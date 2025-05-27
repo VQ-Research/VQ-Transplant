@@ -13,9 +13,15 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from data.augmentation import random_crop_arr, center_crop_arr
 from torchvision.transforms import InterpolationMode, transforms
+from data.lsun_church import LSUNChurchesDataset
+from data.lsun_bedroom import LSUNBedroomsDataset
+
 paths = {
     "ImageNet": "ImageNet",
     "FFHQ": "FFHQ",
+    "CelebAHQ":"CelebAHQ",
+    "Bedrooms":"LSUN-Bedrooms",
+    "Churches": "LSUN-Churches",
 }
 
 def build_train_transform(args):
@@ -45,6 +51,15 @@ def build_dataloader(args):
     elif args.dataset_name == "FFHQ":
         train_set = ImageFolder(root=data_path, transform=train_transform)
         val_set = ImageFolder(root=data_path, transform=eval_transform)
+    elif args.dataset_name == "CelebAHQ":
+        train_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=train_transform)
+        val_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=eval_transform)
+    elif args.dataset_name == "Bedrooms":
+        train_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
+        val_set = LSUNBedroomsDataset(root=data_path, split='val', transform=transform)
+    elif args.dataset_name == "Churches":
+        train_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
+        val_set = LSUNChurchesDataset(root=data_path, split='val', transform=transform)
 
     print("dataset name:", args.dataset_name)
     print("len train_set:", len(train_set))
@@ -65,6 +80,9 @@ def build_dataloader(args):
     )
     return train_dataloader, val_dataloader, train_sampler, len(train_set), len(val_set)
 
+
+
+'''
 def build_dataloader_reconstruction(args):
     data_path = os.path.join(args.dataset_dir, paths[args.dataset_name])
     train_transform = build_train_transform(args)
@@ -91,3 +109,4 @@ def build_dataloader_reconstruction(args):
         batch_size=args.batch_size, shuffle=False, drop_last=False
     )
     return train_dataloader, val_dataloader, len(train_set), len(val_set)
+'''
