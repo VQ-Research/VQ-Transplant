@@ -56,10 +56,10 @@ def build_dataloader(args):
         val_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=eval_transform)
     elif args.dataset_name == "Bedrooms":
         train_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
-        val_set = LSUNBedroomsDataset(root=data_path, split='val', transform=transform)
+        val_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
     elif args.dataset_name == "Churches":
         train_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
-        val_set = LSUNChurchesDataset(root=data_path, split='val', transform=transform)
+        val_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
 
     print("dataset name:", args.dataset_name)
     print("len train_set:", len(train_set))
@@ -79,34 +79,3 @@ def build_dataloader(args):
         sampler=eval_sampler, drop_last=False
     )
     return train_dataloader, val_dataloader, train_sampler, len(train_set), len(val_set)
-
-
-
-'''
-def build_dataloader_reconstruction(args):
-    data_path = os.path.join(args.dataset_dir, paths[args.dataset_name])
-    train_transform = build_train_transform(args)
-    eval_transform = build_eval_transform(args)
-
-    if args.dataset_name == "ImageNet":
-        train_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=train_transform)
-        val_set = ImageFolder(root=os.path.join(data_path, 'val'), transform=eval_transform)
-    elif args.dataset_name == "FFHQ":
-        train_set = ImageFolder(root=data_path, transform=train_transform)
-        val_set = ImageFolder(root=data_path, transform=eval_transform)
-
-    print("dataset name:", args.dataset_name)
-    print("len train_set:", len(train_set))
-    print("len val_set:", len(val_set))
-
-    train_dataloader = DataLoader(
-        dataset=train_set, num_workers=args.workers, pin_memory=True,
-        batch_size=args.batch_size, shuffle=True, drop_last=True
-    )
-
-    val_dataloader = DataLoader(
-        dataset=val_set, num_workers=args.workers, pin_memory=True,
-        batch_size=args.batch_size, shuffle=False, drop_last=False
-    )
-    return train_dataloader, val_dataloader, len(train_set), len(val_set)
-'''
