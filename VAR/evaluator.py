@@ -54,22 +54,22 @@ def main():
     print("Computing evaluations...")
     IS = evaluator.compute_inception_score(sample_acts[0])
     FID = sample_stats.frechet_distance(ref_stats)
-    sFID = sample_stats_spatial.frechet_distance(ref_stats_spatial)
+    #sFID = sample_stats_spatial.frechet_distance(ref_stats_spatial)
     print("Inception Score:", IS)
     print("FID:", FID)
-    print("sFID:", sFID)
-    prec, recall = evaluator.compute_prec_recall(ref_acts[0], sample_acts[0])
-    print("Precision:", prec)
-    print("Recall:", recall)
+    #print("sFID:", sFID)
+    #prec, recall = evaluator.compute_prec_recall(ref_acts[0], sample_acts[0])
+    #print("Precision:", prec)
+    #print("Recall:", recall)
 
-    txt_path = args.sample_batch.replace('.npz', '.txt')
-    print("writing to {}".format(txt_path))
-    with open(txt_path, 'w') as f:
-        print("Inception Score:", IS, file=f)
-        print("FID:", FID, file=f)
-        print("sFID:", sFID, file=f)
-        print("Precision:", prec, file=f)
-        print("Recall:", recall, file=f)
+    #txt_path = args.sample_batch.replace('.npz', '.txt')
+    #print("writing to {}".format(txt_path))
+    #with open(txt_path, 'w') as f:
+    #    print("Inception Score:", IS, file=f)
+    #    print("FID:", FID, file=f)
+    #    print("sFID:", sFID, file=f)
+    #    print("Precision:", prec, file=f)
+    #    print("Recall:", recall, file=f)
 
 
 class InvalidFIDException(Exception):

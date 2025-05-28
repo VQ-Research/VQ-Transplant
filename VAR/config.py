@@ -33,10 +33,10 @@ def parse_arg():
     parser.add_argument('--L', default=4, type=int, help='the number of finite quantized values in SQ, L=4 for FSQ, L=2 for LFQ and BSQ', choices=[4,2])
     
     ###Loss Configuration
-    parser.add_argument('--alpha', type=float, default=1.0, help="vq-transplant stage: the hyperparameter of vq_loss.")
-    parser.add_argument('--beta', type=float, default=0.5, help="vq-transplant stage: the hyperparameter of wasserstein_loss in wasserstein-vq.")
-    parser.add_argument('--gamma', type=float, default=0.1, help="vq-transplant stage: the hyperparameter of codebook d_loss and g_loss in adversarial-vq.")
-    parser.add_argument('--rate_d', type=float, default=0.2, help="dino discriminator loss weight for gan training")
+    parser.add_argument('--beta', type=float, default=1.0, help="substitution stage: the hyperparameter of commit_loss.")
+    parser.add_argument('--gamma_1', type=float, default=0.5, help="substitution stage: the hyperparameter of wasserstein_loss in wasserstein-vq.")
+    parser.add_argument('--gamma_2', type=float, default=0.1, help="substitution stage: the hyperparameter of codebook d_loss and g_loss in adversarial-vq.")
+    parser.add_argument('--lambd', type=float, default=0.2, help="adaptation stage: dino discriminator loss weight for gan training")
 
     ###Training Configuration
     parser.add_argument('--VQ', default='wasserstein-vq', help='various vq approaches.', choices=['wasserstein-vq', 'vanilla-vq', 'ema-vq', 'adversarial-vq', 'fsq', 'bsq', 'lfq'])
@@ -50,10 +50,10 @@ def parse_arg():
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
     parser.add_argument("--disc_epoch", type=int, default=4, help="iteration to start discriminator training and loss")
-    parser.add_argument('--stage', default='transplant', help='there are two stages:vq-transplant and decoder adaptation.', choices=['transplant', 'adaptation'])
-    parser.add_argument('--checkpoint_dir', default="/projects/yuanai/projects/WassersteinVQ/VAR/checkpoint/", type=str, help='the directory of checkpoint.')
-    parser.add_argument('--results_dir', default="/projects/yuanai/projects/WassersteinVQ/VAR/results/", type=str, help='the directory of results.')
-    parser.add_argument('--saver_dir', default="/projects/yuanai/projects/WassersteinVQ/VAR/saver/", type=str, help='the directory of saver.')
+    parser.add_argument('--stage', default='substitution', help='there are two stages:vq-substitution and decoder adaptation.', choices=['substitution', 'adaptation'])
+    parser.add_argument('--checkpoint_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/checkpoint/", type=str, help='the directory of checkpoint.')
+    parser.add_argument('--results_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/results/", type=str, help='the directory of results.')
+    parser.add_argument('--saver_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/saver/", type=str, help='the directory of saver.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--local-rank', default=-1, type=int, help='node rank for distributed training')
@@ -65,15 +65,30 @@ def parse_arg():
     args.batch_size = round(args.global_batch_size/args.world_size)
     args.workers = min(max(0, args.workers), args.batch_size)
     args.ms_token_size = tuple(map(int, args.ms_patch_size.replace('-', '_').split('_')))
-    
-    args.checkpoint_dir = os.path.join(args.checkpoint_dir, args.dataset_name)
-    args.results_dir = os.path.join(args.results_dir, args.dataset_name)
-    args.saver_dir = os.path.join(args.saver_dir, args.dataset_name)
+    if args.stage == "substitution":
+        args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Substitution"), args.dataset_name)
+        args.results_dir = os.path.join(os.path.join(args.results_dir, "Substitution"), args.dataset_name)
+        args.saver_dir = os.path.join(os.path.join(args.saver_dir, "Substitution"), args.dataset_name)
+    elif args.stage == "adaptation":
+        args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Adaptation"), args.dataset_name)
+        args.results_dir = os.path.join(os.path.join(args.results_dir, "Adaptation"), args.dataset_name)
+        args.saver_dir = os.path.join(os.path.join(args.saver_dir, "Adaptation"), args.dataset_name)
         
     args.data_pre = '{}_{}'.format(args.dataset_name, args.resolution)
-    args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
-    args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.alpha, args.beta, args.gamma, args.rate_d)
-    args.training_pre = '{}_{}_{}'.format(args.model_name, args.epochs, args.disc_epoch)
+    if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
+        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
+    elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
+        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor, args.L)
+    
+    if args.stage == "substitution": 
+        args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2)
+    elif args.stage == "adaptation":
+        args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2, args.lambd)
+    
+    if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
+        args.training_pre = '{}_{}_{}'.format(args.model_name, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.add_projection)
+    elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
+        args.training_pre = '{}_{}_{}'.format(args.model_name, args.stage, args.epochs, args.add_projection)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
     
     os.environ['PYTHONHASHSEED'] = str(args.seed)
