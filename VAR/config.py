@@ -2,7 +2,7 @@ import json
 import os
 import random
 import re
-import subprocess
+import subproces
 import sys
 import time
 import numpy as np
@@ -40,7 +40,7 @@ def parse_arg():
     parser.add_argument('--lambd', type=float, default=0.2, help="adaptation stage: dino discriminator loss weight for gan training")
 
     ###Training Configuration
-    parser.add_argument('--VQ', default='wasserstein-vq', help='various vq approaches.', choices=['wasserstein-vq', 'vanilla-vq', 'ema-vq', 'adversarial-vq', 'fsq', 'bsq', 'lfq'])
+    parser.add_argument('--VQ', default='wasserstein-vq', help='various vq approaches.', choices=['wasserstein-vq', 'vanilla-vq', 'ema-vq', 'adversarial-vq', 'fsq', 'bsq', 'lfq', 'original_var', 'var_no_vq'])
     parser.add_argument('--resume', action='store_true', help='reloading model from specified checkpoint.')
     parser.add_argument('--use_trick', action='store_true', help='False: retain phi network in multiscale-VQ as original VAR; True: remove phi network in multiscale-VQ.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
@@ -82,17 +82,23 @@ def parse_arg():
     if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
-        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor, args.L)
-    
+        args.model_pre = 'model_{}_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor, args.L)
+    elif args.VQ == 'original_var' or args.VQ = 'var_no_vq':
+        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
+
     if args.stage == "substitution": 
-        args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2)
+        args.loss_pre = 'loss_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2)
     elif args.stage == "adaptation":
         args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2, args.lambd)
+    elif args.VQ == 'original_var' or args.VQ = 'var_no_vq':
+        args.loss_pre = 'loss_empty'
     
     if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
-        args.training_pre = '{}_{}_{}'.format(args.model_name, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.use_pq, args.fold_token, args.add_projection)
+        args.training_pre = '{}_{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.use_pq, args.fold_token, args.add_projection)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
-        args.training_pre = '{}_{}_{}'.format(args.model_name, args.stage, args.epochs, args.add_projection)
+        args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.add_projection)
+    elif args.VQ == 'original_var' or args.VQ = 'var_no_vq':
+        args.training_pre = '{}'.format(args.VQ)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
     
     os.environ['PYTHONHASHSEED'] = str(args.seed)

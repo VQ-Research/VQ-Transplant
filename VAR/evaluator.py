@@ -23,7 +23,6 @@ INCEPTION_V3_PATH = "classify_image_graph_def.pb"
 FID_POOL_NAME = "pool_3:0"
 FID_SPATIAL_NAME = "mixed_6/conv:0"
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ref_batch", default="/projects/yuanai/processed_data/rFID/baselines/Input.npz", help="path to reference batch npz file")
