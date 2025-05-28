@@ -25,6 +25,7 @@ def parse_arg():
     
     ###Model Configuration
     parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8_10_13_16", type=str, help='multi-scale patch size.')
+    parser.add_argument('--fold_patch_size', default="1_1_2_3_3_4_5_6_8_11", type=str, help='multi-scale patch size.')
     parser.add_argument('--max_patch_size', default=16, type=int, help='the maximum patch size.')
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
     parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors.')
@@ -43,14 +44,16 @@ def parse_arg():
     parser.add_argument('--resume', action='store_true', help='reloading model from specified checkpoint.')
     parser.add_argument('--use_trick', action='store_true', help='False: retain phi network in multiscale-VQ as original VAR; True: remove phi network in multiscale-VQ.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
+    parser.add_argument('--use_pq', action='store_true', help='False: retain phi network in multiscale-VQ as original VAR; True: remove phi network in multiscale-VQ.')
+    parser.add_argument('--fold_token', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--add_projection', action='store_true', help='False: do not use a projection layer, codebook dimension is same as the original VAR; True: use a projection layer to reduce codebook dimension.')
     parser.add_argument('--epochs', type=int, default=4, help="training epochs, 4 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
     parser.add_argument('--lr', default=5e-4, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
-    parser.add_argument("--disc_epoch", type=int, default=4, help="iteration to start discriminator training and loss")
     parser.add_argument('--stage', default='substitution', help='there are two stages:vq-substitution and decoder adaptation.', choices=['substitution', 'adaptation'])
+    parser.add_argument('--pretrained_tokenizer', default="/projects/yuanai/projects/VQ-Transplant/VAR/pretrained_tokenizer/vae_ch160v4096z32.pth", type=str, help='the path to pretrained visual tokenizer.')
     parser.add_argument('--checkpoint_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/checkpoint/", type=str, help='the directory of checkpoint.')
     parser.add_argument('--results_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/results/", type=str, help='the directory of results.')
     parser.add_argument('--saver_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/saver/", type=str, help='the directory of saver.')
@@ -65,6 +68,7 @@ def parse_arg():
     args.batch_size = round(args.global_batch_size/args.world_size)
     args.workers = min(max(0, args.workers), args.batch_size)
     args.ms_token_size = tuple(map(int, args.ms_patch_size.replace('-', '_').split('_')))
+    args.fold_token_size = tuple(map(int, args.fold_patch_size.replace('-', '_').split('_')))
     if args.stage == "substitution":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Substitution"), args.dataset_name)
         args.results_dir = os.path.join(os.path.join(args.results_dir, "Substitution"), args.dataset_name)
@@ -86,7 +90,7 @@ def parse_arg():
         args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2, args.lambd)
     
     if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
-        args.training_pre = '{}_{}_{}'.format(args.model_name, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.add_projection)
+        args.training_pre = '{}_{}_{}'.format(args.model_name, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.use_pq, args.fold_token, args.add_projection)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
         args.training_pre = '{}_{}_{}'.format(args.model_name, args.stage, args.epochs, args.add_projection)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
