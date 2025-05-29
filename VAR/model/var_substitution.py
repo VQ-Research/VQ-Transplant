@@ -31,16 +31,16 @@ class VAR_Substitution(nn.Module):
         post_quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('post_quant_conv.')}
 
         encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
-        decoder_dict = {k.replace('encoder.', '', 1): v for k, v in decoder_dict.items()}
-        quant_conv_dict = {k.replace('encoder.', '', 1): v for k, v in quant_conv_dict.items()}
-        post_quant_conv_dict = {k.replace('encoder.', '', 1): v for k, v in post_quant_conv_dict.items()}
+        decoder_dict = {k.replace('decoder.', '', 1): v for k, v in decoder_dict.items()}
+        quant_conv_dict = {k.replace('quant_conv.', '', 1): v for k, v in quant_conv_dict.items()}
+        post_quant_conv_dict = {k.replace('post_quant_conv.', '', 1): v for k, v in post_quant_conv_dict.items()}
 
         self.encoder.load_state_dict(encoder_dict, strict=True)
         self.decoder.load_state_dict(decoder_dict, strict=True)
         self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
         self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
 
-        for name, param in pretrain_checkpoint.items():
+        for name, param in pretrain_dict.items():
             print("name:", name)
         
         if self.args.VQ == "original_var":
