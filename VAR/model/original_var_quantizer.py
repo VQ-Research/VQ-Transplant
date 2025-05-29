@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 class Original_VAR(nn.Module):
     def __init__(self, vocab_size, Cvae, using_znorm, beta: float = 0.25, v_patch_nums=None, quant_resi=0.5, share_quant_resi=4):
-        super(Original_VAR).__init__()
+        super().__init__()
         self.vocab_size: int = vocab_size
         self.Cvae: int = Cvae
         self.using_znorm: bool = using_znorm
@@ -87,9 +87,10 @@ class Original_VAR(nn.Module):
                 h_BChw = self.quant_resi[si/(SN-1)](h_BChw)
                 f_hat = f_hat + h_BChw
                 f_rest -= h_BChw
-               
+
+            token_cat = torch.cat(token_cat, 0) 
             f_hat = (f_hat.data - f_no_grad).add_(f_BChw)
-            quant_error = F.mse_loss(f_hat.detach()-f_BChw.detach())
+            quant_error = F.mse_loss(f_hat.detach(), f_BChw.detach())
             histogram = token_cat.bincount(minlength=self.vocab_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)
             handler.wait()

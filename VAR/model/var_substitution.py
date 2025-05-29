@@ -39,12 +39,12 @@ class VAR_Substitution(nn.Module):
         self.decoder.load_state_dict(decoder_dict, strict=True)
         self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
         self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
-
-        for name, param in pretrain_dict.items():
-            print("name:", name)
         
         if self.args.VQ == "original_var":
+            quantizer_dict = {k: v for k, v in pretrain_dict.items() if "quantize.embedding." in k or "quantize.quant_resi." in k}
+            quantizer_dict = {k.replace('quantize.', '', 1): v for k, v in quantizer_dict.items()}
             self.quantizer = Original_VAR(vocab_size=4096, Cvae=32, using_znorm=False, beta=0.25, v_patch_nums=self.args.ms_token_size, quant_resi=0.5, share_quant_resi=4)
+            self.quantizer.load_state_dict(quantizer_dict, strict=True)
 
     def forward(self, x):
         pass
