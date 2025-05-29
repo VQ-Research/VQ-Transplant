@@ -105,6 +105,33 @@ def eval_one_epoch(args, model, epoch, val_dataloader, len_val_set):
     else:
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, quant_error=eval_quantization_error, utilization=eval_utilization, perplexity=eval_perplexity, rec_loss=eval_rec_loss)
 
+def main_worker(args):
+    torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
+    torch.distributed.init_process_group(backend='nccl')
+
+    model = VAR_Substitution(args)
+    model = model.cuda(int(os.environ['LOCAL_RANK']))
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[int(os.environ['LOCAL_RANK'])], find_unused_parameters=False, broadcast_buffers=True)
+    train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
+
+    if args.VQ == "var_no_vq" or args.VQ == 'original_var':
+        epoch = 0
+        eval_reconstruction(args, model)
+        return
+    
+
+        
+if __name__ == '__main__':
+    args = config.parse_arg()
+    dict_args = vars(args)
+    sys.stdout = Logger(args.saver_dir, args.saver_name_pre)
+    if int(os.environ['LOCAL_RANK']) == 0:
+        for k, v in zip(dict_args.keys(), dict_args.values()):
+            print("{0}: {1}".format(k, v))
+    main_worker(args)
+
+
+'''
 def calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set):
     if args.VQ == "var_no_vq":
         results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'rec_loss': [], 'lpips':[]}
@@ -127,29 +154,4 @@ def calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set):
             results_val_len = len(results_eval['epoch'])
             data_frame = pd.DataFrame(data=results_eval, index=range(1, results_val_len+1))
             data_frame.to_csv('{}/eval_{}_rec_results.csv'.format(args.results_dir, args.saver_name_pre), index_label='index')
-
-def main_worker(args):
-    torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
-    torch.distributed.init_process_group(backend='nccl')
-
-    model = VAR_Substitution(args)
-    model = model.cuda(int(os.environ['LOCAL_RANK']))
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[int(os.environ['LOCAL_RANK'])], find_unused_parameters=False, broadcast_buffers=True)
-    train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
-
-    if args.VQ == "var_no_vq" or args.VQ == 'original_var':
-        epoch = 0
-        eval_reconstruction(args, model)
-        #calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
-        return
-    
-
-        
-if __name__ == '__main__':
-    args = config.parse_arg()
-    dict_args = vars(args)
-    sys.stdout = Logger(args.saver_dir, args.saver_name_pre)
-    if int(os.environ['LOCAL_RANK']) == 0:
-        for k, v in zip(dict_args.keys(), dict_args.values()):
-            print("{0}: {1}".format(k, v))
-    main_worker(args)
+'''
