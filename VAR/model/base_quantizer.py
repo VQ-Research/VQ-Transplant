@@ -3,8 +3,10 @@ from typing import List, Optional, Sequence, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch import distributed as tdist 
 import numpy as np
+from torch import einsum
+from einops import rearrange
+from torch import distributed as tdist 
 
 class Phi(nn.Conv2d):
     def __init__(self, embed_dim, quant_resi):
@@ -25,15 +27,52 @@ class PhiPartiallyShared(nn.Module):
     def __getitem__(self, at_from_0_to_1: float) -> Phi:
         return self.qresi_ls[np.argmin(np.abs(self.ticks - at_from_0_to_1)).item()]
 
-class BaseQuantizer(nn.Module):
+class EmbeddingEMA(nn.Module):
+    def __init__(self, codebook_size, codebook_dim, decay=0.99, eps=1e-5):
+        super().__init__()
+        self.codebook_size = codebook_size
+        self.codebook_dim = codebook_dim
+        self.decay = decay
+        self.eps = eps
+
+        weight = torch.randn(codebook_size, codebook_dim)/self.codebook_size
+        self.weight = nn.Parameter(weight, requires_grad = False)
+        self.cluster_size = nn.Parameter(torch.zeros(codebook_size), requires_grad = False)
+        self.embed_avg = nn.Parameter(weight.clone(), requires_grad = False)
+
+    def forward(self, embed_id):
+        return F.embedding(embed_id, self.weight)
+
+    def cluster_size_ema_update(self, new_cluster_size):
+        self.cluster_size.data.mul_(self.decay).add_(new_cluster_size, alpha=1 - self.decay)
+
+    def embed_avg_ema_update(self, new_embed_avg): 
+        self.embed_avg.data.mul_(self.decay).add_(new_embed_avg, alpha=1 - self.decay)
+
+    def weight_update(self, num_tokens):
+        n = self.cluster_size.sum()
+        smoothed_cluster_size = (
+                (self.cluster_size + self.eps) / (n + num_tokens * self.eps) * n
+            )
+        #normalize embedding average with smoothed cluster size
+        embed_normalized = self.embed_avg / smoothed_cluster_size.unsqueeze(1)
+        self.weight.data.copy_(embed_normalized)   
+
+class MultiscaleBaseQuantizer(nn.Module):
     def __init__(self, args):
         super(BaseQuantizer, self).__init__()
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
-        self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-        self.embedding.weight.data.normal_(0, 0.01)
-        self.embedding.weight.requires_grad = True
+        self.decay = 0.8
+        
+        if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
+            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+            self.embedding.weight.data.normal_(0, 0.01)
+            self.embedding.weight.requires_grad = True
+        elif args.VQ == "ema-vq":
+            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
+
         if args.use_trick == False:
             self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
