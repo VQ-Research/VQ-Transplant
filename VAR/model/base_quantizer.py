@@ -60,7 +60,7 @@ class EmbeddingEMA(nn.Module):
 
 class MultiscaleBaseQuantizer(nn.Module):
     def __init__(self, args):
-        super(BaseQuantizer, self).__init__()
+        super(MultiscaleBaseQuantizer, self).__init__()
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
@@ -85,8 +85,13 @@ class MultiscaleBaseQuantizer(nn.Module):
 
         ## output, multis_cale_image_token
         ret : List[torch.Tensor] = [] 
-        levels = len(self.args.ms_token_size)
-        patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.ms_token_size] 
+        if self.args.fold_token == False:
+            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.ms_token_size] 
+            levels = len(self.args.ms_token_size)
+        else:
+            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.fold_token_size]
+            levels = len(self.args.fold_token_size)
+
         for level, (ph, pw) in enumerate(patch_hws):
             z_downscale = F.interpolate(z_rest, size=(ph, pw), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != len(patch_hws) -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
 
