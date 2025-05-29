@@ -30,6 +30,7 @@ from utils.util import Logger, LossManager, Pack, adjust_learning_rate
 from data import dataloader
 from model.var_substitution import VAR_Substitution
 from metric.metric import PSNR, LPIPS, SSIM
+from eval_reconstruction import eval_reconstruction
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -138,7 +139,8 @@ def main_worker(args):
 
     if args.VQ == "var_no_vq" or args.VQ == 'original_var':
         epoch = 0
-        calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
+        eval_reconstruction(args, model)
+        #calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
     
 

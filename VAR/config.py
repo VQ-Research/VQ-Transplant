@@ -79,13 +79,13 @@ def parse_arg():
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Adaptation"), args.dataset_name)
         args.results_dir = os.path.join(os.path.join(args.results_dir, "Adaptation"), args.dataset_name)
         args.saver_dir = os.path.join(os.path.join(args.saver_dir, "Adaptation"), args.dataset_name)
-        args.reconstruction_dir = os.path.join(os.path.join(args.reconstruction_dir, "Substitution"), args.dataset_name)
+        args.reconstruction_dir = os.path.join(os.path.join(args.reconstruction_dir, "Adaptation"), args.dataset_name)
         
     args.data_pre = '{}_{}'.format(args.dataset_name, args.resolution)
     if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
-        args.model_pre = 'model_{}_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor, args.L)
+        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_dim, args.factor, args.L)
     elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
 

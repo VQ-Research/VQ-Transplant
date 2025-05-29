@@ -17,11 +17,18 @@ from PIL import Image
 import numpy as np
 import argparse
 import itertools
-import config
-
 from data.augmentation import center_crop_arr
 from data.lsun_church import LSUNChurchesDataset
 from data.lsun_bedroom import LSUNBedroomsDataset
+from metric.metric import PSNR, LPIPS, SSIM
+
+paths = {
+    "ImageNet": "ImageNet",
+    "FFHQ": "FFHQ",
+    "CelebAHQ":"CelebAHQ",
+    "Bedrooms":"LSUN-Bedrooms",
+    "Churches": "LSUN-Churches",
+}
 
 def create_npz_from_sample_folder(sample_dir, num=50000):
     """
@@ -45,61 +52,35 @@ def load_dataset(args, batch_size=16):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
     ])
-
+    data_path = os.path.join(args.dataset_dir, paths[args.dataset_name])
     if args.dataset_name == "ImageNet":
-        pass
+        val_set = ImageFolder(root=os.path.join(data_path, 'val'), transform=transform)
     elif args.dataset_name == "FFHQ":
-        pass
+        val_set = ImageFolder(root=data_path, transform=eval_transform)
     elif args.dataset_name == "CelebAHQ":
-        pass
+        val_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=eval_transform)
     elif args.dataset_name == "Bedrooms":
-        pass
+        val_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
     elif args.dataset_name == "Churches":
-        pass
-    
+        val_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
 
-def load_imagenet_dataset(data_path, batch_size=16):
-    transform = transforms.Compose([
-        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, 256)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
-    ])
-    val_dataset = ImageFolder(root=os.path.join(data_path, 'val'), transform=transform)
-    len_val_set = len(val_dataset)
-    dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=6, drop_last=False)
+    len_val_set = len(val_set)
+    dataloader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=6, drop_last=False)
     return dataloader, len_val_set
 
-def load_ffhq_dataset(data_path, batch_size=16):
-    transform = transforms.Compose([
-        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, 256)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
-    ])
-    val_dataset = ImageFolder(root=data_path, transform=eval_transform)
-    len_val_set = len(val_dataset)
-    dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=6, drop_last=False)
-    return dataloader, len_val_set
+def eval_reconstruction(args, model):
+    val_dataloader, len_val_set = load_dataset(args, batch_size=16)
 
-def main():
-    sample_folder_dir = "/projects/yuanai/processed_data/rFID/baselines/VAR"
-    raw_folder_dir = "/projects/yuanai/processed_data/rFID/baselines/Input"
+    if args.VQ == "var_no_vq" or args.VQ == 'original_var':
+        reconstruction_name = args.VQ
+    elif args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
+        reconstruction_name = '{}_{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.codebook_size, args.codebook_dim, args.use_trick, args.use_multiscale, args.use_pq, args.fold_token, args.add_projection)
+    elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
+        reconstruction_name = '{}_{}_{}_{}'.format(args.VQ, args.codebook_dim, args.L, args.add_projection)
+    reconstruction_path = os.path.join(args.reconstruction_dir, reconstruction_name)
+    os.makedirs(reconstruction_path, exist_ok=True)
 
-    ### load dataset
-    data_path = "/projects/yuanai/data/ImageNet/"
-    val_dataloader, len_val_set = load_dataset(data_path, batch_size=16)
-    num_fid_samples = 50000
-
-    ###load the vae checkpoint
-    vae, var = build_vae_var(
-        V=4096, Cvae=32, ch=160, share_quant_resi=4,    # hard-coded VQVAE hyperparameters
-        device='cuda', patch_nums= (1, 2, 3, 4, 5, 6, 8, 10, 13, 16),
-        num_classes=1000, depth=16, shared_aln=False,
-    )
-    vae_ckpt = "/projects/yuanai/processed_data/checkpoint/VAR/vae_ch160v4096z32.pth"
-    vae.load_state_dict(torch.load(vae_ckpt, map_location='cpu'), strict=True)
-    vae = vae.cuda()
-    vae.eval()
-
+    model.eval()
     psnr_metric = PSNR()
     ssim_metric = SSIM()
     lpips_metric = LPIPS()
@@ -108,19 +89,21 @@ def main():
     for idx, (x, _) in enumerate(val_dataloader):
         x = x.cuda()
         with torch.no_grad():
-            x_rec = vae.img_to_reconstructed_img(x, v_patch_nums=(1, 2, 3, 4, 5, 6, 8, 10, 13, 16), last_one=True)
-            batch_lpips = lpips_metric(x, x_rec).sum()
+            if args.VQ == "var_no_vq":
+                x_rec, _ = model.module.collect_eval_info(x)
+            else:
+                x_rec, _, _, _ = model.module.collect_eval_info(x)
 
+            batch_lpips = lpips_metric(x, x_rec).sum()
             samples = torch.clamp(127.5 * x_rec + 128.0, 0, 255).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
             input_samples = torch.clamp(127.5 * x + 128.0, 0, 255).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
-
+            
             # Save samples to disk as individual .png files
-            for i, sample in enumerate(input_samples):
+            for i, sample in enumerate(samples):
                 index = i + total
-                Image.fromarray(sample).save(f"{raw_folder_dir}/{index:06d}.png")
+                Image.fromarray(sample).save(f"{reconstruction_path}/{index:06d}.png")
 
             total += 16
-
             x_norm = (x + 1.0)/2.0
             x_rec_norm = (x_rec + 1.0)/2.0
 
@@ -136,7 +119,5 @@ def main():
     eval_lpips = lpips/len_val_set
     print("PSNR:"+str(eval_psnr)+"  SSIM:"+str(eval_ssim)+ "  LPIPS:"+str(eval_lpips))
 
-    create_npz_from_sample_folder(raw_folder_dir, num_fid_samples)
-
-if __name__ == "__main__":
-    main()
+    if args.dataset_name == "ImageNet":
+        create_npz_from_sample_folder(raw_folder_dir, num_fid_samples=50000)
