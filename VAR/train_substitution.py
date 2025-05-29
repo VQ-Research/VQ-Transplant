@@ -105,7 +105,6 @@ def eval_one_epoch(args, model, epoch, val_dataloader, len_val_set):
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, quant_error=eval_quantization_error, utilization=eval_utilization, perplexity=eval_perplexity, rec_loss=eval_rec_loss)
 
 def calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set):
-    print("okay2")
     if args.VQ == "var_no_vq":
         results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'rec_loss': [], 'lpips':[]}
     elif args.VQ == 'original_var':
@@ -113,22 +112,20 @@ def calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set):
 
     with torch.no_grad():
         results_pack = eval_one_epoch(args, model, epoch, val_dataloader, len_val_set)
-        print("okay3")
-
         if int(os.environ['LOCAL_RANK']) == 0:
             results_eval['epoch'].append(epoch)
             results_eval['psnr'].append(results_pack.psnr)
             results_eval['ssim'].append(results_pack.ssim)
             results_eval['rec_loss'].append(results_pack.rec_loss)
             results_eval['lpips'].append(results_pack.lpips)
-
-            results_eval['quant_error'].append(results_pack.quant_error)
-            results_eval['utilization'].append(results_pack.utilization)
-            results_eval['perplexity'].append(results_pack.perplexity)
             if args.VQ != "var_no_vq": 
-                results_val_len = len(results_eval['epoch'])
-                data_frame = pd.DataFrame(data=results_eval, index=range(1, results_val_len+1))
-                data_frame.to_csv('{}/eval_{}_rec_results.csv'.format(args.results_dir, args.saver_name_pre), index_label='index')
+                results_eval['quant_error'].append(results_pack.quant_error)
+                results_eval['utilization'].append(results_pack.utilization)
+                results_eval['perplexity'].append(results_pack.perplexity)
+            
+            results_val_len = len(results_eval['epoch'])
+            data_frame = pd.DataFrame(data=results_eval, index=range(1, results_val_len+1))
+            data_frame.to_csv('{}/eval_{}_rec_results.csv'.format(args.results_dir, args.saver_name_pre), index_label='index')
 
 def main_worker(args):
     torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
@@ -141,7 +138,6 @@ def main_worker(args):
 
     if args.VQ == "var_no_vq" or args.VQ == 'original_var':
         epoch = 0
-        print("okay1")
         calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
     

@@ -31,7 +31,8 @@ def parse_arg():
     parser.add_argument('--z_channels', default=256, type=int, help='the resolution of latent variables.')
     parser.add_argument('--factor', default=16, type=int, help='the downscale factor of vanilla image to the latent variable', choices=[16])
     parser.add_argument('--L', default=4, type=int, help='the number of finite quantized values in SQ, L=4 for FSQ, L=2 for LFQ and BSQ', choices=[4,2])
-    
+    parser.add_argument('--product_quant', default=2, type=int, help='if use_pq=true, product_quant=2(default) indicates the codebook_dim would be trunck into 2 parts', choices=[2])
+
     ###Loss Configuration
     parser.add_argument('--beta', type=float, default=1.0, help="substitution stage: the hyperparameter of commit_loss.")
     parser.add_argument('--gamma_1', type=float, default=0.5, help="substitution stage: the hyperparameter of wasserstein_loss in wasserstein-vq.")
@@ -56,6 +57,7 @@ def parse_arg():
     parser.add_argument('--checkpoint_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/checkpoint/", type=str, help='the directory of checkpoint.')
     parser.add_argument('--results_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/results/", type=str, help='the directory of results.')
     parser.add_argument('--saver_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/saver/", type=str, help='the directory of saver.')
+    parser.add_argument('--reconstruction_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--local-rank', default=-1, type=int, help='node rank for distributed training')
@@ -72,10 +74,12 @@ def parse_arg():
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Substitution"), args.dataset_name)
         args.results_dir = os.path.join(os.path.join(args.results_dir, "Substitution"), args.dataset_name)
         args.saver_dir = os.path.join(os.path.join(args.saver_dir, "Substitution"), args.dataset_name)
+        args.reconstruction_dir = os.path.join(os.path.join(args.reconstruction_dir, "Substitution"), args.dataset_name)
     elif args.stage == "adaptation":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Adaptation"), args.dataset_name)
         args.results_dir = os.path.join(os.path.join(args.results_dir, "Adaptation"), args.dataset_name)
         args.saver_dir = os.path.join(os.path.join(args.saver_dir, "Adaptation"), args.dataset_name)
+        args.reconstruction_dir = os.path.join(os.path.join(args.reconstruction_dir, "Substitution"), args.dataset_name)
         
     args.data_pre = '{}_{}'.format(args.dataset_name, args.resolution)
     if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
