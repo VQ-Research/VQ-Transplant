@@ -52,14 +52,14 @@ class VAR_Substitution(nn.Module):
     def collect_eval_info(self, x):
         ## encoder
         z = self.encoder(x)
-        z = self.pre_quant_proj(z)
+        z = self.quant_conv(z)
 
         if self.args.VQ == "var_no_vq":
             z_q = z
         else:
             z_q, quant_error, histogram = self.quantizer.collect_eval_info(z)
 
-        z = self.post_quant_proj(z_q)
+        z = self.post_quant_conv(z_q)
         x_rec = self.decoder(z).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         

@@ -104,15 +104,16 @@ def eval_one_epoch(args, model, epoch, val_dataloader, len_val_set):
     else:
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, quant_error=eval_quantization_error, utilization=eval_utilization, perplexity=eval_perplexity, rec_loss=eval_rec_loss)
 
-def calc_pretrain_var_metrics(args):
+def calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set):
+    print("okay2")
     if args.VQ == "var_no_vq":
         results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'rec_loss': [], 'lpips':[]}
     elif args.VQ == 'original_var':
         results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'rec_loss': [], 'lpips':[], 'quant_error':[], 'utilization':[], 'perplexity':[]}
 
     with torch.no_grad():
-        epoch = 0
         results_pack = eval_one_epoch(args, model, epoch, val_dataloader, len_val_set)
+        print("okay3")
 
         if int(os.environ['LOCAL_RANK']) == 0:
             results_eval['epoch'].append(epoch)
@@ -139,7 +140,12 @@ def main_worker(args):
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
 
     if args.VQ == "var_no_vq" or args.VQ == 'original_var':
-        calc_pretrain_var_metrics(args)
+        epoch = 0
+        print("okay1")
+        calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
+        return
+    
+
         
 if __name__ == '__main__':
     args = config.parse_arg()
