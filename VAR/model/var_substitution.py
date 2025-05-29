@@ -4,7 +4,7 @@ from torch import nn
 from einops import rearrange
 from torch.nn import functional as F
 from model.encoder_decoder import Encoder, Decoder
-from original_var_quantizer import Original_VAR
+from model.original_var_quantizer import Original_VAR
 from utils.util import Pack
 
 class VAR_Substitution(nn.Module):
@@ -23,6 +23,26 @@ class VAR_Substitution(nn.Module):
         self.quant_conv = torch.nn.Conv2d(32, 32, 3, stride=1, padding=1)
         self.post_quant_conv = torch.nn.Conv2d(32, 32, 3, stride=1, padding=1)
 
+        ####loading pretrained visual tokenizer
+        pretrain_dict = torch.load(args.pretrained_tokenizer, map_location='cpu')
+        encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
+        decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
+        quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quant_conv.')}
+        post_quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('post_quant_conv.')}
+
+        encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
+        decoder_dict = {k.replace('encoder.', '', 1): v for k, v in decoder_dict.items()}
+        quant_conv_dict = {k.replace('encoder.', '', 1): v for k, v in quant_conv_dict.items()}
+        post_quant_conv_dict = {k.replace('encoder.', '', 1): v for k, v in post_quant_conv_dict.items()}
+
+        self.encoder.load_state_dict(encoder_dict, strict=True)
+        self.decoder.load_state_dict(decoder_dict, strict=True)
+        self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
+        self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
+
+        for name, param in pretrain_checkpoint.items():
+            print("name:", name)
+        
         if self.args.VQ == "original_var":
             self.quantizer = Original_VAR(vocab_size=4096, Cvae=32, using_znorm=False, beta=0.25, v_patch_nums=self.args.ms_token_size, quant_resi=0.5, share_quant_resi=4)
 

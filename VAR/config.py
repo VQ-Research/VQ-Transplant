@@ -2,7 +2,6 @@ import json
 import os
 import random
 import re
-import subproces
 import sys
 import time
 import numpy as np
@@ -83,21 +82,21 @@ def parse_arg():
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
         args.model_pre = 'model_{}_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor, args.L)
-    elif args.VQ == 'original_var' or args.VQ = 'var_no_vq':
+    elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
 
     if args.stage == "substitution": 
         args.loss_pre = 'loss_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2)
     elif args.stage == "adaptation":
         args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2, args.lambd)
-    elif args.VQ == 'original_var' or args.VQ = 'var_no_vq':
+    elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.loss_pre = 'loss_empty'
     
     if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
         args.training_pre = '{}_{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.use_pq, args.fold_token, args.add_projection)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
         args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.add_projection)
-    elif args.VQ == 'original_var' or args.VQ = 'var_no_vq':
+    elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.training_pre = '{}'.format(args.VQ)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
     
