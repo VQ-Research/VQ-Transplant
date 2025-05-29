@@ -64,17 +64,31 @@ class MultiscaleBaseQuantizer(nn.Module):
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
+        self.beta = args.beta
         self.decay = 0.8
-        
-        if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
-            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding.weight.data.normal_(0, 0.01)
-            self.embedding.weight.requires_grad = True
-        elif args.VQ == "ema-vq":
-            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
+        if args.use_pq == False:
+            if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
+                self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+                self.embedding.weight.data.normal_(0, 0.01)
+                self.embedding.weight.requires_grad = True
+            elif args.VQ == "ema-vq":
+                self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
+        else:
+            codebook_dim = int(args.codebook_dim/2)
+            assert codebook_dim * 2 == args.codebook_dim
+            if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
+                self.embedding_1 = nn.Embedding(self.codebook_size, codebook_dim)
+                self.embedding_2 = nn.Embedding(self.codebook_size, codebook_dim)
+                self.embedding_1.weight.data.normal_(0, 0.01)
+                self.embedding_2.weight.data.normal_(0, 0.01)
+                self.embedding_1.weight.requires_grad = True
+                self.embedding_2.weight.requires_grad = True
+            elif args.VQ == "ema-vq":
+                self.embedding_1 = EmbeddingEMA(self.codebook_size, codebook_dim, self.decay, eps)
+                self.embedding_2 = EmbeddingEMA(self.codebook_size, codebook_dim, self.decay, eps)
 
-        if args.use_trick == False:
-            self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
+        #if args.use_trick == False:
+        self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK

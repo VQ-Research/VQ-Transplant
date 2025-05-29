@@ -142,8 +142,6 @@ def main_worker(args):
         #eval_reconstruction(args, model)
         calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
-    
-
         
 if __name__ == '__main__':
     args = config.parse_arg()
