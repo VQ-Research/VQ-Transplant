@@ -56,15 +56,42 @@ class EmbeddingEMA(nn.Module):
             )
         #normalize embedding average with smoothed cluster size
         embed_normalized = self.embed_avg / smoothed_cluster_size.unsqueeze(1)
-        self.weight.data.copy_(embed_normalized)   
+        self.weight.data.copy_(embed_normalized) 
 
-class MultiscaleBaseQuantizer(nn.Module):
+class Queue(nn.Module):
     def __init__(self, args):
-        super(MultiscaleBaseQuantizer, self).__init__()
+        super(Queue, self).__init__()
+        self.args = args
+        self.codebook_dim = args.codebook_dim
+        if args.use_multiscale ==False:
+            self.queue_size = 32768
+        else:
+            if args.fold_token == False:
+                self.queue_size = 87040      
+            else:
+                self.queue_size = 36608
+        self.register_buffer("queue", torch.randn(self.queue_size, self.codebook_dim)*0.01)
+        self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
+
+    @torch.no_grad()
+    def dequeue_and_enqueue(self, key):
+        batch_size = key.shape[0]
+        ptr = int(self.queue_ptr)
+        assert self.queue_size % batch_size == 0  # for simplicity
+        self.queue[ptr:ptr + batch_size, :] = key
+        ptr = (ptr + batch_size) % self.queue_size  # move pointer
+        self.queue_ptr[0] = ptr  
+
+    @torch.no_grad()
+    def obtain_feature_from_queue(self):
+        return self.queue.detach().clone()
+
+class BaseQuantizer(nn.Module):
+    def __init__(self, args):
+        super(BaseQuantizer, self).__init__()
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
-        self.beta = args.beta
         self.decay = 0.8
         if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
@@ -73,27 +100,47 @@ class MultiscaleBaseQuantizer(nn.Module):
         elif args.VQ == "ema-vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
 
-        #if args.use_trick == False:
-        self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
+        if args.VQ == "wasserstein-vq" and args.VQ == "adversarial-vq":
+            self.queue = Queue(args)
+
+class MultiscaleBaseQuantizer(nn.Module):
+    def __init__(self, args):
+        super(MultiscaleBaseQuantizer, self).__init__()
+        self.args = args
+        self.codebook_size = args.codebook_size
+        self.codebook_dim = args.codebook_dim
+        self.decay = 0.8
+        if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
+            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+            self.embedding.weight.data.normal_(0, 0.01)
+            self.embedding.weight.requires_grad = True
+        elif args.VQ == "ema-vq":
+            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
+
+        if args.VQ == "wasserstein-vq" and args.VQ == "adversarial-vq":
+            self.queue = Queue(args)
+
+        if args.use_trick == False:
+            self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK
     def obtain_multiscale_image_token(self, z_enc):
         B, C, H, W = z_enc.shape
         z_no_grad = z_enc.detach()
-        z_rest = z_no_grad.clone() 
+        z_rest = z_no_grad.clone()
 
         ## output, multis_cale_image_token
         ret : List[torch.Tensor] = [] 
         if self.args.fold_token == False:
-            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.ms_token_size] 
             levels = len(self.args.ms_token_size)
+            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.ms_token_size] 
         else:
-            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.fold_token_size]
             levels = len(self.args.fold_token_size)
+            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.fold_token_size]  
 
         for level, (ph, pw) in enumerate(patch_hws):
-            z_downscale = F.interpolate(z_rest, size=(ph, pw), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != len(patch_hws) -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
+            z_downscale = F.interpolate(z_rest, size=(ph, pw), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != len(patch_hws) -1 and self.args.fold_token == False) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
 
             ## distance [B*ph*pw, vocab_size]
             distance = torch.sum(z_downscale.square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
@@ -103,8 +150,9 @@ class MultiscaleBaseQuantizer(nn.Module):
             token = torch.argmin(distance, dim=1)
             token_Bhw = token.view(B, ph, pw)
 
-            z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+            z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
+            if args.use_trick == False:
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_rest.sub_(z_upscale)
             ret.append(token.reshape(B, ph*pw))
@@ -120,20 +168,26 @@ class MultiscaleBaseQuantizer(nn.Module):
 
         ## output, multis_cale_quantized_feature
         ret : List[torch.Tensor] = []
-        levels = len(self.args.ms_token_size)
-        patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.ms_token_size] 
+        if self.args.fold_token == False:
+            levels = len(self.args.ms_token_size)
+            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.ms_token_size] 
+        else:
+            levels = len(self.args.fold_token_size)
+            patch_hws =  [(pn, pn) if isinstance(pn, int) else (pn[0], pn[1]) for pn in self.args.fold_token_size]  
+
         for level, (ph, pw) in enumerate(patch_hws):
-            z_downscale =  F.interpolate(z_rest, size=(ph, pw), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != len(patch_hws) -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
+            z_downscale =  F.interpolate(z_rest, size=(ph, pw), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != len(patch_hws) -1 and self.args.fold_token == False) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
             ## distance [B*ph*pw, vocab_size]
             distance = torch.sum(z_downscale.square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
             distance.addmm_(z_downscale, self.embedding.weight.data.T, alpha=-2, beta=1)
 
             ## token [B*ph*pw]
             token = torch.argmin(distance, dim=1)
-
             token_Bhw = token.view(B, ph, pw)
-            z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+
+            z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
+            if args.use_trick == False:
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_dec.add_(z_upscale)
             z_rest.sub_(z_upscale)
@@ -148,12 +202,19 @@ class MultiscaleBaseQuantizer(nn.Module):
 
         ## multis_cale_quantized_feature
         ret : List[torch.Tensor] = []
-        levels = len(self.args.ms_token_size)
+        if self.args.fold_token == False:
+            levels = len(self.args.ms_token_size)
+            ms_token_size =  self.args.ms_token_size
+        else:
+            levels = len(self.args.fold_token_size)
+            ms_token_size = self.args.fold_token_size 
+
         z_dec = multiscale_token[0].new_zeros(B, C, H, W, dtype=torch.float32)
-        for level, pn in enumerate(self.args.ms_token_size): # from small to large
+        for level, pn in enumerate(ms_token_size): # from small to large
             token = multiscale_token[level].view(B, pn, pn)
-            z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != self.args.ms_token_size -1) else self.embedding(token).permute(0, 3, 1, 2).contiguous()
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+            z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(ms_token_size) -1 and self.args.fold_token == False) else self.embedding(token).permute(0, 3, 1, 2).contiguous()
+            if args.use_trick == False:
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_dec.add_(z_upscale)
             ret.append(z_dec.clone())
@@ -165,27 +226,43 @@ class MultiscaleBaseQuantizer(nn.Module):
         B = multiscale_token[0].shape[0]
         C = self.args.codebook_dim
         H = W = self.args.ms_token_size[-1]
-        num_level = len(self.args.ms_token_size)
 
+        if self.args.fold_token == False:
+            num_level = len(self.args.ms_token_size)
+            ms_token_size =  self.args.ms_token_size
+        else:
+            num_level = len(self.args.fold_token_size)
+            ms_token_size = self.args.fold_token_size
         token_embedding = multiscale_token[0].new_zeros(B, C, H, W, dtype=torch.float32)
-        pn_next: int = self.args.ms_token_size[0]
+        pn_next: int = ms_token_size[0]
         for level in range(num_level-1):
             level_embedding = F.interpolate(self.embedding(multiscale_token[level]).transpose_(1, 2).view(B, C, pn_next, pn_next), size=(H, W), mode='bicubic')
-            level_embedding = self.phi[level/(levels-1)](level_embedding)
+            if args.use_trick == False:
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             token_embedding.add_(level_embedding)
-            pn_next = self.args.ms_token_size[level+1]
+            pn_next = ms_token_size[level+1]
             next_scales.append(F.interpolate(token_embedding, size=(pn_next, pn_next), mode='area').view(B, C, -1).transpose(1, 2))
         return torch.cat(next_scales, dim=1) 
 
     ### for VAR inference (generation phase)
     def obtain_next_autoregressive_input(self, level, f_hat, predicted_token):
         H = W = self.args.ms_token_size[-1]
-        pn = self.args.ms_token_size[level]
-        levels = len(self.args.ms_token_size)
+        if self.args.fold_token == False:
+            num_level = len(self.args.ms_token_size)
+            ms_token_size =  self.args.ms_token_size
+            pn = self.args.ms_token_size[level]
+            levels = len(self.args.ms_token_size)
+        else:
+            num_level = len(self.args.fold_token_size)
+            ms_token_size = self.args.fold_token_size
+            pn = self.args.fold_token_size[level]
+            levels = len(self.args.fold_token_size)
+
         if level != len(self.args.ms_token_size)-1:
             h = F.interpolate(self.embedding(predicted_token).transpose_(1, 2).view(B, C, pn, pn), size=(H, W), mode='bicubic')
-            h = self.phi[level/(levels-1)](h)
+            if args.use_trick == False:
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             f_hat.add_(h)
             return f_hat, F.interpolate(f_hat, size=(self.args.ms_token_size[level+1], self.args.ms_token_size[level+1]), mode='area')
@@ -193,3 +270,6 @@ class MultiscaleBaseQuantizer(nn.Module):
             h = self.embedding(predicted_token).transpose_(1, 2).view(B, C, pn, pn)
             f_hat.add_(h)
             return f_hat, f_hat
+
+
+        
