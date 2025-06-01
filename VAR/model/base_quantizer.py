@@ -117,7 +117,7 @@ class MultiscaleBaseQuantizer(nn.Module):
         elif args.VQ == "ema-vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
 
-        if args.VQ == "wasserstein-vq" and args.VQ == "adversarial-vq":
+        if args.VQ == "wasserstein-vq" or args.VQ == "adversarial-vq":
             self.queue = Queue(args)
 
         #if args.use_trick == False:

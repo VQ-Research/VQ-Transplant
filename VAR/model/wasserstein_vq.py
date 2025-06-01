@@ -148,7 +148,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
             ### compute wasserstein distance
             wasserstein_loss = self.calc_wasserstein_loss()
-            loss = vq_loss + self.gamma * wasserstein_loss
+            loss = vq_loss + self.args.gamma_1 * wasserstein_loss
 
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
 

@@ -12,4 +12,4 @@
 
 source ~/.bashrc
 conda activate /home/fangxian/packages/anaconda/envs/share_VAR
-CUDA_VISIBLE_DEVICES="0" python -m torch.distributed.launch --nproc_per_node=1 --master_port=12225 train_substitution.py --VQ=wasserstein-vq --dataset_name=ImageNet --global_batch_size 32 --factor 16 --resolution 256 --codebook_size 4096  --stage=substitution --use_multiscale
+CUDA_VISIBLE_DEVICES="0" python -m torch.distributed.launch --nproc_per_node=1 --master_port=12225 train_substitution.py --VQ=wasserstein-vq --dataset_name=ImageNet --global_batch_size 32 --factor 16 --resolution 256 --codebook_size 4096  --stage=substitution --use_multiscale --gamma_1=0.5

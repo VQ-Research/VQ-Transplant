@@ -48,7 +48,7 @@ class VAR_Substitution(nn.Module):
             quantizer_dict = {k.replace('quantize.', '', 1): v for k, v in quantizer_dict.items()}
             self.quantizer = Original_VAR(vocab_size=4096, Cvae=32, using_znorm=False, beta=0.25, v_patch_nums=self.args.ms_token_size, quant_resi=0.5, share_quant_resi=4)
             self.quantizer.load_state_dict(quantizer_dict, strict=True)
-        if self.args.VQ == "wasserstein-vq":
+        if self.args.VQ == "wasserstein_vq":
             if self.args.use_multiscale == True:
                 self.quantizer = MultiscaleWassersteinQuantizer(args)
             else:
@@ -60,7 +60,7 @@ class VAR_Substitution(nn.Module):
         z = self.quant_conv(z)
         
         ## quantizer
-        if self.args.VQ == "wasserstein-vq": 
+        if self.args.VQ == "wasserstein_vq": 
             z_q, vq_loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity = self.quantizer(z)
 
         ## decoder
@@ -78,7 +78,7 @@ class VAR_Substitution(nn.Module):
 
         if self.args.VQ == "var_no_vq":
             z_q = z
-        elif self.args.VQ == "wasserstein-vq":
+        elif self.args.VQ == "wasserstein_vq":
             z_q, wasserstein_loss, quant_error, histogram = self.quantizer.collect_eval_info(z)
         else:
             z_q, quant_error, histogram = self.quantizer.collect_eval_info(z)

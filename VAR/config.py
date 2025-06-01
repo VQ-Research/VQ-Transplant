@@ -34,12 +34,12 @@ def parse_arg():
 
     ###Loss Configuration
     parser.add_argument('--beta', type=float, default=1.0, help="substitution stage: the hyperparameter of commit_loss.")
-    parser.add_argument('--gamma_1', type=float, default=0.5, help="substitution stage: the hyperparameter of wasserstein_loss in wasserstein-vq.")
-    parser.add_argument('--gamma_2', type=float, default=0.1, help="substitution stage: the hyperparameter of codebook d_loss and g_loss in adversarial-vq.")
+    parser.add_argument('--gamma_1', type=float, default=0.5, help="substitution stage: the hyperparameter of wasserstein_loss in wasserstein_vq.")
+    parser.add_argument('--gamma_2', type=float, default=0.1, help="substitution stage: the hyperparameter of codebook d_loss and g_loss in adversarial_vq.")
     parser.add_argument('--lambd', type=float, default=0.2, help="adaptation stage: dino discriminator loss weight for gan training")
 
     ###Training Configuration
-    parser.add_argument('--VQ', default='wasserstein-vq', help='various vq approaches.', choices=['wasserstein-vq', 'vanilla-vq', 'ema-vq', 'adversarial-vq', 'fsq', 'bsq', 'lfq', 'original_var', 'var_no_vq'])
+    parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'adversarial_vq', 'fsq', 'bsq', 'lfq', 'original_var', 'var_no_vq'])
     parser.add_argument('--resume', action='store_true', help='reloading model from specified checkpoint.')
     parser.add_argument('--use_trick', action='store_true', help='False: retain phi network in multiscale-VQ as original VAR; True: remove phi network in multiscale-VQ.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
@@ -80,7 +80,7 @@ def parse_arg():
         args.reconstruction_dir = os.path.join(os.path.join(args.reconstruction_dir, "Adaptation"), args.dataset_name)
         
     args.data_pre = '{}_{}'.format(args.dataset_name, args.resolution)
-    if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
+    if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_dim, args.factor, args.L)
@@ -94,7 +94,7 @@ def parse_arg():
     elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.loss_pre = 'loss_empty'
     
-    if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
+    if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
         args.training_pre = '{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.fold_token, args.add_projection)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
         args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.add_projection)
