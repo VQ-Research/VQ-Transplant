@@ -30,11 +30,11 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         D = z.size(1)
 
         c = self.embedding.weight
-        std = c.std(dim=0).max().detach()
+        #std = c.std(dim=0).max().detach()
 
         # Normalize z and c
-        z = z / (std + 1e-8)
-        c = c / (std + 1e-8)
+        #z = z / (std + 1e-8)
+        #c = c / (std + 1e-8)
 
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 

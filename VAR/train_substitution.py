@@ -146,7 +146,7 @@ def main_worker(args):
         model_para = list(model.module.quantizer.phi.parameters())
         code_para = list(model.module.quantizer.embedding.parameters())
         all_para = model_para + code_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.002}], lr=args.lr, betas=(0.9, 0.95))
     else:
         code_para = list(model.module.quantizer.embedding.parameters())
         all_para = code_para
