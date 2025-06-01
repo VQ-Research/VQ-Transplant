@@ -51,6 +51,9 @@ def eval_one_epoch(args, model, epoch, val_dataloader, len_val_set):
         ssim, psnr, lpips, rec_loss_scalar, quantization_error, utilization, perplexity, total_num = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0 
         histogram_all: torch.Tensor = 0.0
 
+    if self.args.VQ == "wasserstein-vq":
+        wasserstein_loss_scalar = 0.0 
+
     for step, (x, _) in enumerate(val_dataloader):
         x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
         batch_size = x.size(0)
@@ -58,6 +61,9 @@ def eval_one_epoch(args, model, epoch, val_dataloader, len_val_set):
         with torch.no_grad():
             if args.VQ == "var_no_vq":
                 x_rec, rec_loss = model.module.collect_eval_info(x)
+            elif self.args.VQ == "wasserstein-vq":
+                x_rec, rec_loss, wasserstein_loss, quant_error, histogram = model.module.collect_eval_info(x)
+                histogram_all += histogram
             else:
                 x_rec, rec_loss, quant_error, histogram = model.module.collect_eval_info(x)
                 histogram_all += histogram
@@ -82,6 +88,8 @@ def eval_one_epoch(args, model, epoch, val_dataloader, len_val_set):
             rec_loss_scalar += rec_loss.item() * batch_size
             if args.VQ != "var_no_vq":
                 quantization_error += quant_error.item() * batch_size
+            if self.args.VQ == "wasserstein-vq":
+                wasserstein_loss_scalar += wasserstein_loss.item() * batch_size
 
     if args.VQ != "var_no_vq":
         codebook_usage_counts = (histogram_all > 0).float().sum()
@@ -98,10 +106,14 @@ def eval_one_epoch(args, model, epoch, val_dataloader, len_val_set):
         eval_utilization = utilization
         eval_perplexity = perplexity.item()
         eval_quantization_error = quantization_error/total_num
+    if self.args.VQ == "wasserstein-vq":
+        eval_wasserstein_loss = wasserstein_loss_scalar/total_num
 
     model.train()
     if args.VQ == "var_no_vq": 
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss)
+    elif self.args.VQ == "wasserstein-vq":
+        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, quant_error=eval_quantization_error, utilization=eval_utilization, perplexity=eval_perplexity, rec_loss=eval_rec_loss, wasserstein_loss=eval_wasserstein_loss)
     else:
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, quant_error=eval_quantization_error, utilization=eval_utilization, perplexity=eval_perplexity, rec_loss=eval_rec_loss)
 

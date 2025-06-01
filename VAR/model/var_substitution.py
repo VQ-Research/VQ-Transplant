@@ -40,7 +40,7 @@ class VAR_Substitution(nn.Module):
         self.decoder.load_state_dict(decoder_dict, strict=True)
         self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
         self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
-        if self.args.add_projection == True:
+        if self.args.add_projection == True and self.args.use_multiscale==False:
             self.projection = ProjectionLayer(args)
         
         if self.args.VQ == "original_var":
@@ -55,7 +55,20 @@ class VAR_Substitution(nn.Module):
                 self.quantizer = WassersteinQuantizer(args)
 
     def forward(self, x):
-        pass
+        ## encoder
+        z = self.encoder(x)
+        z = self.quant_conv(z)
+        
+        ## quantizer
+        if self.args.VQ == "wasserstein-vq": 
+            z_q, vq_loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity = self.quantizer(z)
+
+        ## decoder
+        z = self.post_quant_conv(z_q)
+        x_rec = self.decoder(z)
+
+        info_pack = Pack(vq_loss=vq_loss, wasserstein_loss=wasserstein_loss, quant_error=quant_error, codebook_utilization=codebook_utilization, codebook_perplexity=codebook_perplexity)
+        return x_rec, vq_loss, info_pack
 
     def collect_eval_info(self, x):
         ## encoder
@@ -64,6 +77,8 @@ class VAR_Substitution(nn.Module):
 
         if self.args.VQ == "var_no_vq":
             z_q = z
+        elif self.args.VQ == "wasserstein-vq":
+            z_q, wasserstein_loss, quant_error, histogram = self.quantizer.collect_eval_info(z)
         else:
             z_q, quant_error, histogram = self.quantizer.collect_eval_info(z)
 
@@ -73,11 +88,8 @@ class VAR_Substitution(nn.Module):
         
         if self.args.VQ == "var_no_vq":
             return x_rec, rec_loss
+        elif self.args.VQ == "wasserstein-vq":
+            return x_rec, rec_loss, wasserstein_loss, quant_error, histogram  
         else:
             return x_rec, rec_loss, quant_error, histogram  
-
-
-
-
-
 
