@@ -104,28 +104,22 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 embed = self.embedding(token)
                 
                 ## the multi-scale vector quantization loss
-                if self.args.use_trick == True:
-                    commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
+                commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
 
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                z_upscale = self.phi[level/(levels-1)](z_upscale)
+                if self.args.use_trick == False:
+                    z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
-
-                if self.args.use_trick == False:
-                    vq_loss += F.mse_loss(z_dec, z_enc.data)
             
             ## residual quantization loss
-            if self.args.use_trick == True:
-                vq_loss = F.mse_loss(z_dec, z_enc.data)
-                commit_loss *= 1. / sum(ms_token_size)
-                vq_loss = vq_loss + commit_loss 
-            else:
-                vq_loss *= 1./levels
+            vq_loss = F.mse_loss(z_dec, z_enc.data)
+            commit_loss *= 1. / sum(ms_token_size)
+            vq_loss = vq_loss + commit_loss 
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
@@ -182,7 +176,8 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
                 token_Bhw = token.view(B, pn, pn)
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                z_upscale = self.phi[level/(levels-1)](z_upscale)
+                if self.args.use_trick == False:
+                    z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)

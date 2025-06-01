@@ -40,6 +40,16 @@ class VAR_Substitution(nn.Module):
         self.decoder.load_state_dict(decoder_dict, strict=True)
         self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
         self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
+        
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+        for param in self.decoder.parameters():
+            param.requires_grad = False
+        for param in self.quant_conv.parameters():
+            param.requires_grad = False
+        for param in self.post_quant_conv.parameters():
+            param.requires_grad = False  
+
         if self.args.add_projection == True and self.args.use_multiscale==False:
             self.projection = ProjectionLayer(args)
         

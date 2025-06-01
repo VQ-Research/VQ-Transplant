@@ -93,14 +93,14 @@ class BaseQuantizer(nn.Module):
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
         self.decay = 0.8
-        if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
+        if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "adversarial_vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding.weight.data.normal_(0, 0.01)
             self.embedding.weight.requires_grad = True
-        elif args.VQ == "ema-vq":
+        elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
 
-        if args.VQ == "wasserstein-vq" and args.VQ == "adversarial-vq":
+        if args.VQ == "wasserstein_vq" and args.VQ == "adversarial_vq":
             self.queue = Queue(args)
 
 class MultiscaleBaseQuantizer(nn.Module):
@@ -110,18 +110,18 @@ class MultiscaleBaseQuantizer(nn.Module):
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
         self.decay = 0.8
-        if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "adversarial-vq":
+        if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "adversarial_vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding.weight.data.normal_(0, 0.01)
             self.embedding.weight.requires_grad = True
-        elif args.VQ == "ema-vq":
+        elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
 
-        if args.VQ == "wasserstein-vq" or args.VQ == "adversarial-vq":
+        if args.VQ == "wasserstein_vq" or args.VQ == "adversarial_vq":
             self.queue = Queue(args)
 
-        #if args.use_trick == False:
-        self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
+        if self.args.use_trick == False:
+            self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK
@@ -151,7 +151,7 @@ class MultiscaleBaseQuantizer(nn.Module):
             token_Bhw = token.view(B, ph, pw)
 
             z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-            if args.use_trick == False:
+            if self.args.use_trick == False:
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_rest.sub_(z_upscale)
@@ -186,7 +186,7 @@ class MultiscaleBaseQuantizer(nn.Module):
             token_Bhw = token.view(B, ph, pw)
 
             z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-            if args.use_trick == False:
+            if self.args.use_trick == False:
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_dec.add_(z_upscale)
@@ -213,7 +213,7 @@ class MultiscaleBaseQuantizer(nn.Module):
         for level, pn in enumerate(ms_token_size): # from small to large
             token = multiscale_token[level].view(B, pn, pn)
             z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(ms_token_size) -1 and self.args.fold_token == False) else self.embedding(token).permute(0, 3, 1, 2).contiguous()
-            if args.use_trick == False:
+            if self.args.use_trick == False:
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_dec.add_(z_upscale)
@@ -237,7 +237,7 @@ class MultiscaleBaseQuantizer(nn.Module):
         pn_next: int = ms_token_size[0]
         for level in range(num_level-1):
             level_embedding = F.interpolate(self.embedding(multiscale_token[level]).transpose_(1, 2).view(B, C, pn_next, pn_next), size=(H, W), mode='bicubic')
-            if args.use_trick == False:
+            if self.args.use_trick == False:
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             token_embedding.add_(level_embedding)
@@ -261,7 +261,7 @@ class MultiscaleBaseQuantizer(nn.Module):
 
         if level != len(self.args.ms_token_size)-1:
             h = F.interpolate(self.embedding(predicted_token).transpose_(1, 2).view(B, C, pn, pn), size=(H, W), mode='bicubic')
-            if args.use_trick == False:
+            if self.args.use_trick == False:
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             f_hat.add_(h)
