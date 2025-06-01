@@ -216,11 +216,6 @@ def main_worker(args):
             data_frame = pd.DataFrame(data=results, index=range(1, results_len + 1))
             data_frame.to_csv('{}/train_{}_statistics.csv'.format(args.results_dir, args.saver_name_pre), index_label='epoch')
 
-        #if epoch % args.eval_epochs == 0 and int(os.environ['LOCAL_RANK']) == 0:
-        #    model.train()
-        #    checkpoint_path = os.path.join(args.checkpoint_dir, 'checkpoint-'+args.saver_name_pre+'-'+str(epoch)+'.pth.tar')
-        #    save_checkpoint({'epoch': epoch, 'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'disc_optimizer': disc_optimizer.state_dict(), 'args': args}, is_best=False, filename=checkpoint_path) 
-
         if epoch % args.eval_epochs == 0:
             with torch.no_grad():
                 results_pack = eval_one_epoch(args, model, epoch, val_dataloader, len_val_set)
@@ -234,7 +229,6 @@ def main_worker(args):
                 results_eval['quant_error'].append(results_pack.quant_error)
                 results_eval['utilization'].append(results_pack.utilization)
                 results_eval['perplexity'].append(results_pack.perplexity)
-                results_eval['wasserstein_loss'].append(results_pack.wasserstein_loss)
                 
                 results_val_len = len(results_eval['epoch'])
                 data_frame = pd.DataFrame(data=results_eval, index=range(1, results_val_len+1))
@@ -244,8 +238,9 @@ def main_worker(args):
     model.train()
     if int(os.environ['LOCAL_RANK']) == 0:
         checkpoint_path = os.path.join(args.checkpoint_dir, 'checkpoint-'+args.saver_name_pre+'.pth.tar')
-        save_checkpoint({'epoch': epoch, 'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'disc_optimizer': disc_optimizer.state_dict(), 'args': args}, is_best=False, filename=checkpoint_path) 
-        
+        save_checkpoint({'epoch': epoch, 'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'args': args}, is_best=False, filename=checkpoint_path) 
+        eval_reconstruction(args, model)
+
 if __name__ == '__main__':
     args = config.parse_arg()
     dict_args = vars(args)
