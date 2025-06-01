@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,7 +7,6 @@ import math
 from torch import einsum
 from einops import rearrange
 from torch import distributed as tdist
-import os
 from model.base_quantizer import BaseQuantizer, MultiscaleBaseQuantizer
 
 
@@ -104,7 +104,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 embed = self.embedding(token)
                 
                 ## the multi-scale vector quantization loss
-                if args.use_trick == True:
+                if self.args.use_trick == True:
                     commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
 
                 token_cat.append(token)                  
@@ -116,11 +116,11 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                if args.use_trick == True:
+                if self.args.use_trick == False:
                     vq_loss += F.mse_loss(z_dec, z_enc.data)
             
             ## residual quantization loss
-            if args.use_trick == True:
+            if self.args.use_trick == True:
                 vq_loss = F.mse_loss(z_dec, z_enc.data)
                 commit_loss *= 1. / sum(ms_token_size)
                 vq_loss = vq_loss + commit_loss 
