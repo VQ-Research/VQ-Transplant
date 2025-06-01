@@ -150,7 +150,7 @@ def main_worker(args):
     else:
         code_para = list(model.module.quantizer.embedding.parameters())
         all_para = code_para
-        optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
+        optimizer = torch.optim.AdamW(code_para, lr=0.002, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}

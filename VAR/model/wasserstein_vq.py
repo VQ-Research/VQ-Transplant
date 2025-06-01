@@ -38,11 +38,11 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
-        z_covariance = z_covariance.detach()
+        z_covariance = 0.25 * z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
         c_mean = c.mean(0)
-        c_covariance = torch.cov(c.t()) + 1e-6 * torch.eye(D, device=z.device) 
+        c_covariance = torch.cov(c.t()) + 1e-6 * torch.eye(D, device=z.device)
         
         ### calculation of part1
         part_mean =  torch.sum(torch.multiply(z_mean - c_mean, z_mean - c_mean))
