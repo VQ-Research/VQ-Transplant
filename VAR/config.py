@@ -31,7 +31,6 @@ def parse_arg():
     parser.add_argument('--z_channels', default=256, type=int, help='the resolution of latent variables.')
     parser.add_argument('--factor', default=16, type=int, help='the downscale factor of vanilla image to the latent variable', choices=[16])
     parser.add_argument('--L', default=4, type=int, help='the number of finite quantized values in SQ, L=4 for FSQ, L=2 for LFQ and BSQ', choices=[4,2])
-    parser.add_argument('--product_quant', default=2, type=int, help='if use_pq=true, product_quant=2(default) indicates the codebook_dim would be trunck into 2 parts', choices=[2])
 
     ###Loss Configuration
     parser.add_argument('--beta', type=float, default=1.0, help="substitution stage: the hyperparameter of commit_loss.")
@@ -44,12 +43,11 @@ def parse_arg():
     parser.add_argument('--resume', action='store_true', help='reloading model from specified checkpoint.')
     parser.add_argument('--use_trick', action='store_true', help='False: retain phi network in multiscale-VQ as original VAR; True: remove phi network in multiscale-VQ.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
-    parser.add_argument('--use_pq', action='store_true', help='False: retain phi network in multiscale-VQ as original VAR; True: remove phi network in multiscale-VQ.')
     parser.add_argument('--fold_token', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--add_projection', action='store_true', help='False: do not use a projection layer, codebook dimension is same as the original VAR; True: use a projection layer to reduce codebook dimension.')
     parser.add_argument('--epochs', type=int, default=4, help="training epochs, 4 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
-    parser.add_argument('--lr', default=5e-4, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
+    parser.add_argument('--lr', default=1e-5, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
     parser.add_argument('--stage', default='substitution', help='there are two stages:vq-substitution and decoder adaptation.', choices=['substitution', 'adaptation'])
@@ -97,7 +95,7 @@ def parse_arg():
         args.loss_pre = 'loss_empty'
     
     if args.VQ == "wasserstein-vq" or args.VQ == "vanilla-vq" or args.VQ == "ema-vq" or args.VQ == "adversarial-vq":
-        args.training_pre = '{}_{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.use_pq, args.fold_token, args.add_projection)
+        args.training_pre = '{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_trick, args.use_multiscale, args.fold_token, args.add_projection)
     elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
         args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.add_projection)
     elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':

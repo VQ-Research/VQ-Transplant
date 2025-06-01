@@ -120,8 +120,8 @@ class MultiscaleBaseQuantizer(nn.Module):
         if args.VQ == "wasserstein-vq" and args.VQ == "adversarial-vq":
             self.queue = Queue(args)
 
-        if args.use_trick == False:
-            self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
+        #if args.use_trick == False:
+        self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK

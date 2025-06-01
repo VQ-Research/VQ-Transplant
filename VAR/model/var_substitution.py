@@ -66,8 +66,9 @@ class VAR_Substitution(nn.Module):
         ## decoder
         z = self.post_quant_conv(z_q)
         x_rec = self.decoder(z)
+        rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
 
-        info_pack = Pack(vq_loss=vq_loss, wasserstein_loss=wasserstein_loss, quant_error=quant_error, codebook_utilization=codebook_utilization, codebook_perplexity=codebook_perplexity)
+        info_pack = Pack(vq_loss=vq_loss, rec_loss=rec_loss, wasserstein_loss=wasserstein_loss, quant_error=quant_error, codebook_utilization=codebook_utilization, codebook_perplexity=codebook_perplexity)
         return x_rec, vq_loss, info_pack
 
     def collect_eval_info(self, x):
@@ -88,8 +89,6 @@ class VAR_Substitution(nn.Module):
         
         if self.args.VQ == "var_no_vq":
             return x_rec, rec_loss
-        elif self.args.VQ == "wasserstein-vq":
-            return x_rec, rec_loss, wasserstein_loss, quant_error, histogram  
         else:
-            return x_rec, rec_loss, quant_error, histogram  
+            return x_rec, rec_loss, quant_error, histogram
 
