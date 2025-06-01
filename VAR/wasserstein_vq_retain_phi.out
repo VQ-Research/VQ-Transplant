@@ -1,0 +1,57 @@
+dataset_dir: /projects/yuanai/data/
+dataset_name: ImageNet
+global_batch_size: 64
+workers: 8
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+fold_patch_size: 1_1_2_3_3_4_5_6_8_11
+max_patch_size: 16
+codebook_size: 4096
+codebook_dim: 32
+z_channels: 256
+factor: 16
+L: 4
+beta: 1.0
+gamma_1: 0.5
+gamma_2: 0.1
+lambd: 0.2
+VQ: wasserstein_vq
+resume: False
+use_trick: False
+use_multiscale: True
+fold_token: False
+add_projection: False
+epochs: 4
+eval_epochs: 1
+lr: 1e-05
+dropout: 0.0
+seed: 3407
+stage: substitution
+pretrained_tokenizer: /projects/yuanai/projects/VQ-Transplant/VAR/pretrained_tokenizer/vae_ch160v4096z32.pth
+checkpoint_dir: /projects/yuanai/projects/VQ-Transplant/VAR/checkpoint/Substitution/ImageNet
+results_dir: /projects/yuanai/projects/VQ-Transplant/VAR/results/Substitution/ImageNet
+saver_dir: /projects/yuanai/projects/VQ-Transplant/VAR/saver/Substitution/ImageNet
+reconstruction_dir: /projects/yuanai/projects/VQ-Transplant/VAR/reconstruction/Substitution/ImageNet
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 1
+batch_size: 64
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+fold_token_size: (1, 1, 2, 3, 3, 4, 5, 6, 8, 11)
+data_pre: ImageNet_256
+model_pre: model_4096_32_16
+loss_pre: loss_1.0_0.5_0.1
+training_pre: wasserstein_vq_substitution_4_False_True_False_False
+saver_name_pre: wasserstein_vq_substitution_4_False_True_False_False_ImageNet_256_model_4096_32_16_loss_1.0_0.5_0.1
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.000010
+Train Epoch: [1/4] Iters:[10/20018] vq_loss 41.0106, rec_loss 0.2574, wasserstein_loss 80.5819, quant_error 0.5207, codebook_utilization 0.9504, codebook_perplexity 2915.6312,
+Train Epoch: [1/4] Iters:[20/20018] vq_loss 25.2200, rec_loss 0.1936, wasserstein_loss 49.1014, quant_error 0.4937, codebook_utilization 0.9749, codebook_perplexity 3288.0658,
+Train Epoch: [1/4] Iters:[30/20018] vq_loss 18.4720, rec_loss 0.1557, wasserstein_loss 35.6922, quant_error 0.4657, codebook_utilization 0.9832, codebook_perplexity 3439.1209,
