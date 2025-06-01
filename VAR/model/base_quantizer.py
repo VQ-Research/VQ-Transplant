@@ -6,7 +6,8 @@ import torch.nn.functional as F
 import numpy as np
 from torch import einsum
 from einops import rearrange
-from torch import distributed as tdist 
+from torch import distributed as tdist
+from model.encoder_decoder import ProjectionLayer
 
 class Phi(nn.Conv2d):
     def __init__(self, embed_dim, quant_resi):
@@ -123,6 +124,11 @@ class MultiscaleBaseQuantizer(nn.Module):
         if self.args.use_trick == False:
             self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
+        if self.args.add_projection == True:
+            self.projection = ProjectionLayer(args)
+
+
+''''
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK
     def obtain_multiscale_image_token(self, z_enc):
@@ -270,6 +276,6 @@ class MultiscaleBaseQuantizer(nn.Module):
             h = self.embedding(predicted_token).transpose_(1, 2).view(B, C, pn, pn)
             f_hat.add_(h)
             return f_hat, f_hat
-
+''''
 
         

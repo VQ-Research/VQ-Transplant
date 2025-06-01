@@ -50,8 +50,8 @@ class VAR_Substitution(nn.Module):
         for param in self.post_quant_conv.parameters():
             param.requires_grad = False  
 
-        if self.args.add_projection == True and self.args.use_multiscale==False:
-            self.projection = ProjectionLayer(args)
+        #if self.args.add_projection == True and self.args.use_multiscale==False:
+        #    self.projection = ProjectionLayer(args)
         
         if self.args.VQ == "original_var":
             quantizer_dict = {k: v for k, v in pretrain_dict.items() if "quantize.embedding." in k or "quantize.quant_resi." in k}
