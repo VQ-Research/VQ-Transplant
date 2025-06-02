@@ -49,9 +49,6 @@ class VAR_Substitution(nn.Module):
             param.requires_grad = False
         for param in self.post_quant_conv.parameters():
             param.requires_grad = False  
-
-        #if self.args.add_projection == True and self.args.use_multiscale==False:
-        #    self.projection = ProjectionLayer(args)
         
         if self.args.VQ == "original_var":
             quantizer_dict = {k: v for k, v in pretrain_dict.items() if "quantize.embedding." in k or "quantize.quant_resi." in k}
@@ -66,17 +63,19 @@ class VAR_Substitution(nn.Module):
 
     def forward(self, x):
         ## encoder
-        z = self.encoder(x)
-        z = self.quant_conv(z)
+        with torch.no_grad():
+            z = self.encoder(x)
+            z = self.quant_conv(z)
         
         ## quantizer
         if self.args.VQ == "wasserstein_vq": 
-            z_q, vq_loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity = self.quantizer(z)
+            z_q, vq_loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity = self.quantizer(z.detach())
 
         ## decoder
-        z = self.post_quant_conv(z_q)
-        x_rec = self.decoder(z)
-        rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
+        with torch.no_grad():
+            z = self.post_quant_conv(z_q)
+            x_rec = self.decoder(z)
+            rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
 
         info_pack = Pack(vq_loss=vq_loss, rec_loss=rec_loss, wasserstein_loss=wasserstein_loss, quant_error=quant_error, codebook_utilization=codebook_utilization, codebook_perplexity=codebook_perplexity)
         return x_rec, vq_loss, info_pack

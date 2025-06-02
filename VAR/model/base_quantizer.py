@@ -128,7 +128,7 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.projection = ProjectionLayer(args)
 
 
-''''
+'''
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK
     def obtain_multiscale_image_token(self, z_enc):
@@ -276,6 +276,6 @@ class MultiscaleBaseQuantizer(nn.Module):
             h = self.embedding(predicted_token).transpose_(1, 2).view(B, C, pn, pn)
             f_hat.add_(h)
             return f_hat, f_hat
-''''
+'''
 
         

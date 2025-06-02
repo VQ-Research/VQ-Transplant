@@ -73,12 +73,14 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
     def forward(self, z_enc):
         B, C, H, W = z_enc.shape
         if self.args.add_projection == True:
-            z_pro_enc = self.self.projection.pre_projection(z_enc)
+            z_pro_enc = self.projection.pre_projection(z_enc)
             z_rest = z_pro_enc
             z_dec = torch.zeros_like(z_rest)
+            B, C, H, W = z_rest.shape
         else:
             z_rest = z_enc
             z_dec = torch.zeros_like(z_rest)
+            B, C, H, W = z_rest.shape
 
         token_cat: List[torch.Tensor] = []
         z_cat: List[torch.Tensor] = []
@@ -107,8 +109,8 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 embed = self.embedding(token)
                 
                 ## the multi-scale vector quantization loss
-                commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
-                #commit_loss += F.mse_loss(embed, z_downscale.detach()) 
+                #commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
+                commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
@@ -121,12 +123,12 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 z_rest = z_rest - z_upscale
             
             ## residual quantization loss
-            vq_loss =  F.mse_loss(z_dec.data, z_enc).mul_(self.args.beta) + F.mse_loss(z_dec, z_prej_no_grad)
-
-            vq_loss = F.mse_loss(z_dec, z_enc.data)
+            if self.args.add_projection == True:
+                #vq_loss =  F.mse_loss(z_dec.data, z_pro_enc).mul_(self.args.beta) + F.mse_loss(z_dec, z_pro_enc.data)
+                vq_loss = F.mse_loss(z_dec, z_pro_enc.data)
+            else:
+                vq_loss = F.mse_loss(z_dec, z_enc.data) 
             commit_loss *= 1. / sum(ms_token_size)
-            
-            vq_loss = vq_loss + commit_loss 
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
@@ -134,7 +136,9 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 self.queue.dequeue_and_enqueue(z_cat.detach())
 
             if self.args.add_projection == True:
-                z_dec = self.self.projection.post_projection(z_dec)
+                z_dec = (z_dec - z_pro_enc).detach().add_(z_pro_enc)
+                z_dec = self.projection.post_projection(z_dec)
+                projection_loss = F.mse_loss(z_dec, z_enc.data) 
 
             ## Criterion Triple defined in the paper
             z_dec = (z_dec - z_enc).detach().add_(z_enc)
@@ -152,8 +156,11 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
             ### compute wasserstein distance
             wasserstein_loss = self.calc_wasserstein_loss()
-            loss = vq_loss + self.args.gamma_1 * wasserstein_loss
-
+            if self.args.add_projection == True:
+                loss = vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss + projection_loss
+                print("loss: "+str(loss.item())+"  vq_loss:"+str(vq_loss.item()) +"  projection_loss: "+str(projection_loss.item()))
+            else:
+                loss = vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
