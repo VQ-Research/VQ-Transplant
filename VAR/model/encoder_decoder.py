@@ -237,7 +237,7 @@ class ProjectionLayer(nn.Module):
         self.post_conv2 = torch.nn.Conv2d(args.codebook_dim, 8*args.codebook_dim, 3, stride=1, padding=1)
         self.post_conv3 = torch.nn.Conv2d(8*args.codebook_dim, 32, 3, stride=1, padding=1)
         
-    def projection(self, z):
+    def pre_projection(self, z):
         z1 = self.pre_conv1(z)
         z2 = self.pre_conv3(F.silu(self.pre_conv2(z)))
         return z1+z2

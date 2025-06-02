@@ -72,10 +72,14 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
     def forward(self, z_enc):
         B, C, H, W = z_enc.shape
+        if self.args.add_projection == True:
+            z_pro_enc = self.self.projection.pre_projection(z_enc)
+            z_rest = z_pro_enc
+            z_dec = torch.zeros_like(z_rest)
+        else:
+            z_rest = z_enc
+            z_dec = torch.zeros_like(z_rest)
 
-        z_no_grad = z_enc.detach()
-        z_rest = z_no_grad.clone()
-        z_dec = torch.zeros_like(z_rest)
         token_cat: List[torch.Tensor] = []
         z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
@@ -103,7 +107,8 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 embed = self.embedding(token)
                 
                 ## the multi-scale vector quantization loss
-                commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
+                commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
+                #commit_loss += F.mse_loss(embed, z_downscale.detach()) 
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
@@ -116,14 +121,20 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 z_rest = z_rest - z_upscale
             
             ## residual quantization loss
+            vq_loss =  F.mse_loss(z_dec.data, z_enc).mul_(self.args.beta) + F.mse_loss(z_dec, z_prej_no_grad)
+
             vq_loss = F.mse_loss(z_dec, z_enc.data)
             commit_loss *= 1. / sum(ms_token_size)
+            
             vq_loss = vq_loss + commit_loss 
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
             with torch.no_grad():
                 self.queue.dequeue_and_enqueue(z_cat.detach())
+
+            if self.args.add_projection == True:
+                z_dec = self.self.projection.post_projection(z_dec)
 
             ## Criterion Triple defined in the paper
             z_dec = (z_dec - z_enc).detach().add_(z_enc)
