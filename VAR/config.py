@@ -24,32 +24,32 @@ def parse_arg():
     
     ###Model Configuration
     parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8_10_13_16", type=str, help='multi-scale patch size.')
-    parser.add_argument('--fold_patch_size', default="1_1_2_3_3_4_5_6_8_11", type=str, help='multi-scale patch size.')
+    parser.add_argument('--fold_patch_size', default="1_1_2_3_3_4_5_6_8_11", type=str, help='folded multi-scale patch size.')
     parser.add_argument('--max_patch_size', default=16, type=int, help='the maximum patch size.')
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
     parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors.')
     parser.add_argument('--z_channels', default=256, type=int, help='the resolution of latent variables.')
     parser.add_argument('--factor', default=16, type=int, help='the downscale factor of vanilla image to the latent variable', choices=[16])
-    parser.add_argument('--L', default=4, type=int, help='the number of finite quantized values in SQ, L=4 for FSQ, L=2 for LFQ and BSQ', choices=[4,2])
     parser.add_argument('--sigma', type=float, default=0.8, help="sigma correction in distributional method (very important in wasserstein vq and adversarile vq).")
 
     ###Loss Configuration
-    parser.add_argument('--beta', type=float, default=1.0, help="substitution stage: the hyperparameter of commit_loss.")
     parser.add_argument('--gamma_1', type=float, default=0.5, help="substitution stage: the hyperparameter of wasserstein_loss in wasserstein_vq.")
     parser.add_argument('--gamma_2', type=float, default=0.1, help="substitution stage: the hyperparameter of codebook d_loss and g_loss in adversarial_vq.")
     parser.add_argument('--lambd', type=float, default=0.2, help="adaptation stage: dino discriminator loss weight for gan training")
 
     ###Training Configuration
-    parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'adversarial_vq', 'fsq', 'bsq', 'lfq', 'original_var', 'var_no_vq'])
+    parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'adversarial_vq', 'original_var', 'var_no_vq'])
     parser.add_argument('--resume', action='store_true', help='reloading model from specified checkpoint.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--fold_token', action='store_true', help='False: do not use folded token; True: use the folded token.')
     parser.add_argument('--use_pq', action='store_true', help='False: do not use product quantization; True: use product quantization.')
-    parser.add_argument('--epochs', type=int, default=4, help="training epochs, 4 epochs for ImageNet, 50 epochs for other datasets")
+    parser.add_argument('--epochs', type=int, default=2, help="training epochs, 4 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
     parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
+    parser.add_argument('--warmup_iters', help='Number of steps for warmup of lr', type=int, default=2000)
+    parser.add_argument('--decay_iters', help='Number of steps for cosine decay of lr', type=int, default=10000)
     parser.add_argument('--stage', default='substitution', help='there are two stages:vq-substitution and decoder adaptation.', choices=['substitution', 'adaptation'])
     parser.add_argument('--pretrained_tokenizer', default="/projects/yuanai/projects/VQ-Transplant/VAR/pretrained_tokenizer/vae_ch160v4096z32.pth", type=str, help='the path to pretrained visual tokenizer.')
     parser.add_argument('--checkpoint_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/checkpoint/", type=str, help='the directory of checkpoint.')
@@ -87,24 +87,16 @@ def parse_arg():
         args.sigma = 0.5
         
     args.data_pre = '{}_{}'.format(args.dataset_name, args.resolution)
-    if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
-        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
-    elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
-        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_dim, args.factor, args.L)
-    elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
-        args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
-
-    if args.stage == "substitution": 
-        args.loss_pre = 'loss_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2)
-    elif args.stage == "adaptation":
-        args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.beta, args.gamma_1, args.gamma_2, args.lambd)
-    elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
+    args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
+    if args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.loss_pre = 'loss_empty'
+    elif args.stage == "substitution": 
+        args.loss_pre = 'loss_{}_{}'.format(args.gamma_1, args.gamma_2)
+    elif args.stage == "adaptation":
+        args.loss_pre = 'loss_{}'.format(args.lambd)
     
     if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
-        args.training_pre = '{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.fold_token, args.use_pq)
-    elif args.VQ == 'fsq' or args.VQ == 'bsq' or args.VQ == 'lfq':
-        args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.add_projection)
+        args.training_pre = '{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.fold_token, args.use_pq)
     elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.training_pre = '{}'.format(args.VQ)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre

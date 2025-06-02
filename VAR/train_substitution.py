@@ -26,7 +26,7 @@ from torch import distributed as tdist
 import itertools
 
 import config
-from utils.util import Logger, LossManager, Pack
+from utils.util import Logger, LossManager, Pack, adjust_learning_rate
 from data import dataloader
 from model.var_substitution import VAR_Substitution
 from metric.metric import PSNR, LPIPS, SSIM
@@ -142,17 +142,16 @@ def main_worker(args):
         #eval_reconstruction(args, model)
         calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
-    if args.use_trick == False:
-        model_para = list(model.module.quantizer.phi.parameters()) #+ list(model.module.quantizer.projection.parameters())
+    
+    if args.use_pq == False:
+        model_para = list(model.module.quantizer.phi.parameters())
         code_para = list(model.module.quantizer.embedding.parameters())
-        all_para = model_para + code_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
     else:
-        #model_para = list(model.module.quantizer.projection.parameters())
-        code_para = list(model.module.quantizer.embedding.parameters())
-        all_para = code_para
-        optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
-        #optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
+        model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
+        code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
+
+    all_para = model_para + code_para
+    optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
@@ -169,6 +168,7 @@ def main_worker(args):
         start_time = time.time()
         for step, (x, _) in enumerate(train_dataloader):
             cur_iter = len(train_dataloader) * (epoch-1) + step
+            lr = adjust_learning_rate(optimizer, cur_iter, args)
             with torch.autocast(device_type='cuda', dtype=torch.float32):
                 x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
                 batch_size = x.size(0)
@@ -185,15 +185,13 @@ def main_worker(args):
                             break
 
                     if has_nan == False:
-                        if args.use_trick == False:
-                            torch.nn.utils.clip_grad_norm_(model_para, 1.0)
+                        torch.nn.utils.clip_grad_norm_(model_para, 1.0)
                         torch.nn.utils.clip_grad_norm_(code_para, 1.0)
                         optimizer.step()
                     else:
                         print("skip gradient update!")
                 else:
-                    if args.use_trick == False:
-                        torch.nn.utils.clip_grad_norm_(model_para, 1.0)
+                    torch.nn.utils.clip_grad_norm_(model_para, 1.0)
                     torch.nn.utils.clip_grad_norm_(code_para, 1.0)
                     optimizer.step()
 

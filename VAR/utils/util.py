@@ -54,7 +54,7 @@ def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
         total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]), norm_type)
     return total_norm
 
-def adjust_learning_rate(optimizer1, optimizer2, step, args, min_lr_constant=50):
+def adjust_learning_rate(optimizer, step, args, min_lr_constant=10):
     if step < args.warmup_iters:
         lr = args.lr * (step / args.warmup_iters)
     elif step > args.decay_iters:
@@ -65,8 +65,7 @@ def adjust_learning_rate(optimizer1, optimizer2, step, args, min_lr_constant=50)
         coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
         lr = args.lr / min_lr_constant + coeff * (args.lr - args.lr / min_lr_constant)
 
-    optimizer1.param_groups[0]["lr"] = lr
-    optimizer2.param_groups[0]["lr"] = lr
+    optimizer.param_groups[0]["lr"] = lr
     return lr
 
 class Logger(object):
