@@ -15,6 +15,50 @@ class WassersteinQuantizer(BaseQuantizer):
         super().__init__(args)
         self.args = args
 
+    def calc_wasserstein_loss(self, z=None):
+        if z==None:
+            z = self.queue.obtain_feature_from_queue()
+            z = self.args.sigma * z  ###very important
+
+        N = z.size(0)
+        D = z.size(1)
+
+        c = self.embedding.weight
+        z_mean = z.mean(0).detach()
+        z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
+        z_covariance = z_covariance.detach()
+
+        ### compute the mean and covariance of codebook vectors
+        c_mean = c.mean(0)
+        c_covariance = torch.cov(c.t()) + 1e-6 * torch.eye(D, device=z.device)
+        
+        ### calculation of part1
+        part_mean =  torch.sum(torch.multiply(z_mean - c_mean, z_mean - c_mean))
+
+        ### 1/2 covariance
+        S1, Q1 = torch.linalg.eigh(z_covariance)
+        sqrt_S1 = torch.diag(torch.sqrt(F.relu(S1)+ 1e-8))
+        temp = torch.mm(Q1, sqrt_S1)
+        temp = torch.nan_to_num(temp, nan=0.0, posinf=0.0, neginf=0.0)
+        z_sqrt_covariance = torch.mm(temp, Q1.T)
+        z_sqrt_covariance = torch.nan_to_num(z_sqrt_covariance, nan=0.0, posinf=0.0, neginf=0.0)
+        z_sqrt_covariance = z_sqrt_covariance.detach()
+        
+        ### 1/2 covariance
+        temp = torch.mm(z_sqrt_covariance, c_covariance)
+        temp = torch.nan_to_num(temp, nan=0.0, posinf=0.0, neginf=0.0)
+
+        covariance = torch.mm(temp, z_sqrt_covariance)
+        covariance = torch.nan_to_num(covariance, nan=0.0, posinf=0.0, neginf=0.0)
+
+        S2, Q2 = torch.linalg.eigh(covariance)
+        sqrt_S2 = torch.sqrt(F.relu(S2)+ 1e-8)
+
+        #############calculation of part2
+        part_covariance = F.relu(torch.trace(z_covariance.detach() + c_covariance) - 2.0 * sqrt_S2.sum())
+        wasserstein_loss = torch.sqrt(part_mean + part_covariance + 1e-10)
+        return wasserstein_loss
+
 ##### multi-scale quantizer
 class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
     def __init__(self, args):
@@ -30,12 +74,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         D = z.size(1)
 
         c = self.embedding.weight
-        #std = c.std(dim=0).max().detach()
-
-        # Normalize z and c
-        #z = z / (std + 1e-8)
-        #c = c / (std + 1e-8)
-
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
@@ -73,21 +111,16 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
     def forward(self, z_enc):
         B, C, H, W = z_enc.shape
-        if self.args.add_projection == True:
-            z_pro_enc = self.projection.pre_projection(z_enc)
-            z_rest = z_pro_enc
-            z_dec = torch.zeros_like(z_rest)
-            B, C, H, W = z_rest.shape
-        else:
-            z_rest = z_enc
-            z_dec = torch.zeros_like(z_rest)
-            B, C, H, W = z_rest.shape
+        z_no_grad = z_enc.detach()
+        z_rest = z_no_grad.clone()
+        z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
         z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             vq_loss: torch.Tensor = 0.0
             commit_loss: torch.Tensor = 0.0
+            multi_vq_loss: torch.Tensor = 0.0
             wasserstein_loss: torch.Tensor = 0.0
             
             if self.args.fold_token == False:
@@ -110,36 +143,29 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 embed = self.embedding(token)
                 
                 ## the multi-scale vector quantization loss
-                #commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
-                commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
+                commit_loss += F.mse_loss(embed, z_downscale.detach())
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
 
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                if self.args.use_trick == False:
-                    z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
+
+                multi_vq_loss += F.mse_loss(z_dec, z_no_grad)
             
             ## residual quantization loss
-            if self.args.add_projection == True:
-                vq_loss =  F.mse_loss(z_dec.data, z_pro_enc).mul_(self.args.beta) + F.mse_loss(z_dec, z_pro_enc.data)
-                #vq_loss = F.mse_loss(z_dec, z_pro_enc.data)
-            else:
-                vq_loss = F.mse_loss(z_dec, z_enc.data) 
-            commit_loss *= 1. / sum(ms_token_size)
+            
+            vq_loss = F.mse_loss(z_dec, z_enc.data) 
+            commit_loss *= 1. / levels
+            multi_vq_loss *= 1. / levels
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
             with torch.no_grad():
                 self.queue.dequeue_and_enqueue(z_cat.detach())
-
-            if self.args.add_projection == True:
-                z_dec = (z_dec - z_pro_enc).detach().add_(z_pro_enc)
-                z_dec = self.projection.post_projection(z_dec)
-                projection_loss = F.mse_loss(z_dec, z_enc.data) 
 
             ## Criterion Triple defined in the paper
             z_dec = (z_dec - z_enc).detach().add_(z_enc)
@@ -157,10 +183,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
             ### compute wasserstein distance
             wasserstein_loss = self.calc_wasserstein_loss()
-            if self.args.add_projection == True:
-                loss = vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss + projection_loss
-            else:
-                loss = vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss
+            loss = vq_loss + multi_vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
@@ -193,8 +216,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
                 token_Bhw = token.view(B, pn, pn)
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 and self.args.fold_token == False) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                if self.args.use_trick == False:
-                    z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)
@@ -207,6 +229,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)
             handler.wait()
+            
         return z_dec, wasserstein_loss, quant_error, histogram
 
 

@@ -224,29 +224,3 @@ class Decoder(nn.Module):
         # end
         h = self.conv_out(F.silu(self.norm_out(h), inplace=True))
         return h
-
-class ProjectionLayer(nn.Module):
-    def __init__(self, args):
-        super(ProjectionLayer, self).__init__()
-        self.args = args
-        self.pre_conv1 = torch.nn.Conv2d(32, args.codebook_dim*16, 3, stride=1, padding=1)
-        self.pre_conv2 = torch.nn.Conv2d(args.codebook_dim*16, args.codebook_dim, 3, stride=1, padding=1)
-        #self.pre_conv2 = torch.nn.Conv2d(32, 8*args.codebook_dim, 3, stride=1, padding=1)
-        #self.pre_conv3 = torch.nn.Conv2d(8*args.codebook_dim, args.codebook_dim, 3, stride=1, padding=1)
-
-        self.post_conv1 = torch.nn.Conv2d(args.codebook_dim, 256, 3, stride=1, padding=1)
-        self.post_conv2 = torch.nn.Conv2d(256, 32, 3, stride=1, padding=1)
-        #self.post_conv2 = torch.nn.Conv2d(args.codebook_dim, 8*args.codebook_dim, 3, stride=1, padding=1)
-        #self.post_conv3 = torch.nn.Conv2d(8*args.codebook_dim, 32, 3, stride=1, padding=1)
-        
-    def pre_projection(self, z):
-        return self.pre_conv2(F.silu(self.pre_conv1(z)))
-        #z1 = self.pre_conv1(z)
-        #z2 = self.pre_conv3(F.silu(self.pre_conv2(z)))
-        #return z1+z2
-
-    def post_projection(self, z):
-        return self.post_conv2(F.silu(self.post_conv1(z)))
-        #z1 = self.post_conv1(z)
-        #z2 = self.post_conv3(F.silu(self.post_conv2(z)))
-        #return z1+z2

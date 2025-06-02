@@ -3,7 +3,7 @@ import torch
 from torch import nn
 from einops import rearrange
 from torch.nn import functional as F
-from model.encoder_decoder import Encoder, Decoder, ProjectionLayer
+from model.encoder_decoder import Encoder, Decoder
 from model.original_var_quantizer import Original_VAR
 from model.wasserstein_vq import MultiscaleWassersteinQuantizer, WassersteinQuantizer
 from utils.util import Pack
