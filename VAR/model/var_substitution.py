@@ -58,8 +58,12 @@ class VAR_Substitution(nn.Module):
         if self.args.VQ == "wasserstein_vq":
             if self.args.use_multiscale == True:
                 self.quantizer = MultiscaleWassersteinQuantizer(args)
+                if self.args.use_pq == True:
+                    self.quantizer2 = MultiscaleWassersteinQuantizer(args)
             else:
                 self.quantizer = WassersteinQuantizer(args)
+                if self.args.use_pq == True: 
+                    self.quantizer2 = WassersteinQuantizer(args)
 
     def forward(self, x):
         ## encoder
