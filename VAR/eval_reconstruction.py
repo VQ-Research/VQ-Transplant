@@ -73,7 +73,7 @@ def eval_reconstruction(args, model):
     if args.VQ == "var_no_vq" or args.VQ == 'original_var':
         reconstruction_name = args.VQ
     elif args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
-        reconstruction_name = '{}_{}_{}_{}_{}_{}_{}'.format(args.VQ, args.codebook_size, args.codebook_dim, args.use_trick, args.use_multiscale, args.fold_token, args.add_projection)
+        reconstruction_name = '{}_{}_{}_{}_{}_{}'.format(args.VQ, args.codebook_size, args.codebook_dim, args.use_multiscale, args.fold_token, args.pd)
     reconstruction_path = os.path.join(args.reconstruction_dir, reconstruction_name)
     os.makedirs(reconstruction_path, exist_ok=True)
 

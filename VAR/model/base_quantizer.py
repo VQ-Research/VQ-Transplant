@@ -64,7 +64,7 @@ class Queue(nn.Module):
         self.args = args
         self.codebook_dim = args.codebook_dim
         if args.use_multiscale ==False:
-            self.queue_size = 32768
+            self.queue_size = 65536
         else:
             if args.fold_token == False:
                 self.queue_size = 87040      
@@ -122,7 +122,6 @@ class MultiscaleBaseQuantizer(nn.Module):
 
         self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
-'''
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK
     def obtain_multiscale_image_token(self, z_enc):
@@ -265,6 +264,5 @@ class MultiscaleBaseQuantizer(nn.Module):
             h = self.embedding(predicted_token).transpose_(1, 2).view(B, C, pn, pn)
             f_hat.add_(h)
             return f_hat, f_hat
-'''
 
         
