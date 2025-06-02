@@ -109,8 +109,8 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 embed = self.embedding(token)
                 
                 ## the multi-scale vector quantization loss
-                #commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
-                commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
+                commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
+                #commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
@@ -124,8 +124,8 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             
             ## residual quantization loss
             if self.args.add_projection == True:
-                #vq_loss =  F.mse_loss(z_dec.data, z_pro_enc).mul_(self.args.beta) + F.mse_loss(z_dec, z_pro_enc.data)
-                vq_loss = F.mse_loss(z_dec, z_pro_enc.data)
+                vq_loss =  F.mse_loss(z_dec.data, z_pro_enc).mul_(self.args.beta) + F.mse_loss(z_dec, z_pro_enc.data)
+                #vq_loss = F.mse_loss(z_dec, z_pro_enc.data)
             else:
                 vq_loss = F.mse_loss(z_dec, z_enc.data) 
             commit_loss *= 1. / sum(ms_token_size)
@@ -158,7 +158,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             wasserstein_loss = self.calc_wasserstein_loss()
             if self.args.add_projection == True:
                 loss = vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss + projection_loss
-                print("loss: "+str(loss.item())+"  vq_loss:"+str(vq_loss.item()) +"  projection_loss: "+str(projection_loss.item()))
             else:
                 loss = vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity

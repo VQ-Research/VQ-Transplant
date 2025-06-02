@@ -7,9 +7,9 @@
 #SBATCH --nodelist=g[003-009]
 #SBATCH --gpus-per-node=1
 #SBATCH --time=2-00:00:00
-#SBATCH --output /projects/yuanai/projects/VQ-Transplant/VAR/slurm/Substitution/ImageNet/wasserstein_vq_remove_phi.out
-#SBATCH --error /projects/yuanai/projects/VQ-Transplant/VAR/slurm/Substitution/ImageNet/wasserstein_vq_remove_phi.err
+#SBATCH --output /projects/yuanai/projects/VQ-Transplant/VAR/slurm/Substitution/ImageNet/wasserstein_vq_remove_phi_p2.out
+#SBATCH --error /projects/yuanai/projects/VQ-Transplant/VAR/slurm/Substitution/ImageNet/wasserstein_vq_remove_phi_p2.err
 
 source ~/.bashrc
 conda activate /home/fangxian/packages/anaconda/envs/share_VAR
-CUDA_VISIBLE_DEVICES="0" python -m torch.distributed.launch --nproc_per_node=1 --master_port=12225 train_substitution.py --VQ=wasserstein_vq --dataset_name=ImageNet --global_batch_size=64 --factor=16 --resolution=256 --codebook_size 16384  --codebook_dim=8 --stage=substitution --use_trick --use_multiscale --add_projection --gamma_1=0.2 --beta=0.01
+CUDA_VISIBLE_DEVICES="0" python -m torch.distributed.launch --nproc_per_node=1 --master_port=12225 train_substitution.py --VQ=wasserstein_vq --dataset_name=ImageNet --global_batch_size=64 --factor=16 --resolution=256 --codebook_size 16384  --codebook_dim=32 --stage=substitution --use_trick --use_multiscale --gamma_1=0.5 --beta=0.1

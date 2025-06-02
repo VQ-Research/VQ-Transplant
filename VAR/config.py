@@ -47,7 +47,7 @@ def parse_arg():
     parser.add_argument('--add_projection', action='store_true', help='False: do not use a projection layer, codebook dimension is same as the original VAR; True: use a projection layer to reduce codebook dimension.')
     parser.add_argument('--epochs', type=int, default=4, help="training epochs, 4 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
-    parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
+    parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
     parser.add_argument('--stage', default='substitution', help='there are two stages:vq-substitution and decoder adaptation.', choices=['substitution', 'adaptation'])
