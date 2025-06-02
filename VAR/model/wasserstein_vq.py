@@ -24,7 +24,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
     def calc_wasserstein_loss(self, z=None):
         if z==None:
             z = self.queue.obtain_feature_from_queue()
-            z = 0.7 * z
+            z = self.args.sigma * z  ###very important
 
         N = z.size(0)
         D = z.size(1)
