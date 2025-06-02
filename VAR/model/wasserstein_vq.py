@@ -24,16 +24,17 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
     def calc_wasserstein_loss(self, z=None):
         if z==None:
             z = self.queue.obtain_feature_from_queue()
+            z = 0.7 * z
 
         N = z.size(0)
         D = z.size(1)
 
         c = self.embedding.weight
-        std = c.std(dim=0).max().detach()
+        #std = c.std(dim=0).max().detach()
 
         # Normalize z and c
-        z = z / (std + 1e-8)
-        c = c / (std + 1e-8)
+        #z = z / (std + 1e-8)
+        #c = c / (std + 1e-8)
 
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
@@ -109,8 +110,8 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 embed = self.embedding(token)
                 
                 ## the multi-scale vector quantization loss
-                commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
-                #commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
+                #commit_loss += (F.mse_loss(embed.detach(), z_downscale).mul_(self.args.beta) + F.mse_loss(embed, z_downscale.detach())) * ms_token_size[level] 
+                commit_loss += F.mse_loss(embed, z_downscale.detach()) * ms_token_size[level] 
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
