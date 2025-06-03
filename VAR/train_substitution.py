@@ -142,16 +142,22 @@ def main_worker(args):
         #eval_reconstruction(args, model)
         calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
-    
-    if args.use_pq == False:
-        model_para = list(model.module.quantizer.phi.parameters())
-        code_para = list(model.module.quantizer.embedding.parameters())
+    if args.use_multiscale == True:
+        if args.use_pq == False:
+            model_para = list(model.module.quantizer.phi.parameters())
+            code_para = list(model.module.quantizer.embedding.parameters())
+        else:
+            model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
+            code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
+        all_para = model_para + code_para
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
     else:
-        model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
-        code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
-
-    all_para = model_para + code_para
-    optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
+        if args.use_pq == False:
+            code_para = list(model.module.quantizer.embedding.parameters())
+        else:
+            code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
+        all_para = code_para
+        optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
@@ -168,7 +174,8 @@ def main_worker(args):
         start_time = time.time()
         for step, (x, _) in enumerate(train_dataloader):
             cur_iter = len(train_dataloader) * (epoch-1) + step
-            lr = adjust_learning_rate(optimizer, cur_iter, args)
+            if args.use_multiscale == True:
+                lr = adjust_learning_rate(optimizer, cur_iter, args)
             with torch.autocast(device_type='cuda', dtype=torch.float32):
                 x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
                 batch_size = x.size(0)
@@ -185,13 +192,15 @@ def main_worker(args):
                             break
 
                     if has_nan == False:
-                        torch.nn.utils.clip_grad_norm_(model_para, 1.0)
+                        if args.use_multiscale == True:
+                            torch.nn.utils.clip_grad_norm_(model_para, 1.0)
                         torch.nn.utils.clip_grad_norm_(code_para, 1.0)
                         optimizer.step()
                     else:
                         print("skip gradient update!")
                 else:
-                    torch.nn.utils.clip_grad_norm_(model_para, 1.0)
+                    if args.use_multiscale == True:
+                        torch.nn.utils.clip_grad_norm_(model_para, 1.0)
                     torch.nn.utils.clip_grad_norm_(code_para, 1.0)
                     optimizer.step()
 
