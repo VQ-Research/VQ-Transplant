@@ -78,7 +78,7 @@ class WassersteinQuantizer(BaseQuantizer):
         ## The only difference to the Vanilla Quantizer
         wasserstein_loss = self.calc_wasserstein_loss()
         loss = F.mse_loss(z_q, z.detach()) + self.args.gamma_1 * wasserstein_loss
-        
+
         # preserve gradients
         z_q = z + (z_q - z).detach()
 
@@ -92,7 +92,7 @@ class WassersteinQuantizer(BaseQuantizer):
         avg_probs = histogram/histogram.sum(0)
         codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        # reshape back to match original input shape
+        # adjuest the shape back to match original input shape
         z_dec = z_q.permute(0, 3, 1, 2).contiguous()
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
 
@@ -101,23 +101,22 @@ class WassersteinQuantizer(BaseQuantizer):
         z = z_enc.permute(0, 2, 3, 1).contiguous()
         z_flat = z.view(-1, C)
 
-        wasserstein_loss = self.calc_wasserstein_loss(z_flattened.detach())
+        wasserstein_loss = self.calc_wasserstein_loss(z_flat.detach())
         # distances from z to embeddings
-        d = torch.sum(z_flattened ** 2, dim=1, keepdim=True) + \
+        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
             torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
-            torch.matmul(z_flattened, self.embedding.weight.data.t())
+            torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
         z_q = self.embedding(token).view(z.shape)
 
-        quant_error = (z_q.detach()-z.detach()).square().sum(3).mean()
+        quant_error = F.mse_loss(z_q.detach(), z.detach())
+        histogram = token.bincount(minlength=self.args.codebook_size).float()
 
-        histogram = token.bincount(minlength=self.codebook_size).float()
-        # reshape back to match original input shape
+        # adjuest the shape back to match original input shape
         z_dec = z_q.permute(0, 3, 1, 2).contiguous()
         return z_dec, wasserstein_loss, quant_error, histogram
     
-
 ##### multi-scale quantizer
 class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
     def __init__(self, args):
