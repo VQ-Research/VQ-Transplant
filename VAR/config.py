@@ -55,7 +55,7 @@ def parse_arg():
     parser.add_argument('--checkpoint_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/checkpoint/", type=str, help='the directory of checkpoint.')
     parser.add_argument('--results_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/results/", type=str, help='the directory of results.')
     parser.add_argument('--saver_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/saver/", type=str, help='the directory of saver.')
-    parser.add_argument('--reconstruction_dir', default="/scratch/fangxian/VQ-Projects/VQ-Transplant/VAR/reconstruction/", type=str, help='the directory of saver.')
+    parser.add_argument('--reconstruction_dir', default="/projects/yuanai/projects/VQ-Transplant/VAR/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--local-rank', default=-1, type=int, help='node rank for distributed training')
