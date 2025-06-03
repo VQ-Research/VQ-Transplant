@@ -115,11 +115,11 @@ class VAR_Substitution(nn.Module):
         else:
             z_q_1, quant_error, histogram = self.quantizer.collect_eval_info(z_1)
             if self.args.use_pq == True:
-                z_q_2, quant_error, histogram = self.quantizer.collect_eval_info(z_1)
+                z_q_2, quant_error_2, histogram_2 = self.quantizer.collect_eval_info(z_1)
                 z_q = torch.cat((z_q_1, z_q_2), dim=1)
             else:
                 z_q = z_q_1
-                
+
         quant_error = F.mse_loss(z_q.detach(), z.detach())
         z = self.post_quant_conv(z_q)
         x_rec = self.decoder(z).clamp_(-1, 1)
