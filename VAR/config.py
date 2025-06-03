@@ -43,7 +43,7 @@ def parse_arg():
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--fold_token', action='store_true', help='False: do not use folded token; True: use the folded token.')
     parser.add_argument('--use_pq', action='store_true', help='False: do not use product quantization; True: use product quantization.')
-    parser.add_argument('--epochs', type=int, default=2, help="training epochs, 4 epochs for ImageNet, 50 epochs for other datasets")
+    parser.add_argument('--epochs', type=int, default=2, help="training epochs, 2 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
     parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
@@ -79,12 +79,34 @@ def parse_arg():
         args.saver_dir = os.path.join(os.path.join(args.saver_dir, "Adaptation"), args.dataset_name)
         args.reconstruction_dir = os.path.join(os.path.join(args.reconstruction_dir, "Adaptation"), args.dataset_name)
 
+    ################### very important
     if args.codebook_dim == 8:
         args.sigma = 1.0
     elif args.codebook_dim == 16:
         args.sigma = 0.8
     elif args.codebook_dim == 32:
         args.sigma = 0.5
+
+    if args.stage == "substitution":
+        if args.dataset_name == "ImageNet":
+            args.epochs = 2
+            args.eval_epochs = 1
+        elif args.dataset_name == "Bedrooms":
+            args.epochs = 10
+            args.eval_epochs = 2
+        else:
+            args.epochs = 20
+            args.eval_epochs = 5
+    else:
+        if args.dataset_name == "ImageNet":
+            args.epochs = 4
+            args.eval_epochs = 1
+        elif args.dataset_name == "Bedrooms":
+            args.epochs = 20
+            args.eval_epochs = 5
+        else:
+            args.epochs = 40
+            args.eval_epochs = 5
         
     args.data_pre = '{}_{}'.format(args.dataset_name, args.resolution)
     args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
