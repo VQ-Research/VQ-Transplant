@@ -18,7 +18,6 @@ class WassersteinQuantizer(BaseQuantizer):
     def calc_wasserstein_loss(self, z=None):
         if z==None:
             z = self.queue.obtain_feature_from_queue()
-            #z = self.args.sigma * z  ###very important
 
         N = z.size(0)
         D = z.size(1)
@@ -60,10 +59,11 @@ class WassersteinQuantizer(BaseQuantizer):
         return wasserstein_loss
 
     def forward(self, z_enc):
+        B, C, H, W = z_enc.shape
         # reshape z_enc -> (batch, height, width, channel) and flatten
         #z, 'b c h w -> b h w c'
         z = rearrange(z_enc, 'b c h w -> b h w c')
-        z_flat = z.reshape(-1, self.codebook_dim)
+        z_flat = z.reshape(-1, C)
         with torch.no_grad():
             self.queue.dequeue_and_enqueue(z_flat.detach())
         
@@ -78,7 +78,6 @@ class WassersteinQuantizer(BaseQuantizer):
         ## The only difference to the Vanilla Quantizer
         wasserstein_loss = self.calc_wasserstein_loss()
         loss = F.mse_loss(z_q, z.detach()) + self.args.gamma_1 * wasserstein_loss
-
         
         # preserve gradients
         z_q = z + (z_q - z).detach()
@@ -96,9 +95,27 @@ class WassersteinQuantizer(BaseQuantizer):
         # reshape back to match original input shape
         z_dec = z_q.permute(0, 3, 1, 2).contiguous()
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
-        
+
     def collect_eval_info(self, z_enc):
-        pass
+        B, C, H, W = z_enc.shape
+        z = z_enc.permute(0, 2, 3, 1).contiguous()
+        z_flat = z.view(-1, C)
+
+        wasserstein_loss = self.calc_wasserstein_loss(z_flattened.detach())
+        # distances from z to embeddings
+        d = torch.sum(z_flattened ** 2, dim=1, keepdim=True) + \
+            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
+            torch.matmul(z_flattened, self.embedding.weight.data.t())
+
+        token = torch.argmin(d, dim=1)
+        z_q = self.embedding(token).view(z.shape)
+
+        quant_error = (z_q.detach()-z.detach()).square().sum(3).mean()
+
+        histogram = token.bincount(minlength=self.codebook_size).float()
+        # reshape back to match original input shape
+        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
+        return z_dec, wasserstein_loss, quant_error, histogram
     
 
 ##### multi-scale quantizer
@@ -110,7 +127,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
     def calc_wasserstein_loss(self, z=None):
         if z==None:
             z = self.queue.obtain_feature_from_queue()
-            #z = self.args.sigma * z  
 
         N = z.size(0)
         D = z.size(1)
