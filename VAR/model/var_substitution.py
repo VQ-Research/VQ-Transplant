@@ -77,9 +77,9 @@ class VAR_Substitution(nn.Module):
 
         ## quantizer
         if self.args.VQ == "wasserstein_vq": 
-            z_q_1, vq_loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity = self.quantizer(z1)
+            z_q_1, vq_loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity = self.quantizer(z_1)
             if self.args.use_pq == True:
-                z_q_2, vq_loss_1, wasserstein_loss_2, quant_error_2, codebook_utilization_2, codebook_perplexity_2 = self.quantizer2(z2)
+                z_q_2, vq_loss_1, wasserstein_loss_2, quant_error_2, codebook_utilization_2, codebook_perplexity_2 = self.quantizer2(z_2)
                 z_q = torch.cat((z_q_1, z_q_2), dim=1)
             else:
                 z_q = z_q_1
@@ -98,14 +98,28 @@ class VAR_Substitution(nn.Module):
         ## encoder
         z = self.encoder(x)
         z = self.quant_conv(z)
+        if self.args.use_pq == True:
+            z_1, z_2 = torch.chunk(z, 2, dim=1) ##[B, 16, 16, 16]
+        else:
+            z_1 = z ##[B, 32, 16, 16]
 
         if self.args.VQ == "var_no_vq":
             z_q = z
         elif self.args.VQ == "wasserstein_vq":
-            z_q, wasserstein_loss, quant_error, histogram = self.quantizer.collect_eval_info(z)
+            z_q_1, wasserstein_loss, quant_error, histogram = self.quantizer.collect_eval_info(z_1)
+            if self.args.use_pq == True:
+                z_q_2, wasserstein_loss_2, quant_error_2, histogram_2 = self.quantizer.collect_eval_info(z_2)
+                z_q = torch.cat((z_q_1, z_q_2), dim=1)
+            else:
+                z_q = z_q_1
         else:
-            z_q, quant_error, histogram = self.quantizer.collect_eval_info(z)
-
+            z_q_1, quant_error, histogram = self.quantizer.collect_eval_info(z_1)
+            if self.args.use_pq == True:
+                z_q_2, quant_error, histogram = self.quantizer.collect_eval_info(z_1)
+                z_q = torch.cat((z_q_1, z_q_2), dim=1)
+            else:
+                z_q = z_q_1
+                
         quant_error = F.mse_loss(z_q.detach(), z.detach())
         z = self.post_quant_conv(z_q)
         x_rec = self.decoder(z).clamp_(-1, 1)
