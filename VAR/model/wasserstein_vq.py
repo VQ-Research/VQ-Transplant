@@ -18,7 +18,7 @@ class WassersteinQuantizer(BaseQuantizer):
     def calc_wasserstein_loss(self, z=None):
         if z==None:
             z = self.queue.obtain_feature_from_queue()
-            z = self.args.sigma * z  ###very important
+            #z = self.args.sigma * z  ###very important
 
         N = z.size(0)
         D = z.size(1)
@@ -26,7 +26,7 @@ class WassersteinQuantizer(BaseQuantizer):
         c = self.embedding.weight
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
-        z_covariance = z_covariance.detach()
+        z_covariance = self.args.sigma * self.args.sigma * z_covariance.detach() ###very important
 
         ### compute the mean and covariance of codebook vectors
         c_mean = c.mean(0)
@@ -60,83 +60,43 @@ class WassersteinQuantizer(BaseQuantizer):
         return wasserstein_loss
 
     def forward(self, z_enc):
-        B, C, H, W = z_enc.shape
-        z_no_grad = z_enc.detach()
-        z_rest = z_no_grad.clone()
-        z_dec = torch.zeros_like(z_rest)
+        # reshape z_enc -> (batch, height, width, channel) and flatten
+        #z, 'b c h w -> b h w c'
+        z = rearrange(z_enc, 'b c h w -> b h w c')
+        z_flat = z.reshape(-1, self.codebook_dim)
+        with torch.no_grad():
+            self.queue.dequeue_and_enqueue(z_flat.detach())
+        
+        # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
+        d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
+            self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
+            torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
-        token_cat: List[torch.Tensor] = []
-        z_cat: List[torch.Tensor] = []
-        with torch.cuda.amp.autocast(enabled=False):
-            vq_loss: torch.Tensor = 0.0
-            commit_loss: torch.Tensor = 0.0
-            multi_vq_loss: torch.Tensor = 0.0
-            wasserstein_loss: torch.Tensor = 0.0
+        token = torch.argmin(d, dim=1)
+        z_q = self.embedding(token).view(z.shape)
+
+        ## The only difference to the Vanilla Quantizer
+        wasserstein_loss = self.calc_wasserstein_loss()
+        loss = F.mse_loss(z_q, z.detach()) + self.args.gamma_1 * wasserstein_loss
+
+        
+        # preserve gradients
+        z_q = z + (z_q - z).detach()
+
+        ## Criterion Triple defined in the paper
+        quant_error = F.mse_loss(z_q.detach(), z.detach())
+
+        histogram = token.bincount(minlength=self.args.codebook_size).float()
+        codebook_usage_counts = (histogram > 0).float().sum()
+        codebook_utilization = codebook_usage_counts.item() / self.args.codebook_size
             
-            if self.args.fold_token == False:
-                levels = len(self.args.ms_token_size)
-                ms_token_size =  self.args.ms_token_size
-            else:
-                levels = len(self.args.fold_token_size)
-                ms_token_size = self.args.fold_token_size 
+        avg_probs = histogram/histogram.sum(0)
+        codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            for level, pn in enumerate(ms_token_size):
-                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1 or self.args.fold_token == True) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
-                z_cat.append(z_downscale.detach())
-                
-                ## distance [B*ph*pw, vocab_size]
-                distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
-                distance.addmm_(z_downscale.detach(), self.embedding.weight.data.T, alpha=-2, beta=1)
-                
-                ## token [B*ph*pw]
-                token = torch.argmin(distance, dim=1)
-                embed = self.embedding(token)
-                
-                ## the multi-scale vector quantization loss
-                commit_loss += F.mse_loss(embed, z_downscale.detach())
-
-                token_cat.append(token)                  
-                token_Bhw = token.view(B, pn, pn)
-
-                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 or self.args.fold_token == True) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                z_upscale = self.phi[level/(levels-1)](z_upscale)
-
-                z_dec = z_dec + z_upscale
-                z_rest = z_rest - z_upscale
-
-                multi_vq_loss += F.mse_loss(z_dec, z_no_grad)
-            
-            ## residual quantization loss
-            
-            vq_loss = F.mse_loss(z_dec, z_enc.data) 
-            commit_loss *= 1. / levels
-            multi_vq_loss *= 1. / levels
-
-            token_cat = torch.cat(token_cat, 0)
-            z_cat = torch.cat(z_cat, 0)
-            with torch.no_grad():
-                self.queue.dequeue_and_enqueue(z_cat.detach())
-
-            ## Criterion Triple defined in the paper
-            z_dec = (z_dec - z_enc).detach().add_(z_enc)
-            quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
-
-            histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
-            handler = tdist.all_reduce(histogram, async_op=True)
-            handler.wait()
-                
-            codebook_usage_counts = (histogram > 0).float().sum()
-            codebook_utilization = codebook_usage_counts.item() / self.args.codebook_size
-            
-            avg_probs = histogram/histogram.sum(0)
-            codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
-
-            ### compute wasserstein distance
-            wasserstein_loss = self.calc_wasserstein_loss()
-            loss = vq_loss + multi_vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss
+        # reshape back to match original input shape
+        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
         
-    
     def collect_eval_info(self, z_enc):
         pass
     
@@ -150,7 +110,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
     def calc_wasserstein_loss(self, z=None):
         if z==None:
             z = self.queue.obtain_feature_from_queue()
-            z = self.args.sigma * z  ###very important
+            #z = self.args.sigma * z  
 
         N = z.size(0)
         D = z.size(1)
@@ -158,7 +118,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         c = self.embedding.weight
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
-        z_covariance = z_covariance.detach()
+        z_covariance = self.args.sigma * self.args.sigma * z_covariance.detach() ###very important
 
         ### compute the mean and covariance of codebook vectors
         c_mean = c.mean(0)
