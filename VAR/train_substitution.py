@@ -150,14 +150,14 @@ def main_worker(args):
             model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
             code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
         all_para = model_para + code_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr, betas=(0.9, 0.95))
     else:
         if args.use_pq == False:
             code_para = list(model.module.quantizer.embedding.parameters())
         else:
             code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
         all_para = code_para
-        optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
+        optimizer = torch.optim.AdamW(code_para, lr=0.005, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
@@ -180,6 +180,11 @@ def main_worker(args):
                 x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
                 batch_size = x.size(0)
                 x_rec, vq_loss, info_pack = model.module(x)
+
+                if step == 100:
+                    with torch.no_grad():
+                        #results_pack = eval_one_epoch(args, model, epoch, val_dataloader, len_val_set)
+                        eval_reconstruction(args, model)
 
                 ######## generator update
                 optimizer.zero_grad()
