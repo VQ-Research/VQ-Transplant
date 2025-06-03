@@ -28,7 +28,6 @@ class VanillaQuantizer(BaseQuantizer):
 
         token = torch.argmin(d, dim=1)
         z_q = self.embedding(token).view(z.shape)
-
         loss = F.mse_loss(z_q, z.detach())
 
         # preserve gradients

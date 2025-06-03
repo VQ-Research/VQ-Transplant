@@ -6,6 +6,8 @@ from torch.nn import functional as F
 from model.encoder_decoder import Encoder, Decoder
 from model.original_var_quantizer import Original_VAR
 from model.wasserstein_vq import MultiscaleWassersteinQuantizer, WassersteinQuantizer
+from model.vanilla_vq import VanillaQuantizer, MultiscaleVanillaQuantizer
+from model.ema_vq import EMAQuantizer, MultiscaleEMAQuantizer
 from utils.util import Pack
 
 class VAR_Substitution(nn.Module):
@@ -65,6 +67,26 @@ class VAR_Substitution(nn.Module):
                 if self.args.use_pq == True: 
                     self.quantizer2 = WassersteinQuantizer(args)
 
+        if self.args.VQ == "vanilla_vq":
+            if self.args.use_multiscale == True:
+                self.quantizer = MultiscaleVanillaQuantizer(args)
+                if self.args.use_pq == True:
+                    self.quantizer2 = MultiscaleVanillaQuantizer(args)
+            else:
+                self.quantizer = VanillaQuantizer(args)
+                if self.args.use_pq == True: 
+                    self.quantizer2 = VanillaQuantizer(args)
+            
+        if self.args.VQ == "ema_vq":
+            if self.args.use_multiscale == True:
+                self.quantizer = MultiscaleEMAQuantizer(args)
+                if self.args.use_pq == True:
+                    self.quantizer2 = MultiscaleEMAQuantizer(args)
+            else:
+                self.quantizer = EMAQuantizer(args)
+                if self.args.use_pq == True: 
+                    self.quantizer2 = EMAQuantizer(args)
+
     def forward(self, x):
         ## encoder
         with torch.no_grad():
@@ -84,6 +106,14 @@ class VAR_Substitution(nn.Module):
                 vq_loss = (vq_loss + vq_loss_2) * 0.5
             else:
                 z_q = z_q_1
+        elif self.args.VQ == "vanilla_vq" or self.args.VQ == "ema_vq":
+            z_q_1, vq_loss, quant_error, codebook_utilization, codebook_perplexity = self.quantizer(z_1)
+            if self.args.use_pq == True:
+                z_q_2, vq_loss_2, quant_error_2, codebook_utilization_2, codebook_perplexity_2 = self.quantizer2(z_2)
+                z_q = torch.cat((z_q_1, z_q_2), dim=1)
+                vq_loss = (vq_loss + vq_loss_2) * 0.5
+            else:
+                z_q = z_q_1
                 
         quant_error = F.mse_loss(z_q.detach(), z.detach())
         ## decoder
@@ -91,8 +121,10 @@ class VAR_Substitution(nn.Module):
             z = self.post_quant_conv(z_q)
             x_rec = self.decoder(z)
             rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-
-        info_pack = Pack(vq_loss=vq_loss, rec_loss=rec_loss, wasserstein_loss=wasserstein_loss, quant_error=quant_error, codebook_utilization=codebook_utilization, codebook_perplexity=codebook_perplexity)
+        if self.args.VQ == "wasserstein_vq": 
+            info_pack = Pack(vq_loss=vq_loss, rec_loss=rec_loss, wasserstein_loss=wasserstein_loss, quant_error=quant_error, codebook_utilization=codebook_utilization, codebook_perplexity=codebook_perplexity)
+        elif self.args.VQ == "vanilla_vq" or self.args.VQ == "ema_vq":
+            info_pack = Pack(vq_loss=vq_loss, rec_loss=rec_loss, quant_error=quant_error, codebook_utilization=codebook_utilization, codebook_perplexity=codebook_perplexity)        
         return x_rec, vq_loss, info_pack
 
     def collect_eval_info(self, x):
