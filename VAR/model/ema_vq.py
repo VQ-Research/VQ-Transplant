@@ -55,53 +55,7 @@ class EMAQuantizer(BaseQuantizer):
 
         # adjuest the shape back to match original input shape
         z_dec = z_q.permute(0, 3, 1, 2).contiguous()
-        return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
-
-    def forward(self, z):
-        # reshape z -> (batch, height, width, channel) and flatten
-        #z, 'b c h w -> b h w c'
-        z = rearrange(z, 'b c h w -> b h w c')
-        z_flattened = z.reshape(-1, self.codebook_dim)
-        
-        # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
-        d = z_flattened.pow(2).sum(dim=1, keepdim=True) + \
-            self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
-            torch.einsum('bd,nd->bn', z_flattened, self.embedding.weight.data) # 'n d -> d n'
-
-        token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape)
-
-        encodings = F.one_hot(token, self.codebook_size).type(z.dtype).detach()
-        if self.training:
-            #EMA cluster size
-            encodings_sum = encodings.sum(0)            
-            self.embedding.cluster_size_ema_update(encodings_sum)
-            #EMA embedding average
-            embed_sum = encodings.transpose(0,1) @ z_flattened            
-            self.embedding.embed_avg_ema_update(embed_sum)
-            #normalize embed_avg and update weight
-            self.embedding.weight_update(self.codebook_size)
-
-        # compute loss for embedding
-        loss = self.beta * F.mse_loss(z_q.detach(), z) 
-
-        # preserve gradients
-        z_q = z + (z_q - z).detach()
-
-        ## Criterion Triple defined in the paper
-        quant_error = (z_q.detach()-z.detach()).square().sum(3).mean()
-
-        histogram = token.bincount(minlength=self.codebook_size).float()
-        codebook_usage_counts = (histogram > 0).float().sum()
-        codebook_utilization = codebook_usage_counts.item() / self.codebook_size
-            
-        avg_probs = histogram/histogram.sum(0)
-        codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
-
-        # reshape back to match original input shape
-        #z_q, 'b h w c -> b c h w'
-        z_q = rearrange(z_q, 'b h w c -> b c h w')
-        return z_q, loss, quant_error, codebook_utilization, codebook_perplexity
+        return z_dec, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
@@ -160,9 +114,6 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
                 ## token [B*ph*pw]
                 token = torch.argmin(distance, dim=1)
                 embed = self.embedding(token)
-                
-                ## the multi-scale vector quantization loss
-                commit_loss += F.mse_loss(embed, z_downscale.detach())
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
@@ -182,6 +133,17 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
+            
+            encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
+            if self.training:
+                #EMA cluster size
+                encodings_sum = encodings.sum(0)            
+                self.embedding.cluster_size_ema_update(encodings_sum)
+                #EMA embedding average
+                embed_sum = encodings.transpose(0,1) @ z_flat            
+                self.embedding.embed_avg_ema_update(embed_sum)
+                #normalize embed_avg and update weight
+                self.embedding.weight_update(self.args.codebook_size)
 
             ## Criterion Triple defined in the paper
             z_dec = (z_dec - z_enc).detach().add_(z_enc)
