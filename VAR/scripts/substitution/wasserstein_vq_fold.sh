@@ -2,7 +2,7 @@
 #SBATCH --job-name=wasserstein_vq_fold
 #SBATCH --partition=medium
 #SBATCH --nodes=1
-#SBATCH --mem=30gb
+#SBATCH --mem=50gb
 #SBATCH --cpus-per-task 10
 #SBATCH --nodelist=g[003-009]
 #SBATCH --gpus-per-node=1

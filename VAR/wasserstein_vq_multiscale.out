@@ -1,0 +1,178 @@
+dataset_dir: /projects/yuanai/data/
+dataset_name: ImageNet
+global_batch_size: 64
+workers: 8
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+fold_patch_size: 1_1_2_3_3_4_5_6_8_11
+max_patch_size: 16
+codebook_size: 4096
+codebook_dim: 32
+z_channels: 256
+factor: 16
+sigma: 0.5
+gamma_1: 0.2
+gamma_2: 0.1
+lambd: 0.2
+VQ: wasserstein_vq
+resume: False
+use_multiscale: True
+fold_token: False
+use_pq: False
+epochs: 1
+eval_epochs: 1
+lr: 0.001
+dropout: 0.0
+seed: 3407
+warmup_iters: 2000
+decay_iters: 10000
+stage: substitution
+pretrained_tokenizer: /projects/yuanai/projects/VQ-Transplant/VAR/pretrained_tokenizer/vae_ch160v4096z32.pth
+checkpoint_dir: /projects/yuanai/projects/VQ-Transplant/VAR/checkpoint/Substitution/ImageNet
+results_dir: /projects/yuanai/projects/VQ-Transplant/VAR/results/Substitution/ImageNet
+saver_dir: /projects/yuanai/projects/VQ-Transplant/VAR/saver/Substitution/ImageNet
+reconstruction_dir: /projects/yuanai/projects/VQ-Transplant/VAR/reconstruction/Substitution/ImageNet
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 1
+batch_size: 64
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+fold_token_size: (1, 1, 2, 3, 3, 4, 5, 6, 8, 11)
+data_pre: ImageNet_256
+model_pre: model_4096_32_16
+loss_pre: loss_0.2_0.1
+training_pre: wasserstein_vq_substitution_1_True_False_False
+saver_name_pre: wasserstein_vq_substitution_1_True_False_False_ImageNet_256_model_4096_32_16_loss_0.2_0.1
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.001000
+Train Epoch: [1/1] Iters:[10/20018] vq_loss 1.5505, rec_loss 0.3016, wasserstein_loss 1.3873, quant_error 0.5521, codebook_utilization 0.9119, codebook_perplexity 2484.8614,
+Train Epoch: [1/1] Iters:[20/20018] vq_loss 1.5112, rec_loss 0.2589, wasserstein_loss 1.2770, quant_error 0.5402, codebook_utilization 0.9150, codebook_perplexity 2745.6494,
+Train Epoch: [1/1] Iters:[30/20018] vq_loss 1.4419, rec_loss 0.2199, wasserstein_loss 1.1458, quant_error 0.5168, codebook_utilization 0.9222, codebook_perplexity 2865.7056,
+Train Epoch: [1/1] Iters:[40/20018] vq_loss 1.3727, rec_loss 0.1910, wasserstein_loss 1.0169, quant_error 0.4934, codebook_utilization 0.9381, codebook_perplexity 3004.2907,
+Train Epoch: [1/1] Iters:[50/20018] vq_loss 1.3303, rec_loss 0.1703, wasserstein_loss 0.9062, quant_error 0.4807, codebook_utilization 0.9500, codebook_perplexity 3131.5934,
+Train Epoch: [1/1] Iters:[60/20018] vq_loss 1.2328, rec_loss 0.1246, wasserstein_loss 0.6831, quant_error 0.4500, codebook_utilization 0.9675, codebook_perplexity 3350.3177,
+Train Epoch: [1/1] Iters:[70/20018] vq_loss 1.1426, rec_loss 0.0954, wasserstein_loss 0.4764, quant_error 0.4222, codebook_utilization 0.9838, codebook_perplexity 3408.4061,
+Train Epoch: [1/1] Iters:[80/20018] vq_loss 1.0833, rec_loss 0.0805, wasserstein_loss 0.3180, quant_error 0.4052, codebook_utilization 0.9962, codebook_perplexity 3390.1934,
+Train Epoch: [1/1] Iters:[90/20018] vq_loss 1.0526, rec_loss 0.0726, wasserstein_loss 0.2128, quant_error 0.3975, codebook_utilization 0.9990, codebook_perplexity 3293.5980,
+Train Epoch: [1/1] Iters:[100/20018] vq_loss 1.0233, rec_loss 0.0681, wasserstein_loss 0.1349, quant_error 0.3894, codebook_utilization 0.9992, codebook_perplexity 3164.3544,
+Train Epoch: [1/1] Iters:[110/20018] vq_loss 1.0146, rec_loss 0.0662, wasserstein_loss 0.0916, quant_error 0.3885, codebook_utilization 0.9992, codebook_perplexity 3050.9281,
+Train Epoch: [1/1] Iters:[120/20018] vq_loss 1.0045, rec_loss 0.0645, wasserstein_loss 0.0775, quant_error 0.3851, codebook_utilization 0.9993, codebook_perplexity 2970.8725,
+Train Epoch: [1/1] Iters:[130/20018] vq_loss 1.0069, rec_loss 0.0643, wasserstein_loss 0.0700, quant_error 0.3870, codebook_utilization 0.9993, codebook_perplexity 2941.6877,
+Train Epoch: [1/1] Iters:[140/20018] vq_loss 0.9902, rec_loss 0.0628, wasserstein_loss 0.0694, quant_error 0.3800, codebook_utilization 0.9994, codebook_perplexity 2878.1620,
+Train Epoch: [1/1] Iters:[150/20018] vq_loss 0.9868, rec_loss 0.0625, wasserstein_loss 0.0651, quant_error 0.3791, codebook_utilization 0.9995, codebook_perplexity 2808.4977,
+Train Epoch: [1/1] Iters:[160/20018] vq_loss 0.9753, rec_loss 0.0621, wasserstein_loss 0.0659, quant_error 0.3742, codebook_utilization 0.9994, codebook_perplexity 2709.9297,
+Train Epoch: [1/1] Iters:[170/20018] vq_loss 0.9738, rec_loss 0.0622, wasserstein_loss 0.0644, quant_error 0.3738, codebook_utilization 0.9994, codebook_perplexity 2619.6654,
+Train Epoch: [1/1] Iters:[180/20018] vq_loss 0.9652, rec_loss 0.0617, wasserstein_loss 0.0628, quant_error 0.3702, codebook_utilization 0.9995, codebook_perplexity 2535.5779,
+Train Epoch: [1/1] Iters:[190/20018] vq_loss 0.9713, rec_loss 0.0622, wasserstein_loss 0.0552, quant_error 0.3735, codebook_utilization 0.9995, codebook_perplexity 2477.3440,
+Train Epoch: [1/1] Iters:[200/20018] vq_loss 0.9683, rec_loss 0.0621, wasserstein_loss 0.0562, quant_error 0.3719, codebook_utilization 0.9995, codebook_perplexity 2424.9054,
+Train Epoch: [1/1] Iters:[210/20018] vq_loss 0.9655, rec_loss 0.0618, wasserstein_loss 0.0572, quant_error 0.3706, codebook_utilization 0.9995, codebook_perplexity 2375.8785,
+Train Epoch: [1/1] Iters:[220/20018] vq_loss 0.9682, rec_loss 0.0617, wasserstein_loss 0.0567, quant_error 0.3716, codebook_utilization 0.9996, codebook_perplexity 2357.8057,
+Train Epoch: [1/1] Iters:[230/20018] vq_loss 0.9729, rec_loss 0.0613, wasserstein_loss 0.0577, quant_error 0.3733, codebook_utilization 0.9996, codebook_perplexity 2316.2743,
+Train Epoch: [1/1] Iters:[240/20018] vq_loss 0.9737, rec_loss 0.0614, wasserstein_loss 0.0589, quant_error 0.3733, codebook_utilization 0.9995, codebook_perplexity 2292.4603,
+Train Epoch: [1/1] Iters:[250/20018] vq_loss 0.9684, rec_loss 0.0606, wasserstein_loss 0.0597, quant_error 0.3708, codebook_utilization 0.9995, codebook_perplexity 2266.0043,
+Train Epoch: [1/1] Iters:[260/20018] vq_loss 0.9624, rec_loss 0.0601, wasserstein_loss 0.0571, quant_error 0.3685, codebook_utilization 0.9995, codebook_perplexity 2263.0728,
+Train Epoch: [1/1] Iters:[270/20018] vq_loss 0.9504, rec_loss 0.0595, wasserstein_loss 0.0583, quant_error 0.3634, codebook_utilization 0.9995, codebook_perplexity 2240.1314,
+Train Epoch: [1/1] Iters:[280/20018] vq_loss 0.9397, rec_loss 0.0588, wasserstein_loss 0.0577, quant_error 0.3589, codebook_utilization 0.9995, codebook_perplexity 2250.8907,
+Train Epoch: [1/1] Iters:[290/20018] vq_loss 0.9424, rec_loss 0.0585, wasserstein_loss 0.0560, quant_error 0.3602, codebook_utilization 0.9995, codebook_perplexity 2229.7887,
+Train Epoch: [1/1] Iters:[300/20018] vq_loss 0.9435, rec_loss 0.0584, wasserstein_loss 0.0565, quant_error 0.3603, codebook_utilization 0.9996, codebook_perplexity 2177.0803,
+Train Epoch: [1/1] Iters:[310/20018] vq_loss 0.9497, rec_loss 0.0585, wasserstein_loss 0.0558, quant_error 0.3627, codebook_utilization 0.9996, codebook_perplexity 2137.2153,
+Train Epoch: [1/1] Iters:[320/20018] vq_loss 0.9567, rec_loss 0.0586, wasserstein_loss 0.0540, quant_error 0.3656, codebook_utilization 0.9996, codebook_perplexity 2108.1117,
+Train Epoch: [1/1] Iters:[330/20018] vq_loss 0.9634, rec_loss 0.0587, wasserstein_loss 0.0534, quant_error 0.3681, codebook_utilization 0.9996, codebook_perplexity 2073.1013,
+Train Epoch: [1/1] Iters:[340/20018] vq_loss 0.9546, rec_loss 0.0578, wasserstein_loss 0.0575, quant_error 0.3639, codebook_utilization 0.9996, codebook_perplexity 2027.2092,
+Train Epoch: [1/1] Iters:[350/20018] vq_loss 0.9494, rec_loss 0.0574, wasserstein_loss 0.0556, quant_error 0.3618, codebook_utilization 0.9996, codebook_perplexity 2039.0113,
+Train Epoch: [1/1] Iters:[360/20018] vq_loss 0.9502, rec_loss 0.0573, wasserstein_loss 0.0557, quant_error 0.3619, codebook_utilization 0.9996, codebook_perplexity 2048.4610,
+Train Epoch: [1/1] Iters:[370/20018] vq_loss 0.9510, rec_loss 0.0566, wasserstein_loss 0.0565, quant_error 0.3618, codebook_utilization 0.9996, codebook_perplexity 2035.5784,
+Train Epoch: [1/1] Iters:[380/20018] vq_loss 0.9541, rec_loss 0.0571, wasserstein_loss 0.0570, quant_error 0.3629, codebook_utilization 0.9996, codebook_perplexity 2035.4150,
+Train Epoch: [1/1] Iters:[390/20018] vq_loss 0.9574, rec_loss 0.0569, wasserstein_loss 0.0555, quant_error 0.3642, codebook_utilization 0.9996, codebook_perplexity 2045.4745,
+Train Epoch: [1/1] Iters:[400/20018] vq_loss 0.9598, rec_loss 0.0569, wasserstein_loss 0.0559, quant_error 0.3649, codebook_utilization 0.9997, codebook_perplexity 2034.1888,
+Train Epoch: [1/1] Iters:[410/20018] vq_loss 0.9633, rec_loss 0.0565, wasserstein_loss 0.0552, quant_error 0.3663, codebook_utilization 0.9997, codebook_perplexity 2039.7383,
+Train Epoch: [1/1] Iters:[420/20018] vq_loss 0.9556, rec_loss 0.0558, wasserstein_loss 0.0607, quant_error 0.3624, codebook_utilization 0.9997, codebook_perplexity 2022.8827,
+Train Epoch: [1/1] Iters:[430/20018] vq_loss 0.9496, rec_loss 0.0546, wasserstein_loss 0.0632, quant_error 0.3595, codebook_utilization 0.9997, codebook_perplexity 2006.5630,
+Train Epoch: [1/1] Iters:[440/20018] vq_loss 0.9475, rec_loss 0.0546, wasserstein_loss 0.0583, quant_error 0.3590, codebook_utilization 0.9997, codebook_perplexity 2038.0878,
+Train Epoch: [1/1] Iters:[450/20018] vq_loss 0.9497, rec_loss 0.0544, wasserstein_loss 0.0561, quant_error 0.3600, codebook_utilization 0.9997, codebook_perplexity 2060.2674,
+Train Epoch: [1/1] Iters:[460/20018] vq_loss 0.9422, rec_loss 0.0542, wasserstein_loss 0.0602, quant_error 0.3561, codebook_utilization 0.9996, codebook_perplexity 2047.9867,
+Train Epoch: [1/1] Iters:[470/20018] vq_loss 0.9471, rec_loss 0.0542, wasserstein_loss 0.0541, quant_error 0.3585, codebook_utilization 0.9996, codebook_perplexity 2096.7764,
+Train Epoch: [1/1] Iters:[480/20018] vq_loss 0.9477, rec_loss 0.0540, wasserstein_loss 0.0535, quant_error 0.3585, codebook_utilization 0.9996, codebook_perplexity 2124.9012,
+Train Epoch: [1/1] Iters:[490/20018] vq_loss 0.9462, rec_loss 0.0532, wasserstein_loss 0.0593, quant_error 0.3572, codebook_utilization 0.9996, codebook_perplexity 2103.0971,
+Train Epoch: [1/1] Iters:[500/20018] vq_loss 0.9426, rec_loss 0.0529, wasserstein_loss 0.0611, quant_error 0.3553, codebook_utilization 0.9997, codebook_perplexity 2096.6784,
+Train Epoch: [1/1] Iters:[510/20018] vq_loss 0.9440, rec_loss 0.0523, wasserstein_loss 0.0602, quant_error 0.3558, codebook_utilization 0.9997, codebook_perplexity 2106.5712,
+Train Epoch: [1/1] Iters:[520/20018] vq_loss 0.9406, rec_loss 0.0522, wasserstein_loss 0.0600, quant_error 0.3545, codebook_utilization 0.9997, codebook_perplexity 2094.3124,
+Train Epoch: [1/1] Iters:[530/20018] vq_loss 0.9360, rec_loss 0.0522, wasserstein_loss 0.0581, quant_error 0.3528, codebook_utilization 0.9997, codebook_perplexity 2111.3555,
+Train Epoch: [1/1] Iters:[540/20018] vq_loss 0.9348, rec_loss 0.0523, wasserstein_loss 0.0548, quant_error 0.3523, codebook_utilization 0.9997, codebook_perplexity 2145.4882,
+Train Epoch: [1/1] Iters:[550/20018] vq_loss 0.9356, rec_loss 0.0522, wasserstein_loss 0.0542, quant_error 0.3525, codebook_utilization 0.9997, codebook_perplexity 2162.9114,
+Train Epoch: [1/1] Iters:[560/20018] vq_loss 0.9347, rec_loss 0.0521, wasserstein_loss 0.0524, quant_error 0.3523, codebook_utilization 0.9997, codebook_perplexity 2184.3002,
+Train Epoch: [1/1] Iters:[570/20018] vq_loss 0.9381, rec_loss 0.0518, wasserstein_loss 0.0533, quant_error 0.3534, codebook_utilization 0.9997, codebook_perplexity 2190.5690,
+Train Epoch: [1/1] Iters:[580/20018] vq_loss 0.9397, rec_loss 0.0511, wasserstein_loss 0.0537, quant_error 0.3536, codebook_utilization 0.9997, codebook_perplexity 2181.3957,
+Train Epoch: [1/1] Iters:[590/20018] vq_loss 0.9406, rec_loss 0.0507, wasserstein_loss 0.0517, quant_error 0.3542, codebook_utilization 0.9997, codebook_perplexity 2190.8225,
+Train Epoch: [1/1] Iters:[600/20018] vq_loss 0.9386, rec_loss 0.0501, wasserstein_loss 0.0515, quant_error 0.3531, codebook_utilization 0.9997, codebook_perplexity 2227.5918,
+Train Epoch: [1/1] Iters:[610/20018] vq_loss 0.9365, rec_loss 0.0498, wasserstein_loss 0.0522, quant_error 0.3519, codebook_utilization 0.9997, codebook_perplexity 2234.7417,
+Train Epoch: [1/1] Iters:[620/20018] vq_loss 0.9395, rec_loss 0.0499, wasserstein_loss 0.0511, quant_error 0.3530, codebook_utilization 0.9996, codebook_perplexity 2271.9891,
+Train Epoch: [1/1] Iters:[630/20018] vq_loss 0.9296, rec_loss 0.0494, wasserstein_loss 0.0551, quant_error 0.3484, codebook_utilization 0.9996, codebook_perplexity 2272.0092,
+Train Epoch: [1/1] Iters:[640/20018] vq_loss 0.9288, rec_loss 0.0491, wasserstein_loss 0.0535, quant_error 0.3480, codebook_utilization 0.9996, codebook_perplexity 2298.3535,
+Train Epoch: [1/1] Iters:[650/20018] vq_loss 0.9292, rec_loss 0.0487, wasserstein_loss 0.0549, quant_error 0.3480, codebook_utilization 0.9997, codebook_perplexity 2299.3706,
+Train Epoch: [1/1] Iters:[660/20018] vq_loss 0.9291, rec_loss 0.0484, wasserstein_loss 0.0545, quant_error 0.3480, codebook_utilization 0.9997, codebook_perplexity 2298.0466,
+Train Epoch: [1/1] Iters:[670/20018] vq_loss 0.9257, rec_loss 0.0477, wasserstein_loss 0.0543, quant_error 0.3465, codebook_utilization 0.9998, codebook_perplexity 2315.9692,
+Train Epoch: [1/1] Iters:[680/20018] vq_loss 0.9348, rec_loss 0.0478, wasserstein_loss 0.0508, quant_error 0.3505, codebook_utilization 0.9997, codebook_perplexity 2342.6608,
+Train Epoch: [1/1] Iters:[690/20018] vq_loss 0.9324, rec_loss 0.0475, wasserstein_loss 0.0563, quant_error 0.3488, codebook_utilization 0.9997, codebook_perplexity 2333.2962,
+Train Epoch: [1/1] Iters:[700/20018] vq_loss 0.9305, rec_loss 0.0476, wasserstein_loss 0.0552, quant_error 0.3479, codebook_utilization 0.9997, codebook_perplexity 2345.1988,
+Train Epoch: [1/1] Iters:[710/20018] vq_loss 0.9263, rec_loss 0.0473, wasserstein_loss 0.0544, quant_error 0.3461, codebook_utilization 0.9997, codebook_perplexity 2366.5078,
+Train Epoch: [1/1] Iters:[720/20018] vq_loss 0.9268, rec_loss 0.0475, wasserstein_loss 0.0531, quant_error 0.3465, codebook_utilization 0.9997, codebook_perplexity 2372.9115,
+Train Epoch: [1/1] Iters:[730/20018] vq_loss 0.9206, rec_loss 0.0472, wasserstein_loss 0.0556, quant_error 0.3434, codebook_utilization 0.9997, codebook_perplexity 2375.5173,
+Train Epoch: [1/1] Iters:[740/20018] vq_loss 0.9260, rec_loss 0.0473, wasserstein_loss 0.0516, quant_error 0.3459, codebook_utilization 0.9997, codebook_perplexity 2389.9742,
+Train Epoch: [1/1] Iters:[750/20018] vq_loss 0.9247, rec_loss 0.0467, wasserstein_loss 0.0510, quant_error 0.3453, codebook_utilization 0.9997, codebook_perplexity 2384.3423,
+Train Epoch: [1/1] Iters:[760/20018] vq_loss 0.9243, rec_loss 0.0463, wasserstein_loss 0.0509, quant_error 0.3449, codebook_utilization 0.9997, codebook_perplexity 2418.4869,
+Train Epoch: [1/1] Iters:[770/20018] vq_loss 0.9161, rec_loss 0.0458, wasserstein_loss 0.0521, quant_error 0.3413, codebook_utilization 0.9997, codebook_perplexity 2413.1119,
+Train Epoch: [1/1] Iters:[780/20018] vq_loss 0.9188, rec_loss 0.0458, wasserstein_loss 0.0495, quant_error 0.3426, codebook_utilization 0.9997, codebook_perplexity 2440.9683,
+Train Epoch: [1/1] Iters:[790/20018] vq_loss 0.9232, rec_loss 0.0456, wasserstein_loss 0.0483, quant_error 0.3442, codebook_utilization 0.9997, codebook_perplexity 2467.2409,
+Train Epoch: [1/1] Iters:[800/20018] vq_loss 0.9257, rec_loss 0.0456, wasserstein_loss 0.0512, quant_error 0.3447, codebook_utilization 0.9997, codebook_perplexity 2467.9802,
+Train Epoch: [1/1] Iters:[810/20018] vq_loss 0.9332, rec_loss 0.0461, wasserstein_loss 0.0524, quant_error 0.3475, codebook_utilization 0.9997, codebook_perplexity 2465.6577,
+Train Epoch: [1/1] Iters:[820/20018] vq_loss 0.9343, rec_loss 0.0458, wasserstein_loss 0.0570, quant_error 0.3471, codebook_utilization 0.9997, codebook_perplexity 2467.7190,
+Train Epoch: [1/1] Iters:[830/20018] vq_loss 0.9330, rec_loss 0.0455, wasserstein_loss 0.0568, quant_error 0.3464, codebook_utilization 0.9997, codebook_perplexity 2457.2536,
+Train Epoch: [1/1] Iters:[840/20018] vq_loss 0.9248, rec_loss 0.0453, wasserstein_loss 0.0568, quant_error 0.3428, codebook_utilization 0.9997, codebook_perplexity 2484.8233,
+Train Epoch: [1/1] Iters:[850/20018] vq_loss 0.9181, rec_loss 0.0450, wasserstein_loss 0.0552, quant_error 0.3401, codebook_utilization 0.9997, codebook_perplexity 2501.8027,
+Train Epoch: [1/1] Iters:[860/20018] vq_loss 0.9103, rec_loss 0.0447, wasserstein_loss 0.0546, quant_error 0.3368, codebook_utilization 0.9997, codebook_perplexity 2506.9965,
+Train Epoch: [1/1] Iters:[870/20018] vq_loss 0.9108, rec_loss 0.0447, wasserstein_loss 0.0501, quant_error 0.3374, codebook_utilization 0.9998, codebook_perplexity 2521.2519,
+Train Epoch: [1/1] Iters:[880/20018] vq_loss 0.9094, rec_loss 0.0446, wasserstein_loss 0.0500, quant_error 0.3365, codebook_utilization 0.9998, codebook_perplexity 2542.7540,
+Train Epoch: [1/1] Iters:[890/20018] vq_loss 0.9059, rec_loss 0.0440, wasserstein_loss 0.0502, quant_error 0.3349, codebook_utilization 0.9998, codebook_perplexity 2539.6198,
+Train Epoch: [1/1] Iters:[900/20018] vq_loss 0.9124, rec_loss 0.0444, wasserstein_loss 0.0487, quant_error 0.3376, codebook_utilization 0.9997, codebook_perplexity 2567.9664,
+Train Epoch: [1/1] Iters:[910/20018] vq_loss 0.9148, rec_loss 0.0445, wasserstein_loss 0.0494, quant_error 0.3382, codebook_utilization 0.9997, codebook_perplexity 2572.1865,
+Train Epoch: [1/1] Iters:[920/20018] vq_loss 0.9189, rec_loss 0.0443, wasserstein_loss 0.0513, quant_error 0.3396, codebook_utilization 0.9997, codebook_perplexity 2558.5139,
+Train Epoch: [1/1] Iters:[930/20018] vq_loss 0.9170, rec_loss 0.0439, wasserstein_loss 0.0528, quant_error 0.3385, codebook_utilization 0.9997, codebook_perplexity 2548.3027,
+Train Epoch: [1/1] Iters:[940/20018] vq_loss 0.9215, rec_loss 0.0442, wasserstein_loss 0.0541, quant_error 0.3403, codebook_utilization 0.9997, codebook_perplexity 2542.6230,
+Train Epoch: [1/1] Iters:[950/20018] vq_loss 0.9148, rec_loss 0.0435, wasserstein_loss 0.0566, quant_error 0.3371, codebook_utilization 0.9997, codebook_perplexity 2534.1076,
+Train Epoch: [1/1] Iters:[960/20018] vq_loss 0.9165, rec_loss 0.0431, wasserstein_loss 0.0552, quant_error 0.3378, codebook_utilization 0.9997, codebook_perplexity 2535.1711,
+Train Epoch: [1/1] Iters:[970/20018] vq_loss 0.9090, rec_loss 0.0431, wasserstein_loss 0.0548, quant_error 0.3344, codebook_utilization 0.9997, codebook_perplexity 2573.4822,
+Train Epoch: [1/1] Iters:[980/20018] vq_loss 0.9069, rec_loss 0.0435, wasserstein_loss 0.0518, quant_error 0.3338, codebook_utilization 0.9998, codebook_perplexity 2597.9811,
+Train Epoch: [1/1] Iters:[990/20018] vq_loss 0.8984, rec_loss 0.0432, wasserstein_loss 0.0522, quant_error 0.3300, codebook_utilization 0.9998, codebook_perplexity 2603.8429,
+Train Epoch: [1/1] Iters:[1000/20018] vq_loss 0.9043, rec_loss 0.0437, wasserstein_loss 0.0503, quant_error 0.3324, codebook_utilization 0.9998, codebook_perplexity 2621.9324,
+Train Epoch: [1/1] Iters:[1010/20018] vq_loss 0.9019, rec_loss 0.0435, wasserstein_loss 0.0518, quant_error 0.3311, codebook_utilization 0.9998, codebook_perplexity 2615.0975,
+Train Epoch: [1/1] Iters:[1020/20018] vq_loss 0.9021, rec_loss 0.0432, wasserstein_loss 0.0522, quant_error 0.3310, codebook_utilization 0.9998, codebook_perplexity 2600.7204,
+Train Epoch: [1/1] Iters:[1030/20018] vq_loss 0.9048, rec_loss 0.0427, wasserstein_loss 0.0527, quant_error 0.3318, codebook_utilization 0.9998, codebook_perplexity 2605.0069,
+Train Epoch: [1/1] Iters:[1040/20018] vq_loss 0.9086, rec_loss 0.0428, wasserstein_loss 0.0524, quant_error 0.3332, codebook_utilization 0.9997, codebook_perplexity 2605.6700,
+Train Epoch: [1/1] Iters:[1050/20018] vq_loss 0.9054, rec_loss 0.0422, wasserstein_loss 0.0530, quant_error 0.3315, codebook_utilization 0.9997, codebook_perplexity 2612.2101,
+Train Epoch: [1/1] Iters:[1060/20018] vq_loss 0.9067, rec_loss 0.0422, wasserstein_loss 0.0544, quant_error 0.3317, codebook_utilization 0.9997, codebook_perplexity 2627.2506,
+Train Epoch: [1/1] Iters:[1070/20018] vq_loss 0.9056, rec_loss 0.0418, wasserstein_loss 0.0563, quant_error 0.3308, codebook_utilization 0.9997, codebook_perplexity 2639.1640,
+Train Epoch: [1/1] Iters:[1080/20018] vq_loss 0.9088, rec_loss 0.0419, wasserstein_loss 0.0566, quant_error 0.3319, codebook_utilization 0.9997, codebook_perplexity 2651.8073,
+Train Epoch: [1/1] Iters:[1090/20018] vq_loss 0.9101, rec_loss 0.0418, wasserstein_loss 0.0560, quant_error 0.3323, codebook_utilization 0.9997, codebook_perplexity 2642.6399,
+Train Epoch: [1/1] Iters:[1100/20018] vq_loss 0.9139, rec_loss 0.0418, wasserstein_loss 0.0544, quant_error 0.3338, codebook_utilization 0.9997, codebook_perplexity 2629.7289,
+Train Epoch: [1/1] Iters:[1110/20018] vq_loss 0.9083, rec_loss 0.0415, wasserstein_loss 0.0528, quant_error 0.3315, codebook_utilization 0.9997, codebook_perplexity 2621.5349,
+Train Epoch: [1/1] Iters:[1120/20018] vq_loss 0.9129, rec_loss 0.0418, wasserstein_loss 0.0498, quant_error 0.3336, codebook_utilization 0.9997, codebook_perplexity 2623.4617,
+Train Epoch: [1/1] Iters:[1130/20018] vq_loss 0.9046, rec_loss 0.0410, wasserstein_loss 0.0513, quant_error 0.3298, codebook_utilization 0.9997, codebook_perplexity 2624.6808,
+Train Epoch: [1/1] Iters:[1140/20018] vq_loss 0.9084, rec_loss 0.0408, wasserstein_loss 0.0494, quant_error 0.3312, codebook_utilization 0.9997, codebook_perplexity 2652.4669,
+Train Epoch: [1/1] Iters:[1150/20018] vq_loss 0.9114, rec_loss 0.0407, wasserstein_loss 0.0515, quant_error 0.3320, codebook_utilization 0.9997, codebook_perplexity 2659.1241,
+Train Epoch: [1/1] Iters:[1160/20018] vq_loss 0.9187, rec_loss 0.0411, wasserstein_loss 0.0532, quant_error 0.3344, codebook_utilization 0.9997, codebook_perplexity 2657.3973,
+Train Epoch: [1/1] Iters:[1170/20018] vq_loss 0.9167, rec_loss 0.0407, wasserstein_loss 0.0551, quant_error 0.3331, codebook_utilization 0.9998, codebook_perplexity 2653.4727,
+Train Epoch: [1/1] Iters:[1180/20018] vq_loss 0.9232, rec_loss 0.0409, wasserstein_loss 0.0546, quant_error 0.3357, codebook_utilization 0.9998, codebook_perplexity 2646.4957,
+Train Epoch: [1/1] Iters:[1190/20018] vq_loss 0.9159, rec_loss 0.0407, wasserstein_loss 0.0581, quant_error 0.3322, codebook_utilization 0.9998, codebook_perplexity 2641.1614,
+Train Epoch: [1/1] Iters:[1200/20018] vq_loss 0.9118, rec_loss 0.0409, wasserstein_loss 0.0567, quant_error 0.3305, codebook_utilization 0.9998, codebook_perplexity 2645.7417,
+Train Epoch: [1/1] Iters:[1210/20018] vq_loss 0.9082, rec_loss 0.0404, wasserstein_loss 0.0536, quant_error 0.3292, codebook_utilization 0.9998, codebook_perplexity 2658.7742,
+Train Epoch: [1/1] Iters:[1220/20018] vq_loss 0.9080, rec_loss 0.0406, wasserstein_loss 0.0506, quant_error 0.3294, codebook_utilization 0.9997, codebook_perplexity 2663.3428,
+Train Epoch: [1/1] Iters:[1230/20018] vq_loss 0.9094, rec_loss 0.0407, wasserstein_loss 0.0498, quant_error 0.3298, codebook_utilization 0.9997, codebook_perplexity 2667.9261,
+Train Epoch: [1/1] Iters:[1240/20018] vq_loss 0.9124, rec_loss 0.0405, wasserstein_loss 0.0491, quant_error 0.3308, codebook_utilization 0.9997, codebook_perplexity 2662.9269,
