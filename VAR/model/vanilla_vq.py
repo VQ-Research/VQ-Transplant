@@ -121,15 +121,12 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
                 multi_vq_loss += F.mse_loss(z_dec, z_no_grad)
             
             ## residual quantization loss
-            
             vq_loss = F.mse_loss(z_dec, z_enc.data) 
             commit_loss *= 1. / levels
             multi_vq_loss *= 1. / levels
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
-            with torch.no_grad():
-                self.queue.dequeue_and_enqueue(z_cat.detach())
 
             ## Criterion Triple defined in the paper
             z_dec = (z_dec - z_enc).detach().add_(z_enc)
@@ -145,10 +142,8 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            ### compute wasserstein distance
-            wasserstein_loss = self.calc_wasserstein_loss()
-            loss = vq_loss + multi_vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss
-        return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
+            loss = vq_loss + multi_vq_loss + commit_loss 
+        return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
@@ -187,11 +182,10 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
-            wasserstein_loss = self.calc_wasserstein_loss(z_cat.detach())
 
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)
             handler.wait()
             
-        return z_dec, wasserstein_loss, quant_error, histogram
+        return z_dec, quant_error, histogram
