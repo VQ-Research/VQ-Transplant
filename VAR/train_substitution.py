@@ -181,11 +181,6 @@ def main_worker(args):
                 batch_size = x.size(0)
                 x_rec, vq_loss, info_pack = model.module(x)
 
-                if step == 100:
-                    with torch.no_grad():
-                        #results_pack = eval_one_epoch(args, model, epoch, val_dataloader, len_val_set)
-                        eval_reconstruction(args, model)
-
                 ######## generator update
                 optimizer.zero_grad()
                 vq_loss.backward()

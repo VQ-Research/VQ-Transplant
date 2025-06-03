@@ -43,7 +43,7 @@ def parse_arg():
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--fold_token', action='store_true', help='False: do not use folded token; True: use the folded token.')
     parser.add_argument('--use_pq', action='store_true', help='False: do not use product quantization; True: use product quantization.')
-    parser.add_argument('--epochs', type=int, default=2, help="training epochs, 2 epochs for ImageNet, 50 epochs for other datasets")
+    parser.add_argument('--epochs', type=int, default=1, help="training epochs, 2 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
     parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
