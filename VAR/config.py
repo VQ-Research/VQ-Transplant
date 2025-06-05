@@ -24,8 +24,7 @@ def parse_arg():
     
     ###Model Configuration
     parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8_10_13_16", type=str, help='multi-scale patch size.')
-    parser.add_argument('--fold_patch_size', default="1_1_2_3_3_4_5_6_8_11", type=str, help='folded multi-scale patch size.')
-    parser.add_argument('--importance', default="1_1_1_2_2_2_3_3_5_5", type=str, help='folded multi-scale patch size.')
+    parser.add_argument('--importance', default="1_1_1_2_2_2_3_3_5_5", type=str, help='importance of multi-scale multi-scale VQ.')
     parser.add_argument('--max_patch_size', default=16, type=int, help='the maximum patch size.')
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
     parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors.')
@@ -42,9 +41,8 @@ def parse_arg():
     parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'adversarial_vq', 'original_var', 'var_no_vq'])
     parser.add_argument('--resume', action='store_true', help='reloading model from specified checkpoint.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
-    parser.add_argument('--fold_token', action='store_true', help='False: do not use folded token; True: use the folded token.')
     parser.add_argument('--use_pq', action='store_true', help='False: do not use product quantization; True: use product quantization.')
-    parser.add_argument('--epochs', type=int, default=1, help="training epochs, 2 epochs for ImageNet, 50 epochs for other datasets")
+    parser.add_argument('--epochs', type=int, default=1, help="training epochs, 1 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
     parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
@@ -68,7 +66,6 @@ def parse_arg():
     args.batch_size = round(args.global_batch_size/args.world_size)
     args.workers = min(max(0, args.workers), args.batch_size)
     args.ms_token_size = tuple(map(int, args.ms_patch_size.replace('-', '_').split('_')))
-    args.fold_token_size = tuple(map(int, args.fold_patch_size.replace('-', '_').split('_')))
     args.importance = tuple(map(int, args.importance.replace('-', '_').split('_')))
     if args.stage == "substitution":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Substitution"), args.dataset_name)
@@ -120,7 +117,7 @@ def parse_arg():
         args.loss_pre = 'loss_{}'.format(args.lambd)
     
     if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
-        args.training_pre = '{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.fold_token, args.use_pq)
+        args.training_pre = '{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.use_pq)
     elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.training_pre = '{}'.format(args.VQ)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
