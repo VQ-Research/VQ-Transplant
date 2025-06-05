@@ -179,15 +179,11 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             multi_vq_loss: torch.Tensor = 0.0
             wasserstein_loss: torch.Tensor = 0.0
             
-            if self.args.fold_token == False:
-                levels = len(self.args.ms_token_size)
-                ms_token_size =  self.args.ms_token_size
-            else:
-                levels = len(self.args.fold_token_size)
-                ms_token_size = self.args.fold_token_size 
+            levels = len(self.args.ms_token_size)
+            ms_token_size =  self.args.ms_token_size
 
             for level, pn in enumerate(ms_token_size):
-                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1 or self.args.fold_token == True) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
+                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
                 z_cat.append(z_downscale.detach())
                 
                 ## distance [B*ph*pw, vocab_size]
@@ -201,7 +197,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
 
-                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 or self.args.fold_token == True) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
+                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec = z_dec + z_upscale
@@ -242,15 +238,11 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         token_cat: List[torch.Tensor] = []
         z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
-            if self.args.fold_token == False:
-                levels = len(self.args.ms_token_size)
-                ms_token_size =  self.args.ms_token_size
-            else:
-                levels = len(self.args.fold_token_size)
-                ms_token_size = self.args.fold_token_size
-
+            levels = len(self.args.ms_token_size)
+            ms_token_size =  self.args.ms_token_size
+            
             for level, pn in enumerate(ms_token_size):
-                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1 or self.args.fold_token == True) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
+                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
                 z_cat.append(z_downscale)
 
                 ## distance [B*ph*pw, vocab_size]
@@ -262,7 +254,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 token_cat.append(token)
 
                 token_Bhw = token.view(B, pn, pn)
-                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 or self.args.fold_token == True) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
+                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
