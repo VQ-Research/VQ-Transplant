@@ -82,8 +82,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
         token_cat: List[torch.Tensor] = []
         z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
-            vq_loss: torch.Tensor = 0.0
-            commit_loss: torch.Tensor = 0.0
             multi_vq_loss: torch.Tensor = 0.0
             
             if self.args.fold_token == False:
@@ -117,12 +115,11 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                multi_vq_loss += F.mse_loss(z_dec, z_no_grad)
+                multi_vq_loss += F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
             
             ## residual quantization loss
-            vq_loss = F.mse_loss(z_dec, z_enc.data) 
-            commit_loss *= 1. / levels
-            multi_vq_loss *= 1. / levels
+            ##multi_vq_loss *= 1. / levels
+            multi_vq_loss *= 1. / sum(self.args.importance)
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
@@ -141,7 +138,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            #loss = vq_loss + multi_vq_loss + commit_loss 
             loss = multi_vq_loss 
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
