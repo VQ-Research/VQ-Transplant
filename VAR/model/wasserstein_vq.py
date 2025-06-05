@@ -176,7 +176,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             vq_loss: torch.Tensor = 0.0
-            commit_loss: torch.Tensor = 0.0
             multi_vq_loss: torch.Tensor = 0.0
             wasserstein_loss: torch.Tensor = 0.0
             
@@ -198,9 +197,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 ## token [B*ph*pw]
                 token = torch.argmin(distance, dim=1)
                 embed = self.embedding(token)
-                
-                ## the multi-scale vector quantization loss
-                commit_loss += F.mse_loss(embed, z_downscale.detach())
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
@@ -211,14 +207,11 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                multi_vq_loss += F.mse_loss(z_dec, z_no_grad)
-            
-            ## residual quantization loss
-            
-            vq_loss = F.mse_loss(z_dec, z_enc.data) 
-            commit_loss *= 1. / levels
-            multi_vq_loss *= 1. / levels
+                print("self.args.importance[level]:", self.args.importance[level])
+                multi_vq_loss += F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
 
+            multi_vq_loss *= 1. / sum(self.args.importance)
+            print("sum(self.args.importance):", sum(self.args.importance))
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
             with torch.no_grad():
@@ -240,7 +233,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
             ### compute wasserstein distance
             wasserstein_loss = self.calc_wasserstein_loss()
-            #loss = vq_loss + multi_vq_loss + commit_loss + self.args.gamma_1 * wasserstein_loss
             loss =  multi_vq_loss + self.args.gamma_1 * wasserstein_loss
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
 
@@ -287,7 +279,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)
             handler.wait()
-            
         return z_dec, wasserstein_loss, quant_error, histogram
 
 

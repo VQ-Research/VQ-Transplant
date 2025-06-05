@@ -25,6 +25,7 @@ def parse_arg():
     ###Model Configuration
     parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8_10_13_16", type=str, help='multi-scale patch size.')
     parser.add_argument('--fold_patch_size', default="1_1_2_3_3_4_5_6_8_11", type=str, help='folded multi-scale patch size.')
+    parser.add_argument('--importance', default="1_1_1_2_2_2_3_3_5_5", type=str, help='folded multi-scale patch size.')
     parser.add_argument('--max_patch_size', default=16, type=int, help='the maximum patch size.')
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
     parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors.')
@@ -68,6 +69,7 @@ def parse_arg():
     args.workers = min(max(0, args.workers), args.batch_size)
     args.ms_token_size = tuple(map(int, args.ms_patch_size.replace('-', '_').split('_')))
     args.fold_token_size = tuple(map(int, args.fold_patch_size.replace('-', '_').split('_')))
+    args.importance = tuple(map(int, args.importance.replace('-', '_').split('_')))
     if args.stage == "substitution":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Substitution"), args.dataset_name)
         args.results_dir = os.path.join(os.path.join(args.results_dir, "Substitution"), args.dataset_name)
