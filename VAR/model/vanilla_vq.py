@@ -141,7 +141,8 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            loss = vq_loss + multi_vq_loss + commit_loss 
+            #loss = vq_loss + multi_vq_loss + commit_loss 
+            loss = multi_vq_loss 
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):

@@ -95,7 +95,7 @@ class BaseQuantizer(nn.Module):
         self.decay = 0.8
         if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "adversarial_vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding.weight.data.normal_(0, 0.01)
+            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding.weight.requires_grad = True
         elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
@@ -112,7 +112,7 @@ class MultiscaleBaseQuantizer(nn.Module):
         self.decay = 0.8
         if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "adversarial_vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding.weight.data.normal_(0, 0.01)
+            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding.weight.requires_grad = True
         elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
