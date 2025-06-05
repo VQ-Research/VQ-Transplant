@@ -102,9 +102,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
                 ## token [B*ph*pw]
                 token = torch.argmin(distance, dim=1)
                 embed = self.embedding(token)
-                
-                ## the multi-scale vector quantization loss
-                commit_loss += F.mse_loss(embed, z_downscale.detach())
 
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
@@ -118,7 +115,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
                 multi_vq_loss += F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
             
             ## residual quantization loss
-            ##multi_vq_loss *= 1. / levels
             multi_vq_loss *= 1. / sum(self.args.importance)
 
             token_cat = torch.cat(token_cat, 0)

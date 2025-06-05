@@ -206,12 +206,9 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
-
-                print("self.args.importance[level]:", self.args.importance[level])
                 multi_vq_loss += F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
 
             multi_vq_loss *= 1. / sum(self.args.importance)
-            print("sum(self.args.importance):", sum(self.args.importance))
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
             with torch.no_grad():
