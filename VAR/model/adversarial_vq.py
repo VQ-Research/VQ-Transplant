@@ -27,7 +27,7 @@ class AdversarialQuantizer(BaseQuantizer):
 
         loss_real = torch.mean(F.relu(1. - logits_real))
         loss_fake = torch.mean(F.relu(1. + logits_fake))
-        d_loss = self.gamma * 0.5 * (loss_real + loss_fake)
+        d_loss = self.args.gamma_2 * 0.5 * (loss_real + loss_fake)
         return d_loss
 
     def forward(self, z_enc):
@@ -106,7 +106,7 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
 
         loss_real = torch.mean(F.relu(1. - logits_real))
         loss_fake = torch.mean(F.relu(1. + logits_fake))
-        d_loss = self.gamma * 0.5 * (loss_real + loss_fake)
+        d_loss = self.args.gamma_2 * 0.5 * (loss_real + loss_fake)
         return d_loss
 
     def forward(self, z_enc):
