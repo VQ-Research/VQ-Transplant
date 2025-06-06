@@ -47,6 +47,7 @@ def parse_arg():
     parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
+    parser.add_argument('--iterations', default=1000, type=int, help='the iteration to teriminal the program (for check quantization-decoder mismatch).')
     parser.add_argument('--warmup_iters', help='Number of steps for warmup of lr', type=int, default=2000)
     parser.add_argument('--decay_iters', help='Number of steps for cosine decay of lr', type=int, default=10000)
     parser.add_argument('--stage', default='substitution', help='there are two stages:vq-substitution and decoder adaptation.', choices=['substitution', 'adaptation'])
@@ -117,7 +118,11 @@ def parse_arg():
         args.loss_pre = 'loss_{}'.format(args.lambd)
     
     if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
-        args.training_pre = '{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.use_pq)
+        if args.pq == False:
+            args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale)
+        else:
+            args.training_pre = '{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.iterations)
+
     elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.training_pre = '{}'.format(args.VQ)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
