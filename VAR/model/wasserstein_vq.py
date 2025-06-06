@@ -226,7 +226,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             ### compute wasserstein distance
             wasserstein_loss = self.calc_wasserstein_loss()
             loss =  multi_vq_loss + self.args.gamma_1 * wasserstein_loss
-            
+
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
@@ -240,7 +240,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         with torch.cuda.amp.autocast(enabled=False):
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
-            
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
                 z_cat.append(z_downscale)

@@ -142,24 +142,33 @@ def main_worker(args):
         #eval_reconstruction(args, model)
         calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
-    if args.use_multiscale == True:
+
+    if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "adversarial_vq":
+        if args.use_multiscale == True:
+            if args.use_pq == False:
+                model_para = list(model.module.quantizer.phi.parameters())
+                code_para = list(model.module.quantizer.embedding.parameters())
+            else:
+                model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
+                code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
+            all_para = model_para + code_para
+            optimizer = torch.optim.Adam([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr, betas=(0.9, 0.95))
+        else:
+            if args.use_pq == False:
+                code_para = list(model.module.quantizer.embedding.parameters())
+            else:
+                code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
+            all_para = code_para
+            optimizer = torch.optim.Adam(code_para, lr=0.005, betas=(0.9, 0.95))
+
+    elif args.VQ == "ema_vq":
+        assert self.args.use_multiscale == True
         if args.use_pq == False:
             model_para = list(model.module.quantizer.phi.parameters())
-            code_para = list(model.module.quantizer.embedding.parameters())
         else:
-            model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
-            code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
-        all_para = model_para + code_para
-        optimizer = torch.optim.Adam([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr, betas=(0.9, 0.95))
-        #optimizer = torch.optim.SGD([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr, momentum=0.9)
-    else:
-        if args.use_pq == False:
-            code_para = list(model.module.quantizer.embedding.parameters())
-        else:
-            code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
-        all_para = code_para
-        optimizer = torch.optim.Adam(code_para, lr=0.005, betas=(0.9, 0.95))
-        #optimizer = torch.optim.SGD(code_para, lr=0.005, momentum=0.9)
+            model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters()
+        all_para = model_para
+        optimizer = torch.optim.Adam(model_para, lr=args.lr, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
@@ -203,7 +212,8 @@ def main_worker(args):
                 else:
                     if args.use_multiscale == True:
                         torch.nn.utils.clip_grad_norm_(model_para, 1.0)
-                    torch.nn.utils.clip_grad_norm_(code_para, 1.0)
+                    if args.VQ != "ema_vq":
+                        torch.nn.utils.clip_grad_norm_(code_para, 1.0)
                     optimizer.step()
 
             train_loss.add_loss(info_pack)

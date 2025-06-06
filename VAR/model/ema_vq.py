@@ -90,6 +90,7 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
         z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
+        z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             multi_vq_loss: torch.Tensor = 0.0
             levels = len(self.args.ms_token_size)
@@ -97,7 +98,8 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
 
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
-                
+                z_cat.append(z_downscale.detach())
+
                 ## distance [B*ph*pw, vocab_size]
                 distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
                 distance.addmm_(z_downscale.detach(), self.embedding.weight.data.T, alpha=-2, beta=1)
@@ -114,20 +116,19 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
-
                 multi_vq_loss += F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
             
-            ## residual quantization loss
             multi_vq_loss *= 1. / sum(self.args.importance)
-            
+
             token_cat = torch.cat(token_cat, 0)
-            encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
+            z_cat = torch.cat(z_cat, 0)
+            encodings = F.one_hot(token_cat, self.args.codebook_size).type(z.dtype).detach()
             if self.training:
                 #EMA cluster size
                 encodings_sum = encodings.sum(0)            
                 self.embedding.cluster_size_ema_update(encodings_sum)
                 #EMA embedding average
-                embed_sum = encodings.transpose(0,1) @ z_flat            
+                embed_sum = encodings.transpose(0,1) @ z_cat            
                 self.embedding.embed_avg_ema_update(embed_sum)
                 #normalize embed_avg and update weight
                 self.embedding.weight_update(self.args.codebook_size)
@@ -146,7 +147,7 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            loss = vq_loss + multi_vq_loss + commit_loss 
+            loss = multi_vq_loss
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
