@@ -92,10 +92,10 @@ def parse_arg():
             args.epochs = 1
             args.eval_epochs = 1
         elif args.dataset_name == "Bedrooms":
-            args.epochs = 10
-            args.eval_epochs = 2
+            args.epochs = 5
+            args.eval_epochs = 1
         else:
-            args.epochs = 20
+            args.epochs = 10
             args.eval_epochs = 5
     else:
         if args.dataset_name == "ImageNet":
