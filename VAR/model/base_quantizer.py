@@ -63,6 +63,7 @@ class Queue(nn.Module):
         super(Queue, self).__init__()
         self.args = args
         self.codebook_dim = args.codebook_dim
+        self.codebook_size = args.codebook_size
         if args.use_multiscale ==False:
             self.queue_size = 65536
         else:
@@ -83,6 +84,36 @@ class Queue(nn.Module):
     def obtain_feature_from_queue(self):
         return self.queue.detach().clone()
 
+    @torch.no_grad()
+    def obatin_latest_feature_from_queue(self):
+        assert self.codebook_size < self.queue_size
+        ptr = int(self.queue_ptr)
+        if ptr >= self.codebook_size:
+            return self.queue[(ptr-self.codebook_size):ptr, :].detach().clone()
+        else:
+            part1 = self.queue[0:ptr, :].detach().clone()
+            part2 = self.queue[(self.queue_size-(self.codebook_size-ptr)):self.queue_size,:].detach().clone()
+            return torch.cat((part1, part2), 0)
+
+class Discriminator(nn.Module):
+    def __init__(self, args):
+        super(Discriminator, self).__init__()
+        self.args = args
+        self.fc1 = nn.Linear(args.codebook_dim, args.codebook_dim*8)
+        self.fc2 = nn.Linear(args.codebook_dim*8, args.codebook_dim*8)
+        self.fc3 = nn.Linear(args.codebook_dim*8, args.codebook_dim*8)
+        self.fc4 = nn.Linear(args.codebook_dim*8, 1)
+
+        self.bn1 = nn.BatchNorm1d(args.codebook_dim*8)
+        self.bn2 = nn.BatchNorm1d(args.codebook_dim*8)
+
+    def forward(self, z):
+        z = F.leaky_relu(self.bn1(self.fc1(z)))
+        z = F.leaky_relu(self.bn2(self.fc2(z)))
+        z = F.leaky_relu(self.fc3(z))
+        z = self.fc4(z)
+        return z 
+
 class BaseQuantizer(nn.Module):
     def __init__(self, args):
         super(BaseQuantizer, self).__init__()
@@ -99,6 +130,8 @@ class BaseQuantizer(nn.Module):
 
         if args.VQ == "wasserstein_vq" or args.VQ == "adversarial_vq":
             self.queue = Queue(args)
+            if args.VQ == "adversarial_vq":
+                self.discriminator = Discriminator(args)
 
 class MultiscaleBaseQuantizer(nn.Module):
     def __init__(self, args):
@@ -116,6 +149,8 @@ class MultiscaleBaseQuantizer(nn.Module):
 
         if args.VQ == "wasserstein_vq" or args.VQ == "adversarial_vq":
             self.queue = Queue(args)
+            if args.VQ == "adversarial_vq":
+                self.discriminator = Discriminator(args)
 
         self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 

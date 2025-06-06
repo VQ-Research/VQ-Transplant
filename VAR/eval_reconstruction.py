@@ -30,7 +30,7 @@ paths = {
     "Churches": "LSUN-Churches",
 }
 
-def create_npz_from_sample_folder(sample_dir, num=50000):
+def create_npz_from_sample_folder(sample_dir, num_fid_samples=50000):
     """
     Builds a single .npz file from a folder of .png samples.
     """
@@ -121,4 +121,4 @@ def eval_reconstruction(args, model):
     print("PSNR:"+str(eval_psnr)+"  SSIM:"+str(eval_ssim)+ "  LPIPS:"+str(eval_lpips))
 
     if args.dataset_name == "ImageNet":
-        create_npz_from_sample_folder(reconstruction_path, num_fid_samples=50000)
+        create_npz_from_sample_folder(reconstruction_path)

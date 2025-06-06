@@ -33,8 +33,8 @@ def parse_arg():
     parser.add_argument('--sigma', type=float, default=0.8, help="sigma correction in distributional method (very important in wasserstein vq and adversarile vq).")
 
     ###Loss Configuration
-    parser.add_argument('--gamma_1', type=float, default=0.5, help="substitution stage: the hyperparameter of wasserstein_loss in wasserstein_vq.")
-    parser.add_argument('--gamma_2', type=float, default=0.1, help="substitution stage: the hyperparameter of codebook d_loss and g_loss in adversarial_vq.")
+    parser.add_argument('--gamma_1', type=float, default=0.2, help="substitution stage: the hyperparameter of wasserstein_loss in wasserstein_vq.")
+    parser.add_argument('--gamma_2', type=float, default=0.2, help="substitution stage: the hyperparameter of codebook d_loss and g_loss in adversarial_vq.")
     parser.add_argument('--lambd', type=float, default=0.2, help="adaptation stage: dino discriminator loss weight for gan training")
 
     ###Training Configuration
@@ -112,9 +112,15 @@ def parse_arg():
     args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.factor)
     if args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.loss_pre = 'loss_empty'
-    elif args.stage == "substitution": 
-        args.loss_pre = 'loss_{}_{}'.format(args.gamma_1, args.gamma_2)
-    elif args.stage == "adaptation":
+    if args.stage == "substitution": 
+        if args.VQ =="ema_vq" or args.VQ == "vanilla_vq":
+            args.loss_pre = 'loss_empty'
+        elif args.VQ == "wasserstein_vq":
+            args.loss_pre = 'loss_{}'.format(args.gamma_1)
+        elif args.VQ == "adversarial_vq":
+            args.loss_pre = 'loss_{}'.format(args.gamma_2)
+
+    if args.stage == "adaptation":
         args.loss_pre = 'loss_{}'.format(args.lambd)
     
     if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
