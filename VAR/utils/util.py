@@ -64,7 +64,6 @@ def adjust_learning_rate(optimizer, step, args, min_lr_constant=10):
         assert 0 <= decay_ratio <= 1
         coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
         lr = args.lr / min_lr_constant + coeff * (args.lr - args.lr / min_lr_constant)
-
     optimizer.param_groups[0]["lr"] = lr
     return lr
 

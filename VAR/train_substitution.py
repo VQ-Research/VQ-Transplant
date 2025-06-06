@@ -152,21 +152,21 @@ def main_worker(args):
                 model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
                 code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
             all_para = model_para + code_para
-            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr, betas=(0.9, 0.95))
+            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
         else:
             if args.use_pq == False:
                 code_para = list(model.module.quantizer.embedding.parameters())
             else:
                 code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
             all_para = code_para
-            optimizer = torch.optim.AdamW(code_para, lr=0.005, betas=(0.9, 0.95))
+            optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
 
     elif args.VQ == "ema_vq":
-        assert self.args.use_multiscale == True
+        #assert self.args.use_multiscale == True
         if args.use_pq == False:
             model_para = list(model.module.quantizer.phi.parameters())
         else:
-            model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters()
+            model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
         all_para = model_para
         optimizer = torch.optim.Adam(model_para, lr=args.lr, betas=(0.9, 0.95))
 
@@ -191,6 +191,9 @@ def main_worker(args):
                 x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
                 batch_size = x.size(0)
                 x_rec, vq_loss, info_pack = model.module(x)
+
+                if args.use_pq == True and step == args.iterations:
+                    break
 
                 ######## generator update
                 optimizer.zero_grad()

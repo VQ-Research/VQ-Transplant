@@ -118,7 +118,7 @@ def parse_arg():
         args.loss_pre = 'loss_{}'.format(args.lambd)
     
     if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "adversarial_vq":
-        if args.pq == False:
+        if args.use_pq == False:
             args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale)
         else:
             args.training_pre = '{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.iterations)

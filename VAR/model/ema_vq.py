@@ -122,7 +122,7 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
 
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
-            encodings = F.one_hot(token_cat, self.args.codebook_size).type(z.dtype).detach()
+            encodings = F.one_hot(token_cat, self.args.codebook_size).type(z_cat.dtype).detach()
             if self.training:
                 #EMA cluster size
                 encodings_sum = encodings.sum(0)            

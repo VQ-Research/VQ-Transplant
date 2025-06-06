@@ -95,7 +95,7 @@ class BaseQuantizer(nn.Module):
             self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding.weight.requires_grad = True
         elif args.VQ == "ema_vq":
-            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
+            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
 
         if args.VQ == "wasserstein_vq" or args.VQ == "adversarial_vq":
             self.queue = Queue(args)
@@ -112,7 +112,7 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding.weight.requires_grad = True
         elif args.VQ == "ema_vq":
-            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps)
+            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
 
         if args.VQ == "wasserstein_vq" or args.VQ == "adversarial_vq":
             self.queue = Queue(args)
