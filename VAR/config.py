@@ -44,7 +44,7 @@ def parse_arg():
     parser.add_argument('--use_pq', action='store_true', help='False: do not use product quantization; True: use product quantization.')
     parser.add_argument('--epochs', type=int, default=1, help="training epochs, 1 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
-    parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
+    parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
     parser.add_argument('--iterations', default=1000, type=int, help='the iteration to teriminal the program (for check quantization-decoder mismatch).')
