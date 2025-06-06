@@ -2,9 +2,9 @@
 #SBATCH --job-name=var_no_vq
 #SBATCH --partition=medium
 #SBATCH --nodes=1
-#SBATCH --mem=20gb
+#SBATCH --mem=50gb
 #SBATCH --cpus-per-task 8
-#SBATCH --nodelist=g[002-009]
+#SBATCH --nodelist=g[003-009]
 #SBATCH --gpus-per-node=1
 #SBATCH --time=2-00:00:00
 #SBATCH --output /projects/yuanai/projects/VQ-Transplant/VAR/slurm/Substitution/ImageNet/var_no_vq.out

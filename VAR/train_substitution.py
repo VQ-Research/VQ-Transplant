@@ -134,13 +134,14 @@ def main_worker(args):
 
     model = VAR_Substitution(args)
     model = model.cuda(int(os.environ['LOCAL_RANK']))
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[int(os.environ['LOCAL_RANK'])], find_unused_parameters=False, broadcast_buffers=True)
+    if args.VQ != "var_no_vq" and args.VQ != 'original_var':
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[int(os.environ['LOCAL_RANK'])], find_unused_parameters=False, broadcast_buffers=True)
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
 
     if args.VQ == "var_no_vq" or args.VQ == 'original_var':
         epoch = 0
-        #eval_reconstruction(args, model)
-        calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
+        eval_reconstruction(args, model)
+        #calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
 
     if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq":

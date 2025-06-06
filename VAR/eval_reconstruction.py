@@ -91,7 +91,7 @@ def eval_reconstruction(args, model):
         x = x.cuda()
         with torch.no_grad():
             if args.VQ == "var_no_vq":
-                x_rec, _ = model.module.collect_eval_info(x)
+                x_rec, _ = model.collect_eval_info(x)
             else:
                 x_rec, _, _, _ = model.module.collect_eval_info(x)
 
