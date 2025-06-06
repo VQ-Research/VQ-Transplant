@@ -216,8 +216,8 @@ def main_worker(args):
                 batch_size = x.size(0)
                 x_rec, vq_loss, info_pack = model.module(x)
 
-                if args.use_pq == True and step == args.iterations:
-                    break
+                if args.use_pq == True and step == args.iterations:  ## for quantization-deocder mismatch verification
+                    break  
 
                 ######## generator update
                 optimizer.zero_grad()
@@ -242,6 +242,15 @@ def main_worker(args):
                     if args.VQ != "ema_vq":
                         torch.nn.utils.clip_grad_norm_(code_para, 1.0)
                     optimizer.step()
+                    
+                if args.VQ == "adversarial_vq":
+                    optimizer.zero_grad()
+                    disc_optimizer.zero_grad()
+                    d_loss, d_loss_pack = model.module.calc_codebook_d_loss()
+                    d_loss.backward()
+                    torch.nn.utils.clip_grad_norm_(disc_para, 1.0)
+                    disc_optimizer.step()
+                    info_pack.add(d_loss_pack)
 
             train_loss.add_loss(info_pack)
             if int(os.environ['LOCAL_RANK']) == 0:
@@ -292,7 +301,10 @@ def main_worker(args):
     model.train()
     if int(os.environ['LOCAL_RANK']) == 0:
         checkpoint_path = os.path.join(args.checkpoint_dir, 'checkpoint-'+args.saver_name_pre+'.pth.tar')
-        save_checkpoint({'epoch': epoch, 'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'args': args}, is_best=False, filename=checkpoint_path) 
+        if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq":
+            save_checkpoint({'epoch': epoch, 'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'args': args}, is_best=False, filename=checkpoint_path) 
+        elif args.VQ == "adversarial_vq":
+            save_checkpoint({'epoch': epoch, 'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'disc_optimizer': disc_optimizer.state_dict(), 'args': args}, is_best=False, filename=checkpoint_path) 
         eval_reconstruction(args, model)
 
 if __name__ == '__main__':
