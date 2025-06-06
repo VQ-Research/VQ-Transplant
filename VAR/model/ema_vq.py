@@ -90,22 +90,13 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
         z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
-        z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
-            vq_loss: torch.Tensor = 0.0
-            commit_loss: torch.Tensor = 0.0
             multi_vq_loss: torch.Tensor = 0.0
-            
-            if self.args.fold_token == False:
-                levels = len(self.args.ms_token_size)
-                ms_token_size =  self.args.ms_token_size
-            else:
-                levels = len(self.args.fold_token_size)
-                ms_token_size = self.args.fold_token_size 
+            levels = len(self.args.ms_token_size)
+            ms_token_size =  self.args.ms_token_size
 
             for level, pn in enumerate(ms_token_size):
-                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1 or self.args.fold_token == True) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
-                z_cat.append(z_downscale.detach())
+                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
                 
                 ## distance [B*ph*pw, vocab_size]
                 distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
@@ -118,22 +109,18 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
 
-                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 or self.args.fold_token == True) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
+                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                multi_vq_loss += F.mse_loss(z_dec, z_no_grad)
+                multi_vq_loss += F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
             
             ## residual quantization loss
-            vq_loss = F.mse_loss(z_dec, z_enc.data) 
-            commit_loss *= 1. / levels
-            multi_vq_loss *= 1. / levels
-
-            token_cat = torch.cat(token_cat, 0)
-            z_cat = torch.cat(z_cat, 0)
+            multi_vq_loss *= 1. / sum(self.args.importance)
             
+            token_cat = torch.cat(token_cat, 0)
             encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
             if self.training:
                 #EMA cluster size
@@ -169,18 +156,12 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
         z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
-        z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
-            if self.args.fold_token == False:
-                levels = len(self.args.ms_token_size)
-                ms_token_size =  self.args.ms_token_size
-            else:
-                levels = len(self.args.fold_token_size)
-                ms_token_size = self.args.fold_token_size
+            levels = len(self.args.ms_token_size)
+            ms_token_size =  self.args.ms_token_size
 
             for level, pn in enumerate(ms_token_size):
-                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1 or self.args.fold_token == True) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
-                z_cat.append(z_downscale)
+                z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
 
                 ## distance [B*ph*pw, vocab_size]
                 distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
@@ -191,15 +172,13 @@ class MultiscaleEMAQuantizer(MultiscaleBaseQuantizer):
                 token_cat.append(token)
 
                 token_Bhw = token.view(B, pn, pn)
-                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1 or self.args.fold_token == True) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
+                z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
                 z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)
 
             token_cat = torch.cat(token_cat, 0)
-            z_cat = torch.cat(z_cat, 0)
-
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)

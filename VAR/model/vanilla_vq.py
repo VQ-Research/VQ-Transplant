@@ -80,7 +80,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
         z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
-        z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             multi_vq_loss: torch.Tensor = 0.0
             levels = len(self.args.ms_token_size)
@@ -88,7 +87,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
 
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
-                z_cat.append(z_downscale.detach())
                 
                 ## distance [B*ph*pw, vocab_size]
                 distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
@@ -113,7 +111,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
             multi_vq_loss *= 1. / sum(self.args.importance)
 
             token_cat = torch.cat(token_cat, 0)
-            z_cat = torch.cat(z_cat, 0)
 
             ## Criterion Triple defined in the paper
             z_dec = (z_dec - z_enc).detach().add_(z_enc)
@@ -139,13 +136,11 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
         z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
-        z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
-                z_cat.append(z_downscale)
 
                 ## distance [B*ph*pw, vocab_size]
                 distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
@@ -163,8 +158,6 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
                 z_rest.sub_(z_upscale)
 
             token_cat = torch.cat(token_cat, 0)
-            z_cat = torch.cat(z_cat, 0)
-
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)

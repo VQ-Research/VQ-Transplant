@@ -175,7 +175,6 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         token_cat: List[torch.Tensor] = []
         z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
-            vq_loss: torch.Tensor = 0.0
             multi_vq_loss: torch.Tensor = 0.0
             wasserstein_loss: torch.Tensor = 0.0
             
@@ -227,6 +226,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             ### compute wasserstein distance
             wasserstein_loss = self.calc_wasserstein_loss()
             loss =  multi_vq_loss + self.args.gamma_1 * wasserstein_loss
+            
         return z_dec, loss, wasserstein_loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
@@ -268,6 +268,7 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)
             handler.wait()
+
         return z_dec, wasserstein_loss, quant_error, histogram
 
 
