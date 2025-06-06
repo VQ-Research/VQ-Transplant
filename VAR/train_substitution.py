@@ -143,7 +143,7 @@ def main_worker(args):
         calc_pretrain_var_metrics(args, model, epoch, val_dataloader, len_val_set)
         return
 
-    if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "adversarial_vq":
+    if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq":
         if args.use_multiscale == True:
             if args.use_pq == False:
                 model_para = list(model.module.quantizer.phi.parameters())
@@ -169,6 +169,30 @@ def main_worker(args):
             model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
         all_para = model_para
         optimizer = torch.optim.Adam(model_para, lr=args.lr, betas=(0.9, 0.95))
+
+    elif args.VQ == "adversarial_vq":
+        if args.use_multiscale == True:
+            if args.use_pq == False:
+                model_para = list(model.module.quantizer.phi.parameters())
+                code_para = list(model.module.quantizer.embedding.parameters())
+                disc_para = list(model.module.quantizer.discriminator.parameters())
+            else:
+                model_para = list(model.module.quantizer.phi.parameters()) + list(model.module.quantizer2.phi.parameters())
+                code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
+                disc_para = list(model.module.quantizer.discriminator.parameters()) + list(model.module.quantizer2.discriminator.parameters())
+            all_para = model_para + code_para
+            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
+            disc_optimizer = torch.optim.Adam(disc_para, lr=0.00005, betas=(0.9, 0.95))
+        else:
+            if args.use_pq == False:
+                code_para = list(model.module.quantizer.embedding.parameters())
+                disc_para = list(model.module.quantizer.discriminator.parameters())
+            else:
+                code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
+                disc_para = list(model.module.quantizer.discriminator.parameters()) + list(model.module.quantizer2.discriminator.parameters())
+            all_para = code_para
+            optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
+            disc_optimizer = torch.optim.Adam(disc_para, lr=0.00005, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
