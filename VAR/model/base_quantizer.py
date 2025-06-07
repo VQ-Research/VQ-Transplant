@@ -74,13 +74,10 @@ class Queue(nn.Module):
     @torch.no_grad()
     def dequeue_and_enqueue(self, key):
         batch_size = key.shape[0]
-        print("batch_size:", batch_size)
         ptr = int(self.queue_ptr)
-        print("ptr1:", ptr)
         assert self.queue_size % batch_size == 0  # for simplicity
         self.queue[ptr:ptr + batch_size, :] = key
         ptr = (ptr + batch_size) % self.queue_size  # move pointer
-        print("ptr2:", ptr)
         self.queue_ptr[0] = ptr  
 
     @torch.no_grad()

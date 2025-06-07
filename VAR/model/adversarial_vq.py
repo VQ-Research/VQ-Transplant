@@ -20,7 +20,7 @@ class AdversarialQuantizer(BaseQuantizer):
         return -torch.mean(logits_fake)
     
     def calc_codebook_d_loss(self):
-        z = self.queue.obatin_latest_feature_from_queue()
+        z = self.queue.obtain_feature_from_queue()
         c = self.embedding.weight
         logits_real =  self.discriminator(z.detach().clone())
         logits_fake =  self.discriminator(c.detach().clone())
@@ -99,7 +99,7 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
         return -torch.mean(logits_fake)
     
     def calc_codebook_d_loss(self):
-        z = self.queue.obatin_latest_feature_from_queue()
+        z = self.queue.obtain_feature_from_queue()
         c = self.embedding.weight
         logits_real =  self.discriminator(z.detach().clone())
         logits_fake =  self.discriminator(c.detach().clone())
@@ -167,7 +167,7 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            loss =  multi_vq_loss  + self.args.gamma_2 * 0.1 * codebook_g_loss
+            loss =  multi_vq_loss  + self.args.gamma_2 * 0.2 * codebook_g_loss
         return z_dec, loss, codebook_g_loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
