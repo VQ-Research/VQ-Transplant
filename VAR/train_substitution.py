@@ -181,8 +181,8 @@ def main_worker(args):
                 code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
                 disc_para = list(model.module.quantizer.discriminator.parameters()) + list(model.module.quantizer2.discriminator.parameters())
             all_para = model_para + code_para
-            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
-            disc_optimizer = torch.optim.Adam(disc_para, lr=0.00001, betas=(0.9, 0.95))
+            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr, betas=(0.9, 0.95))
+            disc_optimizer = torch.optim.Adam(disc_para, lr=0.0001, betas=(0.9, 0.95))
         else:
             if args.use_pq == False:
                 code_para = list(model.module.quantizer.embedding.parameters())
@@ -191,8 +191,8 @@ def main_worker(args):
                 code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
                 disc_para = list(model.module.quantizer.discriminator.parameters()) + list(model.module.quantizer2.discriminator.parameters())
             all_para = code_para
-            optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
-            disc_optimizer = torch.optim.Adam(disc_para, lr=0.00001, betas=(0.9, 0.95))
+            optimizer = torch.optim.AdamW(code_para, lr=0.005, betas=(0.9, 0.95))
+            disc_optimizer = torch.optim.Adam(disc_para, lr=0.0001, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
