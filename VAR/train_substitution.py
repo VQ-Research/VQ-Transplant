@@ -181,7 +181,7 @@ def main_worker(args):
                 code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
                 disc_para = list(model.module.quantizer.discriminator.parameters()) + list(model.module.quantizer2.discriminator.parameters())
             all_para = model_para + code_para
-            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr, betas=(0.9, 0.95))
+            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr, betas=(0.9, 0.95))
             disc_optimizer = torch.optim.Adam(disc_para, lr=0.00001, betas=(0.9, 0.95))
         else:
             if args.use_pq == False:
@@ -191,7 +191,7 @@ def main_worker(args):
                 code_para = list(model.module.quantizer.embedding.parameters()) + list(model.module.quantizer2.embedding.parameters())
                 disc_para = list(model.module.quantizer.discriminator.parameters()) + list(model.module.quantizer2.discriminator.parameters())
             all_para = code_para
-            optimizer = torch.optim.AdamW(code_para, lr=0.005, betas=(0.9, 0.95))
+            optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95))
             disc_optimizer = torch.optim.Adam(disc_para, lr=0.00001, betas=(0.9, 0.95))
 
     results = {'vq_loss':[], 'rec_loss': [], 'quant_error':[], 'utilization':[], 'perplexity':[]}
@@ -215,7 +215,6 @@ def main_worker(args):
                 x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
                 batch_size = x.size(0)
                 x_rec, vq_loss, info_pack = model.module(x)
-
                 if args.use_pq == True and step == args.iterations:  ## for quantization-deocder mismatch verification
                     break  
 
@@ -223,7 +222,6 @@ def main_worker(args):
                 optimizer.zero_grad()
                 if args.VQ == "adversarial_vq":
                     disc_optimizer.zero_grad()
-
                 vq_loss.backward()
                 if args.VQ == "wasserstein_vq":
                     has_nan = False            
