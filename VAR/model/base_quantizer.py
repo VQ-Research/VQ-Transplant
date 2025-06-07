@@ -101,8 +101,7 @@ class Discriminator(nn.Module):
         self.args = args
         self.fc1 = nn.Linear(args.codebook_dim, args.codebook_dim*8)
         self.fc2 = nn.Linear(args.codebook_dim*8, args.codebook_dim*8)
-        self.fc3 = nn.Linear(args.codebook_dim*8, args.codebook_dim*8)
-        self.fc4 = nn.Linear(args.codebook_dim*8, 1)
+        self.fc3 = nn.Linear(args.codebook_dim*8, 1)
 
         self.bn1 = nn.BatchNorm1d(args.codebook_dim*8)
         self.bn2 = nn.BatchNorm1d(args.codebook_dim*8)
@@ -110,8 +109,7 @@ class Discriminator(nn.Module):
     def forward(self, z):
         z = F.leaky_relu(self.bn1(self.fc1(z)))
         z = F.leaky_relu(self.bn2(self.fc2(z)))
-        z = F.leaky_relu(self.fc3(z))
-        z = self.fc4(z)
+        z = self.fc3(z)
         return z 
 
 class BaseQuantizer(nn.Module):

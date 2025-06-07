@@ -16,12 +16,14 @@ class AdversarialQuantizer(BaseQuantizer):
 
     def calc_codebook_g_loss(self):
         c = self.embedding.weight
+        z = self.queue.obtain_feature_from_queue()
         logits_fake = self.discriminator(c)
         return -torch.mean(logits_fake)
     
     def calc_codebook_d_loss(self):
-        z = self.queue.obtain_feature_from_queue()
         c = self.embedding.weight
+        z = self.queue.obtain_feature_from_queue()
+        
         logits_real =  self.discriminator(z.detach().clone())
         logits_fake =  self.discriminator(c.detach().clone())
 
