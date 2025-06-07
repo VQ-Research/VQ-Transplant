@@ -42,10 +42,9 @@ def parse_arg():
     parser.add_argument('--resume', action='store_true', help='reloading model from specified checkpoint.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--use_pq', action='store_true', help='False: do not use product quantization; True: use product quantization.')
-    parser.add_argument('--lr_test', action='store_true', help='False: do not use product quantization; True: use product quantization.')
     parser.add_argument('--epochs', type=int, default=1, help="training epochs, 1 epochs for ImageNet, 50 epochs for other datasets")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet, 5 epochs for FFHQ datasets.")
-    parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
+    parser.add_argument('--lr', default=1e-3, type=float, metavar='LR', help='initial learning rate for encoder-decoder architecture.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
     parser.add_argument('--iterations', default=1000, type=int, help='the iteration to teriminal the program (for check quantization-decoder mismatch).')
@@ -130,9 +129,7 @@ def parse_arg():
         else:
             args.training_pre = '{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.iterations)
 
-    if args.lr_test == True:
-        args.training_pre = '{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.epochs, args.use_multiscale, args.lr)
-    elif args.VQ == 'original_var' or args.VQ == 'var_no_vq':
+    if args.VQ == 'original_var' or args.VQ == 'var_no_vq':
         args.training_pre = '{}'.format(args.VQ)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
     

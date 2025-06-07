@@ -121,5 +121,4 @@ def eval_reconstruction(args, model):
     print("PSNR:"+str(eval_psnr)+"  SSIM:"+str(eval_ssim)+ "  LPIPS:"+str(eval_lpips))
 
     if args.dataset_name == "ImageNet":
-        if args.lr_test == False:
-            create_npz_from_sample_folder(reconstruction_path)
+        create_npz_from_sample_folder(reconstruction_path)

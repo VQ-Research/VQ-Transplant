@@ -130,8 +130,9 @@ class BaseQuantizer(nn.Module):
 
         if args.VQ == "wasserstein_vq" or args.VQ == "adversarial_vq":
             self.queue = Queue(args)
-            if args.VQ == "adversarial_vq":
-                self.discriminator = Discriminator(args)
+
+        if args.VQ == "adversarial_vq":
+            self.discriminator = Discriminator(args)
 
 class MultiscaleBaseQuantizer(nn.Module):
     def __init__(self, args):
