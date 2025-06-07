@@ -158,7 +158,7 @@ class VAR_Substitution(nn.Module):
         codebook_d_loss = self.quantizer.calc_codebook_d_loss()
         if self.args.use_pq == True:
             codebook_d_loss_2 = self.quantizer2.calc_codebook_d_loss()
-            codebook_d_loss = (codebook_d_loss + codebook_d_loss_2) *0.5
+            codebook_d_loss = (codebook_d_loss + codebook_d_loss_2) * 0.5
         else:
             codebook_d_loss = codebook_d_loss
 
