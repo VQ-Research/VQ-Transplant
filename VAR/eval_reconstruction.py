@@ -90,7 +90,7 @@ def eval_reconstruction(args, model):
     for idx, (x, _) in enumerate(val_dataloader):
         x = x.cuda()
         with torch.no_grad():
-            if args.VQ == "var_no_vq":
+            if args.VQ == "var_no_vq" or args.VQ == 'original_var':
                 x_rec, _ = model.collect_eval_info(x)
             else:
                 x_rec, _, _, _ = model.module.collect_eval_info(x)

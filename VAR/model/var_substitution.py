@@ -176,6 +176,8 @@ class VAR_Substitution(nn.Module):
 
         if self.args.VQ == "var_no_vq":
             z_q = z
+        elif self.args.VQ == 'original_var':
+            z_q, _ = self.quantizer(z_1) 
         elif self.args.VQ == "wasserstein_vq":
             z_q_1, wasserstein_loss, quant_error, histogram = self.quantizer.collect_eval_info(z_1)
             if self.args.use_pq == True:
@@ -196,7 +198,7 @@ class VAR_Substitution(nn.Module):
         x_rec = self.decoder(z).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         
-        if self.args.VQ == "var_no_vq":
+        if self.args.VQ == "var_no_vq" or self.args.VQ == 'original_var':
             return x_rec, rec_loss
         else:
             return x_rec, rec_loss, quant_error, histogram
