@@ -16,14 +16,15 @@ class AdversarialQuantizer(BaseQuantizer):
 
     def calc_codebook_g_loss(self):
         c = self.embedding.weight
-        z = self.queue.obtain_feature_from_queue()
         logits_fake = self.discriminator(c)
         return -torch.mean(logits_fake)
     
     def calc_codebook_d_loss(self):
         c = self.embedding.weight
         z = self.queue.obtain_feature_from_queue()
-        
+        z_mean = z.mean(0).detach()
+        z = (z - z_mean) * self.args.sigma + z_mean ##### very important
+
         logits_real =  self.discriminator(z.detach().clone())
         logits_fake =  self.discriminator(c.detach().clone())
 
@@ -101,8 +102,11 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
         return -torch.mean(logits_fake)
     
     def calc_codebook_d_loss(self):
-        z = self.queue.obtain_feature_from_queue()
         c = self.embedding.weight
+        z = self.queue.obtain_feature_from_queue()
+        z_mean = z.mean(0, keepdim=True).detach()
+        z = (z - z_mean) * self.args.sigma + z_mean ##### very important
+
         logits_real =  self.discriminator(z.detach().clone())
         logits_fake =  self.discriminator(c.detach().clone())
 
@@ -122,6 +126,7 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
         with torch.cuda.amp.autocast(enabled=False):
             multi_vq_loss: torch.Tensor = 0.0
             codebook_g_loss: torch.Tensor = 0.0
+            commit_loss: torch.Tensor = 0.0
 
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
@@ -137,7 +142,7 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
                 ## token [B*ph*pw]
                 token = torch.argmin(distance, dim=1)
                 embed = self.embedding(token)
-
+                commit_loss += F.mse_loss(z_downscale.detach(), embed)
                 token_cat.append(token)                  
                 token_Bhw = token.view(B, pn, pn)
 
@@ -149,6 +154,7 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
                 multi_vq_loss += F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
 
             multi_vq_loss *= 1. / sum(self.args.importance)
+            commit_loss *= 1. / levels
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
             with torch.no_grad():
@@ -169,7 +175,7 @@ class MultiscaleAdversarialQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            loss =  multi_vq_loss  + self.args.gamma_2 * 0.2 * codebook_g_loss
+            loss =  multi_vq_loss + commit_loss + self.args.gamma_2 * codebook_g_loss
         return z_dec, loss, codebook_g_loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
