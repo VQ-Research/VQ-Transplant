@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=ema_vq_p1
+#SBATCH --job-name=ema_vq_p3
 #SBATCH --partition=medium
 #SBATCH --nodes=1
 #SBATCH --mem=50gb
@@ -7,8 +7,8 @@
 #SBATCH --nodelist=g[003-009]
 #SBATCH --gpus-per-node=1
 #SBATCH --time=2-00:00:00
-#SBATCH --output /projects/yuanai/projects/VQ-Transplant/VAR/metrics/Substitution/ImageNet/ema_vq_p1.out
-#SBATCH --error /projects/yuanai/projects/VQ-Transplant/VAR/metrics/Substitution/ImageNet/ema_vq_p1.err
+#SBATCH --output /projects/yuanai/projects/VQ-Transplant/VAR/metrics/Substitution/ImageNet/ema_vq_p3.out
+#SBATCH --error /projects/yuanai/projects/VQ-Transplant/VAR/metrics/Substitution/ImageNet/ema_vq_p3.err
 
 source ~/.bashrc
 conda activate /home/fangxian/packages/anaconda/envs/FID
