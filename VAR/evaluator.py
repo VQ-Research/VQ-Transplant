@@ -26,8 +26,11 @@ FID_SPATIAL_NAME = "mixed_6/conv:0"
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ref_batch", default="/projects/yuanai/processed_data/rFID/baselines/Input.npz", help="path to reference batch npz file")
-    parser.add_argument("--sample_batch", default="/projects/yuanai/processed_data/rFID/baselines/VAR.npz", help="path to sample batch npz file")
+    parser.add_argument("--sample_path", default="/projects/yuanai/projects/VQ-Transplant/VAR/reconstruction/Substitution/ImageNet/", help="path to sample batch npz file")
+    parser.add_argument("--sample_name", default="var_no_vq.npz", help="path to sample batch npz file")
+    #parser.add_argument("--sample_batch", default="/projects/yuanai/processed_data/rFID/baselines/VAR.npz", help="path to sample batch npz file")
     args = parser.parse_args()
+    args.sample_batch =  os.path.join(args.sample_path, args.sample_name)
 
     config = tf.ConfigProto(
         allow_soft_placement=True  # allows DecodeJpeg to run on CPU in Inception graph
