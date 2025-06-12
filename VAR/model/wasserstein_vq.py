@@ -269,25 +269,3 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
             handler.wait()
 
         return z_dec, wasserstein_loss, quant_error, histogram
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
