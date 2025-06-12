@@ -10,6 +10,7 @@ from collections import OrderedDict
 from typing import Optional, Union
 import argparse
 import torch.distributed as dist
+from sigma_table import calc_sigma_value
 
 def parse_arg():
     parser = argparse.ArgumentParser(description='VQ-Transplant based on Pretrained VAR visual tokenizer.') 
@@ -68,6 +69,7 @@ def parse_arg():
     args.workers = min(max(0, args.workers), args.batch_size)
     args.ms_token_size = tuple(map(int, args.ms_patch_size.replace('-', '_').split('_')))
     args.importance = tuple(map(int, args.importance.replace('-', '_').split('_')))
+    
     if args.stage == "substitution":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Substitution"), args.dataset_name)
         args.results_dir = os.path.join(os.path.join(args.results_dir, "Substitution"), args.dataset_name)
@@ -80,12 +82,7 @@ def parse_arg():
         args.reconstruction_dir = os.path.join(os.path.join(args.reconstruction_dir, "Adaptation"), args.dataset_name)
 
     ################### very important
-    if args.codebook_dim == 8:
-        args.sigma = 1.0
-    elif args.codebook_dim == 16:
-        args.sigma = 0.8
-    elif args.codebook_dim == 32:
-        args.sigma = 0.5
+    args.sigma = calc_sigma_value(args.codebook_dim, args.codebook_size)
 
     if args.stage == "substitution":
         if args.dataset_name == "ImageNet":
