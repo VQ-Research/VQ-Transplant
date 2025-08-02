@@ -15,7 +15,7 @@ from utils.misc import str2bool
 import ruamel.yaml as yaml
 
 def parse_arg():
-    parser = argparse.ArgumentParser(description='Discrete Categorical Tokenizer.') 
+    parser = argparse.ArgumentParser(description='VQ-Transplant based on SANA Tokenizer.') 
 
     ### Dataset and Dataloader Configuration
     parser.add_argument('--dataset_dir', default="/projects/yuanai/data/", type=str, help='the directory of dataset') 
@@ -26,6 +26,7 @@ def parse_arg():
     parser.add_argument('--channels', default=3, type=int, metavar='N', help='the channels of images')
     
     ### Model Configuration
+    parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8", type=str, help='multi-scale patch size.')
     parser.add_argument('--codebook_size', default=256, type=int, help='the size of codebook.', choices=[128, 256, 512, 1024])
     parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors.')
     parser.add_argument('--L', default=64, type=int, help='Quantize probability distributions into fractions with a denominator of L.', choices=[8, 16, 32, 64])
