@@ -100,6 +100,16 @@ class BaseQuantizer(nn.Module):
 
         if args.VQ == "wasserstein_vq":
             self.queue = Queue(args)
+        
+        self.residual = nn.Sequential(
+                nn.Linear(self.codebook_dim, self.codebook_dim*8),
+                nn.BatchNorm2d(self.codebook_dim*8),
+                nn.SiLU(),
+                nn.Linear(self.codebook_dim*8, self.codebook_dim*8),
+                nn.BatchNorm2d(self.codebook_dim*8),
+                nn.SiLU(),
+                nn.Linear(self.codebook_dim*8, self.codebook_dim),
+            )
 
 class MultiscaleBaseQuantizer(nn.Module):
     def __init__(self, args):
@@ -119,6 +129,15 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.queue = Queue(args)
 
         self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
+        self.residual = nn.Sequential(
+                nn.Linear(self.codebook_dim, self.codebook_dim*8),
+                nn.BatchNorm2d(self.codebook_dim*8),
+                nn.SiLU(),
+                nn.Linear(self.codebook_dim*8, self.codebook_dim*8),
+                nn.BatchNorm2d(self.codebook_dim*8),
+                nn.SiLU(),
+                nn.Linear(self.codebook_dim*8, self.codebook_dim),
+            )
 
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK
