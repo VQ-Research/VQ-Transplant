@@ -366,6 +366,10 @@ class Decoder(nn.Module):
             act=cfg.out_act,
         )
 
+    @property
+    def last_layer(self):
+        return self.project_out.op_list[2].conv.weight
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.project_in(x)
         for stage in reversed(self.stages):

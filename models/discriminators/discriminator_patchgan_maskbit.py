@@ -3,11 +3,6 @@
 import functools
 import torch
 import torch.nn as nn
-try:
-    from kornia.filters import filter2d
-except:
-    pass
-
 
 def Normalize(in_channels, norm_type='group'):
     assert norm_type in ['group', 'batch']

@@ -11,13 +11,13 @@ from torchvision.datasets import ImageFolder
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from data.augmentation import random_crop_arr, center_crop_arr
 from torchvision.transforms import InterpolationMode, transforms
+from data.augmentation import random_crop_arr, center_crop_arr
 from data.lsun_church import LSUNChurchesDataset
 from data.lsun_bedroom import LSUNBedroomsDataset
 
 paths = {
-    "ImageNet": "ImageNet",
+    "ImageNet": "imagenet",
     "FFHQ": "FFHQ",
     "CelebAHQ":"CelebAHQ",
     "Bedrooms":"LSUN-Bedrooms",

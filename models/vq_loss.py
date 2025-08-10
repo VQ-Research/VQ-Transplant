@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from models.lpips import LPIPS
 from models.discriminators import PatchGANDiscriminator, StyleGANDiscriminator, PatchGANMaskBitDiscriminator, DinoDiscriminator
 from utils.diff_aug import DiffAugment
-
 import torch.distributed as tdist
 from utils.util import Pack
 
@@ -57,12 +56,10 @@ class VQLoss(nn.Module):
     def __init__(self, args):
         super(VQLoss, self).__init__()
         self.args = args
-        self.disc_adaptive_weight = False
+        self.disc_adaptive_weight = True
         self.perceptual_loss = LPIPS().eval()
-
-        if args.stage == "refinement":
-            self.lecam_ema = LeCAM_EMA()
-            self.discriminator = DinoDiscriminator()
+        self.lecam_ema = LeCAM_EMA()
+        self.discriminator = DinoDiscriminator()
 
     def calculate_adaptive_weight(self, nll_loss, g_loss, last_layer):
         nll_grads = torch.autograd.grad(nll_loss, last_layer, retain_graph=True)[0]
@@ -72,23 +69,12 @@ class VQLoss(nn.Module):
         d_weight = torch.clamp(d_weight, 0.0, 1e4).detach()
         return d_weight.detach()
 
-    def vqvae(self, inputs, reconstructions, categorical_loss):
-        # reconstruction loss
-        rec_loss = torch.mean(torch.abs(inputs.contiguous() - reconstructions.contiguous()))
-
-        # perceptual loss
-        p_loss = self.perceptual_loss(inputs.contiguous(), reconstructions.contiguous())
-        p_loss = torch.mean(p_loss)
-
-        gen_loss = rec_loss + p_loss + categorical_loss
-        loss_pack = Pack(gen_loss=gen_loss, rec_loss=rec_loss, lpips_loss=p_loss)
-        return gen_loss, loss_pack
-
-    def forward(self, inputs, reconstructions, categorical_loss, optimizer_idx, last_layer=None):
+    def forward(self, inputs, reconstructions, optimizer_idx, cur_epoch, last_layer=None):
         # generator update
         if optimizer_idx == 0:
             # reconstruction loss
-            rec_loss = torch.mean(torch.abs(inputs.contiguous() - reconstructions.contiguous()))
+            rec_loss = F.mse_loss(inputs.contiguous(), reconstructions.contiguous())
+            #rec_loss = torch.mean(torch.abs(inputs.contiguous() - reconstructions.contiguous()))
 
             # perceptual loss
             p_loss = self.perceptual_loss(inputs.contiguous(), reconstructions.contiguous())
@@ -103,9 +89,10 @@ class VQLoss(nn.Module):
                 null_loss = rec_loss + p_loss
                 disc_adaptive_weight = self.calculate_adaptive_weight(null_loss, g_loss, last_layer=last_layer)
             else:
-                disc_adaptive_weight = 1
-            
-            gen_loss = rec_loss + p_loss + disc_adaptive_weight * self.args.disc_weight * g_loss #+ 0 * categorical_loss
+                disc_adaptive_weight = 1.
+
+            disc_weight = adopt_weight(self.args.disc_weight, cur_epoch, threshold=self.args.disc_epoch)
+            gen_loss = rec_loss + p_loss + disc_adaptive_weight * g_loss
             loss_pack = Pack(gen_loss=gen_loss, rec_loss=rec_loss, lpips_loss=p_loss, g_loss=g_loss, disc_weight=disc_weight, disc_adaptive_weight=disc_adaptive_weight)
             return gen_loss, loss_pack
 
@@ -114,10 +101,12 @@ class VQLoss(nn.Module):
             logits_real = self.discriminator(DiffAugment(inputs.contiguous().detach(), policy='color,translation,cutout_0.2', prob=0.5))
             logits_fake = self.discriminator(DiffAugment(reconstructions.contiguous().detach(), policy='color,translation,cutout_0.2', prob=0.5))
 
+            disc_weight = adopt_weight(self.args.disc_weight, cur_epoch, threshold=self.args.disc_epoch)
+
             self.lecam_ema.update(logits_real, logits_fake)
             lecam_loss = lecam_reg(logits_real, logits_fake, self.lecam_ema)
             adversarial_loss = hinge_d_loss(logits_real, logits_fake)
-            d_loss = self.args.disc_weight * (lecam_loss * self.args.lecam_loss_weight + adversarial_loss)
+            d_loss = disc_weight * (lecam_loss * self.args.lecam_loss_weight + adversarial_loss)
 
             logits_real_s = self.discriminator(DiffAugment(inputs.contiguous().detach(), policy='color,translation,cutout_0.5', prob=1.0))
             logits_fake_s = self.discriminator(DiffAugment(reconstructions.contiguous().detach(), policy='color,translation,cutout_0.5', prob=1.0))
