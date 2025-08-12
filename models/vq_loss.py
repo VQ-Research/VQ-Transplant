@@ -74,8 +74,7 @@ class VQLoss(nn.Module):
         if optimizer_idx == 0:
             # reconstruction loss
             rec_loss = F.mse_loss(inputs.contiguous(), reconstructions.contiguous())
-            #rec_loss = torch.mean(torch.abs(inputs.contiguous() - reconstructions.contiguous()))
-
+            
             # perceptual loss
             p_loss = self.perceptual_loss(inputs.contiguous(), reconstructions.contiguous())
             p_loss = torch.mean(p_loss)

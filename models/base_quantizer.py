@@ -95,13 +95,18 @@ class BaseQuantizer(nn.Module):
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding.weight.requires_grad = True
+        elif args.VQ == "online_vq":
+            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
+            self.embedding.weight.requires_grad = True
+            self.register_buffer("embed_prob", torch.zeros(self.codebook_size))
         elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-
+        
         if args.VQ == "wasserstein_vq":
             self.queue = Queue(args)
-        
-        self.residual = nn.Sequential(
+        if args.residual:
+            self.residual = nn.Sequential(
                 nn.Linear(self.codebook_dim, self.codebook_dim*8),
                 nn.BatchNorm2d(self.codebook_dim*8),
                 nn.SiLU(),
@@ -122,6 +127,11 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding.weight.requires_grad = True
+        elif args.VQ == "online_vq":
+            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
+            self.embedding.weight.requires_grad = True
+            self.register_buffer("embed_prob", torch.zeros(self.codebook_size))
         elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
 
@@ -129,7 +139,8 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.queue = Queue(args)
 
         self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
-        self.residual = nn.Sequential(
+        if args.residual:
+            self.residual = nn.Sequential(
                 nn.Linear(self.codebook_dim, self.codebook_dim*8),
                 nn.BatchNorm2d(self.codebook_dim*8),
                 nn.SiLU(),
