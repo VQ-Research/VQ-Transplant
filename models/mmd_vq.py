@@ -62,6 +62,9 @@ class MMDQuantizer(BaseQuantizer):
         quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
 
         histogram = token.bincount(minlength=self.args.codebook_size).float()
+        handler = tdist.all_reduce(histogram, async_op=True)
+        handler.wait()
+
         codebook_usage_counts = (histogram > 0).float().sum()
         codebook_utilization = codebook_usage_counts.item() / self.args.codebook_size
             
@@ -94,6 +97,8 @@ class MMDQuantizer(BaseQuantizer):
 
         quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
         histogram = token.bincount(minlength=self.args.codebook_size).float()
+        handler = tdist.all_reduce(histogram, async_op=True)
+        handler.wait()
         return z_dec, quant_error, histogram
     
 ##### multi-scale quantizer

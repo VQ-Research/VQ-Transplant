@@ -4,7 +4,11 @@ import torch
 from torch import nn
 from einops import rearrange
 from torch.nn import functional as F
-from models.categorical_quantizer import Categorical_Quantizer
+from models.vanilla_vq import VanillaQuantizer, MultiscaleVanillaQuantizer
+from models.ema_vq import EMAQuantizer, MultiscaleEMAQuantizer
+from models.online_vq import OnlineQuantizer, MultiscaleOnlineQuantizer
+from models.wasserstein_vq import WassersteinQuantizer, MultiscaleWassersteinQuantizer
+from models.mmd_vq import MMDQuantizer, MultiscaleMMDQuantizer
 from models.encoder_decoder import Encoder, Decoder, EncoderConfig, DecoderConfig
 from utils.util import Pack
 from safetensors.torch import load_file
@@ -17,8 +21,29 @@ class VQModel(nn.Module):
         dec_config = DecoderConfig
         self.encoder = Encoder(EncoderConfig)
         self.decoder = Decoder(DecoderConfig)
-        self.quantizer = Categorical_Quantizer(args)
-    
+        if args.use_multiscale:
+            if args.VQ == "vanilla_vq":
+                self.quantizer = MultiscaleVanillaQuantizer(args)
+            elif args.VQ == "ema_vq":
+                self.quantizer = MultiscaleEMAQuantizer(args)
+            elif args.VQ == "online_vq":
+                self.quantizer = MultiscaleOnlineQuantizer(args)
+            elif args.VQ == "wasserstein_vq":
+                self.quantizer = MultiscaleWassersteinQuantizer(args)
+            elif args.VQ == "mmd_vq":
+                self.quantizer = MultiscaleMMDQuantizer(args)
+        else:
+            if args.VQ == "vanilla_vq":
+                self.quantizer = VanillaQuantizer(args)
+            elif args.VQ == "ema_vq":
+                self.quantizer = EMAQuantizer(args)
+            elif args.VQ == "online_vq":
+                self.quantizer = OnlineQuantizer(args)
+            elif args.VQ == "wasserstein_vq":
+                self.quantizer = WassersteinQuantizer(args)
+            elif args.VQ == "mmd_vq":
+                self.quantizer = MMDQuantizer(args)
+                
         if args.stage == "transplant":
             pretrain_dict = load_file(args.pretrained_tokenizer)
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
