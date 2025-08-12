@@ -128,11 +128,6 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding.weight.requires_grad = True
-        elif args.VQ == "online_vq":
-            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-            self.embedding.weight.requires_grad = True
-            self.register_buffer("embed_prob", torch.zeros(self.codebook_size))
         elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
 
