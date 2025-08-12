@@ -1,18 +1,36 @@
 import os
-import math
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+import math
 from torch import einsum
 from einops import rearrange
 from torch import distributed as tdist
 from models.base_quantizer import BaseQuantizer, MultiscaleBaseQuantizer
 
+#### not the multi-scale quantizer and no residual quantization
 class MMDQuantizer(BaseQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args
+        self.sqrt_d = math.sqrt(self.codebook_dim)
+
+    def calc_gaussian_mmd_loss(self, z):
+        z = z.detach()
+        c = self.embedding.weight
+        N = z.size(0) + c.size(0)
+
+        dxx = (torch.sum(z**2, dim=1, keepdim=True) + torch.sum(z**2, dim=1) - 2*torch.matmul(z, z.t())).div(self.sqrt_d)
+        dxy = (torch.sum(z**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(z, c.t())).div(self.sqrt_d)
+        dyy = (torch.sum(c**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(c, c.t())).div(self.sqrt_d)
+        bandwidth = (dxx.sum() + 2*dxy.sum() + dyy.sum()).detach() / (N**2 -N)
+
+        XX = torch.exp(-dxx / bandwidth).mean() 
+        XY = torch.exp(-dxy / bandwidth).mean()
+        YY = torch.exp(-dyy / bandwidth).mean()
+        mmd_loss = XX - 2 * XY + YY
+        return mmd_loss
 
     def forward(self, z_enc):
         B, C, H, W = z_enc.shape
@@ -20,7 +38,10 @@ class MMDQuantizer(BaseQuantizer):
         #z, 'b c h w -> b h w c'
         z = rearrange(z_enc, 'b c h w -> b h w c')
         z_flat = z.reshape(-1, C)
-        
+
+        ## The only difference to the Vanilla Quantizer
+        mmd_loss = self.calc_gaussian_mmd_loss(z_flat.detach())
+
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
         d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
             self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
@@ -28,13 +49,17 @@ class MMDQuantizer(BaseQuantizer):
 
         token = torch.argmin(d, dim=1)
         z_q = self.embedding(token).view(z.shape)
-        loss = F.mse_loss(z_q, z.detach())
+        commit_loss = F.mse_loss(z_q, z.detach())
 
-        ## preserve gradients
-        z_q = z + (z_q - z).detach()
+        # adjuest the shape back to match original input shape
+        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
+
+        if self.args.residual:
+            z_dec = z_dec.detach() + self.residual(z_dec.detach())
+            residual_loss = F.mse_loss(z_dec, z_enc.detach())
 
         ## Criterion Triple defined in the paper
-        quant_error = F.mse_loss(z_q.detach(), z.detach())
+        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
 
         histogram = token.bincount(minlength=self.args.codebook_size).float()
         codebook_usage_counts = (histogram > 0).float().sum()
@@ -43,8 +68,10 @@ class MMDQuantizer(BaseQuantizer):
         avg_probs = histogram/histogram.sum(0)
         codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
+        if self.args.residual:
+            loss = commit_loss + self.args.gamma * mmd_loss + residual_loss
+        else:
+            loss = commit_loss + self.args.gamma * mmd_loss
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
@@ -60,11 +87,13 @@ class MMDQuantizer(BaseQuantizer):
         token = torch.argmin(d, dim=1)
         z_q = self.embedding(token).view(z.shape)
 
-        quant_error = F.mse_loss(z_q.detach(), z.detach())
-        histogram = token.bincount(minlength=self.args.codebook_size).float()
-
         # adjuest the shape back to match original input shape
         z_dec = z_q.permute(0, 3, 1, 2).contiguous()
+        if self.args.residual:
+            z_dec = z_dec.detach() + self.residual(z_dec.detach())
+
+        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
+        histogram = token.bincount(minlength=self.args.codebook_size).float()
         return z_dec, quant_error, histogram
     
 ##### multi-scale quantizer
@@ -72,6 +101,24 @@ class MultiscaleMMDQuantizer(MultiscaleBaseQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args
+        self.sqrt_d = math.sqrt(self.codebook_dim)
+
+    def calc_gaussian_mmd_loss(self, z):
+        z = z.detach()
+        c = self.embedding.weight
+        N = z.size(0) + c.size(0)
+
+        dxx = (torch.sum(z**2, dim=1, keepdim=True) + torch.sum(z**2, dim=1) - 2*torch.matmul(z, z.t())).div(self.sqrt_d)
+        dxy = (torch.sum(z**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(z, c.t())).div(self.sqrt_d)
+        dyy = (torch.sum(c**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(c, c.t())).div(self.sqrt_d)
+
+        bandwidth = (dxx.sum() + 2*dxy.sum() + dyy.sum()).detach() / (N**2 -N)
+
+        XX = torch.exp(-dxx / bandwidth).mean() 
+        XY = torch.exp(-dxy / bandwidth).mean()
+        YY = torch.exp(-dyy / bandwidth).mean()
+        mmd_loss = XX - 2 * XY + YY
+        return mmd_loss
 
     def forward(self, z_enc):
         B, C, H, W = z_enc.shape
@@ -80,13 +127,17 @@ class MultiscaleMMDQuantizer(MultiscaleBaseQuantizer):
         z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
+        z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             multi_vq_loss: torch.Tensor = 0.0
+            mmd_loss: torch.Tensor = 0.0
+            residual_loss: torch.Tensor = 0.0
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
 
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
+                z_cat.append(z_downscale.detach())
                 
                 ## distance [B*ph*pw, vocab_size]
                 distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
@@ -104,15 +155,21 @@ class MultiscaleMMDQuantizer(MultiscaleBaseQuantizer):
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
+                multi_vq_loss += F.mse_loss(z_dec, z_no_grad)
 
-                multi_vq_loss += F.mse_loss(z_dec, z_no_grad) 
-            
-            ## residual quantization loss
             multi_vq_loss *= 1. / len(ms_token_size)
-
             token_cat = torch.cat(token_cat, 0)
+            z_cat = torch.cat(z_cat, 0)
+
+            ### compute mmd distance
+            mmd_loss = self.calc_gaussian_mmd_loss(z_cat.detach())
+
+            ### residual layer
+            if self.args.residual:
+                z_dec = z_dec.detach() + self.residual(z_dec.detach())
+                residual_loss = F.mse_loss(z_dec, z_no_grad) 
+
             ## Criterion Triple defined in the paper
-            z_dec = (z_dec - z_enc).detach().add_(z_enc)
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
 
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
@@ -125,7 +182,11 @@ class MultiscaleMMDQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            loss = multi_vq_loss 
+            if self.args.residual:
+                loss =  multi_vq_loss + self.args.gamma * mmd_loss
+            else:
+                loss =  multi_vq_loss + self.args.gamma * mmd_loss + residual_loss
+                
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
@@ -138,6 +199,7 @@ class MultiscaleMMDQuantizer(MultiscaleBaseQuantizer):
         with torch.cuda.amp.autocast(enabled=False):
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
+
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
 
@@ -155,6 +217,10 @@ class MultiscaleMMDQuantizer(MultiscaleBaseQuantizer):
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)
+
+            ### residual layer
+            if self.args.residual:
+                z_dec = z_dec.detach() + self.residual(z_dec.detach())
 
             token_cat = torch.cat(token_cat, 0)
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())

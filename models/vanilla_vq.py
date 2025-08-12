@@ -28,13 +28,17 @@ class VanillaQuantizer(BaseQuantizer):
 
         token = torch.argmin(d, dim=1)
         z_q = self.embedding(token).view(z.shape)
-        loss = F.mse_loss(z_q, z.detach())
+        commit_loss = F.mse_loss(z_q, z.detach())
 
-        ## preserve gradients
-        z_q = z + (z_q - z).detach()
+        # adjuest the shape back to match original input shape
+        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
+
+        if self.args.residual:
+            z_dec = z_dec.detach() + self.residual(z_dec.detach())
+            residual_loss = F.mse_loss(z_dec, z_enc.detach())
 
         ## Criterion Triple defined in the paper
-        quant_error = F.mse_loss(z_q.detach(), z.detach())
+        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
 
         histogram = token.bincount(minlength=self.args.codebook_size).float()
         codebook_usage_counts = (histogram > 0).float().sum()
@@ -43,8 +47,10 @@ class VanillaQuantizer(BaseQuantizer):
         avg_probs = histogram/histogram.sum(0)
         codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
+        if self.args.residual:
+            loss = commit_loss + residual_loss
+        else:
+            loss = commit_loss
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
@@ -60,11 +66,13 @@ class VanillaQuantizer(BaseQuantizer):
         token = torch.argmin(d, dim=1)
         z_q = self.embedding(token).view(z.shape)
 
-        quant_error = F.mse_loss(z_q.detach(), z.detach())
-        histogram = token.bincount(minlength=self.args.codebook_size).float()
-
         # adjuest the shape back to match original input shape
         z_dec = z_q.permute(0, 3, 1, 2).contiguous()
+        if self.args.residual:
+            z_dec = z_dec.detach() + self.residual(z_dec.detach())
+
+        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
+        histogram = token.bincount(minlength=self.args.codebook_size).float()
         return z_dec, quant_error, histogram
     
 ##### multi-scale quantizer
@@ -82,6 +90,7 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
         token_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             multi_vq_loss: torch.Tensor = 0.0
+            residual_loss: torch.Tensor = 0.0
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
 
@@ -111,8 +120,12 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
             multi_vq_loss *= 1. / len(ms_token_size)
 
             token_cat = torch.cat(token_cat, 0)
+            ### residual layer
+            if self.args.residual:
+                z_dec = z_dec.detach() + self.residual(z_dec.detach())
+                residual_loss = F.mse_loss(z_dec, z_no_grad) 
+
             ## Criterion Triple defined in the paper
-            z_dec = (z_dec - z_enc).detach().add_(z_enc)
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
 
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
@@ -125,7 +138,10 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            loss = multi_vq_loss 
+            if self.args.residual:
+                loss = multi_vq_loss + residual_loss
+            else:
+                loss = multi_vq_loss
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
@@ -138,6 +154,7 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
         with torch.cuda.amp.autocast(enabled=False):
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
+
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
 
@@ -155,6 +172,10 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)
+
+            ### residual layer
+            if self.args.residual:
+                z_dec = z_dec.detach() + self.residual(z_dec.detach())
 
             token_cat = torch.cat(token_cat, 0)
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())

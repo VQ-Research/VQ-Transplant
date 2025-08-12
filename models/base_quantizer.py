@@ -105,7 +105,7 @@ class BaseQuantizer(nn.Module):
         
         if args.VQ == "wasserstein_vq":
             self.queue = Queue(args)
-            
+
         if args.residual:
             self.residual = nn.Sequential(
                 nn.Conv2d(self.codebook_dim, self.codebook_dim*8, kernel_size=3)
@@ -144,9 +144,6 @@ class MultiscaleBaseQuantizer(nn.Module):
         if args.residual:
             self.residual = nn.Sequential(
                 nn.Conv2d(self.codebook_dim, self.codebook_dim*8, kernel_size=3)
-                nn.BatchNorm2d(self.codebook_dim*8),
-                nn.SiLU(),
-                nn.Conv2d(self.codebook_dim*8, self.codebook_dim*8, kernel_size=3)
                 nn.BatchNorm2d(self.codebook_dim*8),
                 nn.SiLU(),
                 nn.Conv2d(self.codebook_dim*8, self.codebook_dim, kernel_size=3)
