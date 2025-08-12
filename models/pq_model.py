@@ -1,3 +1,4 @@
+import os
 import sys
 import torch
 from torch import nn
@@ -17,8 +18,6 @@ class VQModel(nn.Module):
         self.encoder = Encoder(EncoderConfig)
         self.decoder = Decoder(DecoderConfig)
         self.quantizer = Categorical_Quantizer(args)
-        if args.stage == "transplant":
-            self.encoder2 = Encoder(EncoderConfig)
     
         if args.stage == "transplant":
             pretrain_dict = load_file(args.pretrained_tokenizer)
@@ -27,20 +26,33 @@ class VQModel(nn.Module):
             encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
             decoder_dict = {k.replace('decoder.', '', 1): v for k, v in decoder_dict.items()}
             self.encoder.load_state_dict(encoder_dict, strict=True)
-            self.encoder2.load_state_dict(encoder_dict, strict=True)
             self.decoder.load_state_dict(decoder_dict, strict=True)
             for param in self.encoder.parameters():
-                param.requires_grad = True
+                param.requires_grad = False
             for param in self.quantizer.parameters():
                 param.requires_grad = True
             for param in self.decoder.parameters():
                 param.requires_grad = False
-            for param in self.encoder2.parameters():
-                param.requires_grad = False
-            self.encoder2.eval()
+            self.encoder.eval()
             self.decoder.eval()
 
         if args.stage == "refinement":
+            checkpoint_dir = os.path.join(os.path.join(args.init_checkpoint_dir, "Transplant"), args.dataset_name)
+            checkpoint_name = args.checkpoint_name
+            checkpoint_path = os.path.join(checkpoint_dir, checkpoint_name)
+
+            pretrain_dict = torch.load(checkpoint_path, map_location='cpu')['model']
+            encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
+            decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
+            quantizer_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quantizer.')}
+
+            encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
+            decoder_dict = {k.replace('decoder.', '', 1): v for k, v in decoder_dict.items()}
+            quantizer_dict = {k.replace('quantizer.', '', 1): v for k, v in quantizer_dict.items()}
+
+            self.encoder.load_state_dict(encoder_dict, strict=True)
+            self.decoder.load_state_dict(decoder_dict, strict=True)
+            self.quantizer.load_state_dict(quantizer_dict, strict=True)
             for param in self.encoder.parameters():
                 param.requires_grad = False
             for param in self.quantizer.parameters():
@@ -50,42 +62,41 @@ class VQModel(nn.Module):
             self.encoder.eval()
             self.quantizer.eval()
 
-    def transplant(self, x, cur_iter):
+    def transplant(self, x):
         assert self.args.stage == "transplant"
         with torch.no_grad():
-            z_obj = self.encoder2(x) 
-        z = self.encoder(x)
-        z_q, categorical_loss, prob_commit_loss, entropy_loss, avg_entropy_loss = self.quantizer(z, cur_iter)
+            z = self.encoder(x)
+        z_q, categorical_loss, prob_commit_loss, entropy_loss, avg_entropy_loss = self.quantizer(z)
         with torch.no_grad():
             x_rec = self.decoder(z_q)
 
-        vq_loss = F.mse_loss(z_q, z_obj.detach())
+        vq_loss = F.mse_loss(z_q, z.detach())
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss  = vq_loss + categorical_loss
+        transplant_loss  = 10.0 * vq_loss + categorical_loss
         return transplant_loss, rec_loss, vq_loss, categorical_loss, prob_commit_loss, entropy_loss, avg_entropy_loss
     
-    def refinement(self, x, cur_iter):
+    def refinement(self, x):
         assert self.args.stage == "refinement"
         with torch.no_grad():
             z = self.encoder(x)
-            z_q, _, _, _, _, _ = self.quantizer(z, cur_iter)
+            z_q, _, _, _, _ = self.quantizer(z)
         x_rec = self.decoder(z_q)
+        rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec
 
     def collect_eval_info_transplant(self, x):
-        z_obj = self.encoder2(x) 
         z = self.encoder(x)
         z_q, prob_commit_loss, entropy_loss, avg_entropy_loss = self.quantizer.collect_eval_info(z)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
 
-        vq_loss = F.mse_loss(z_q.detach(), z_obj.detach())
+        vq_loss = F.mse_loss(z_q.detach(), z.detach())
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec, rec_loss, vq_loss, prob_commit_loss, entropy_loss, avg_entropy_loss
 
     def collect_eval_info_refinement(self, x):
         z = self.encoder(x)
-        z_q, prob_commit_loss, commit_loss, entropy_loss, avg_entropy_loss = self.quantizer.collect_eval_info(z)
+        z_q, _, _, _ = self.quantizer.collect_eval_info(z)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
 
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        return x_rec, rec_loss, prob_commit_loss, commit_loss, entropy_loss, avg_entropy_loss
+        return x_rec, rec_loss
