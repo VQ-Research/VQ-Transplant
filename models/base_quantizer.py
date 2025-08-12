@@ -105,15 +105,16 @@ class BaseQuantizer(nn.Module):
         
         if args.VQ == "wasserstein_vq":
             self.queue = Queue(args)
+            
         if args.residual:
             self.residual = nn.Sequential(
-                nn.Linear(self.codebook_dim, self.codebook_dim*8),
+                nn.Conv2d(self.codebook_dim, self.codebook_dim*8, kernel_size=3)
                 nn.BatchNorm2d(self.codebook_dim*8),
                 nn.SiLU(),
-                nn.Linear(self.codebook_dim*8, self.codebook_dim*8),
+                nn.Conv2d(self.codebook_dim*8, self.codebook_dim*8, kernel_size=3)
                 nn.BatchNorm2d(self.codebook_dim*8),
                 nn.SiLU(),
-                nn.Linear(self.codebook_dim*8, self.codebook_dim),
+                nn.Conv2d(self.codebook_dim*8, self.codebook_dim, kernel_size=3)
             )
 
 class MultiscaleBaseQuantizer(nn.Module):
@@ -139,15 +140,16 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.queue = Queue(args)
 
         self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
+
         if args.residual:
             self.residual = nn.Sequential(
-                nn.Linear(self.codebook_dim, self.codebook_dim*8),
+                nn.Conv2d(self.codebook_dim, self.codebook_dim*8, kernel_size=3)
                 nn.BatchNorm2d(self.codebook_dim*8),
                 nn.SiLU(),
-                nn.Linear(self.codebook_dim*8, self.codebook_dim*8),
+                nn.Conv2d(self.codebook_dim*8, self.codebook_dim*8, kernel_size=3)
                 nn.BatchNorm2d(self.codebook_dim*8),
                 nn.SiLU(),
-                nn.Linear(self.codebook_dim*8, self.codebook_dim),
+                nn.Conv2d(self.codebook_dim*8, self.codebook_dim, kernel_size=3)
             )
 
     ## continous feature (from encoder) into multi-scale image token
