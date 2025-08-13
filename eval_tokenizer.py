@@ -103,6 +103,78 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         model.module.quantizer.eval()
 
     if args.stage == "transplant":
-        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=utilization, perplexity=eval_perplexity)
+        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)
+    else:
+        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss)
+
+def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
+    model.eval()
+    psnr_metric = PSNR()
+    ssim_metric = SSIM()
+    lpips_metric = LPIPS()
+
+    if args.stage == "transplant":
+        ssim, psnr, lpips, rec_loss, quant_error, total_num =  0.0, 0.0, 0.0, 0.0, 0.0, 0
+    if args.stage == "refinement":
+        ssim, psnr, lpips, rec_loss, total_num = 0.0, 0.0, 0.0, 0.0, 0  
+
+    for step, (x, _) in enumerate(val_dataloader):
+        x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
+        batch_size = x.size(0)
+        total_num += batch_size
+        with torch.no_grad():
+            if args.stage == "transplant":
+                x_rec, rec_loss_eval, quant_error_eval = model.module.collect_eval_info_transplant(x)
+                info_pack = Pack(rec_loss=rec_loss_eval, quant_error=quant_error_eval)
+            else:
+                x_rec, rec_loss_eval = model.module.collect_eval_info_refinement(x)
+                info_pack = Pack(rec_loss=rec_loss_eval)
+
+            x_norm = (x + 1.0)/2.0
+            x_rec_norm = (x_rec + 1.0)/2.0
+            batch_lpips = lpips_metric(x_norm, x_rec_norm).sum()
+            batch_psnr = psnr_metric(x_norm, x_rec_norm).sum()
+            batch_ssim = ssim_metric(x_norm, x_rec_norm).sum()
+
+        handler1 = tdist.all_reduce(batch_lpips, async_op=True)
+        handler2 = tdist.all_reduce(batch_psnr, async_op=True)
+        handler3 = tdist.all_reduce(batch_ssim, async_op=True)
+        handler1.wait()
+        handler2.wait()
+        handler3.wait()
+
+        if int(os.environ['LOCAL_RANK']) == 0:
+            ssim += batch_ssim.item()
+            psnr += batch_psnr.item()
+            lpips += batch_lpips.item()
+            rec_loss += info_pack.rec_loss.item() * batch_size
+            if args.stage == "transplant":
+                quant_error += info_pack.quant_error.item() * batch_size
+
+        if args.stage == "transplant":
+            codebook_usage_counts = (histogram_all > 0).float().sum()
+            utilization  = codebook_usage_counts.item() / args.codebook_size
+            avg_probs = histogram_all/histogram_all.sum(0)
+            perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
+
+    eval_psnr = psnr/len_val_set
+    eval_ssim = ssim/len_val_set
+    eval_lpips = lpips/len_val_set
+    eval_rec_loss = rec_loss/total_num
+    if args.stage == "transplant":
+        eval_quant_error = quant_error/total_num
+        eval_utilization = utilization
+        eval_perplexity = perplexity.item()
+
+    model.train()
+    if args.stage == "transplant":
+        model.module.encoder.eval()
+        model.module.decoder.eval()
+    else:
+        model.module.encoder.eval()
+        model.module.quantizer.eval()
+
+    if args.stage == "transplant":
+        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)
     else:
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss)
