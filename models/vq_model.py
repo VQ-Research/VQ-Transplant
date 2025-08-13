@@ -43,7 +43,7 @@ class VQModel(nn.Module):
                 self.quantizer = WassersteinQuantizer(args)
             elif args.VQ == "mmd_vq":
                 self.quantizer = MMDQuantizer(args)
-                
+
         if args.stage == "transplant":
             pretrain_dict = load_file(args.pretrained_tokenizer)
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
@@ -91,36 +91,43 @@ class VQModel(nn.Module):
         assert self.args.stage == "transplant"
         with torch.no_grad():
             z = self.encoder(x)
-        z_q, categorical_loss, prob_commit_loss, entropy_loss, avg_entropy_loss = self.quantizer(z)
+
+        if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False:
+            z_q, quant_error, utilization, perplexity = self.quantizer(z)
+        else:
+            z_q, transplant_loss, quant_error, utilization, perplexity = self.quantizer(z)
+
         with torch.no_grad():
             x_rec = self.decoder(z_q)
-
-        vq_loss = F.mse_loss(z_q, z.detach())
+            
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss  = 10.0 * vq_loss + categorical_loss
-        return transplant_loss, rec_loss, vq_loss, categorical_loss, prob_commit_loss, entropy_loss, avg_entropy_loss
+        if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False: 
+            return  rec_loss, quant_error, utilization, perplexity
+        else:
+            return  transplant_loss, rec_loss, quant_error, utilization, perplexity
     
     def refinement(self, x):
         assert self.args.stage == "refinement"
         with torch.no_grad():
             z = self.encoder(x)
-            z_q, _, _, _, _ = self.quantizer(z)
+            if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False:
+                z_q, _, _, _ = self.quantizer(z)
+            else:
+                z_q, _, _, _, _ = self.quantizer(z)
         x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec
 
     def collect_eval_info_transplant(self, x):
         z = self.encoder(x)
-        z_q, prob_commit_loss, entropy_loss, avg_entropy_loss = self.quantizer.collect_eval_info(z)
+        z_q, quant_error, histogram = self.quantizer.collect_eval_info(z)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
-
-        vq_loss = F.mse_loss(z_q.detach(), z.detach())
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        return x_rec, rec_loss, vq_loss, prob_commit_loss, entropy_loss, avg_entropy_loss
+        return x_rec, rec_loss, quant_error, histogram 
 
     def collect_eval_info_refinement(self, x):
         z = self.encoder(x)
-        z_q, _, _, _ = self.quantizer.collect_eval_info(z)
+        z_q, _, _ = self.quantizer.collect_eval_info(z)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
 
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
