@@ -174,44 +174,127 @@ class PQModel(nn.Module):
         assert self.args.stage == "transplant"
         with torch.no_grad():
             z = self.encoder(x)
+            if self.args.pq == 2:
+                z_1, z_2 = torch.chunk(z, 2, dim=1)
+            elif self.args.pq == 4:
+                z_1, z_2, z_3, z_4 = torch.chunk(z, 4, dim=1)
 
         if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False:
-            z_q, quant_error, utilization, perplexity = self.quantizer(z)
+            if self.args.pq == 2:
+                z_q_1, _, utilization_1, _ = self.quantizer1(z_1)
+                z_q_2, _, utilization_2, _ = self.quantizer2(z_2)
+                z_q = torch.cat((z_q_1, z_q_2), dim=1)
+                utilization = 0.5*(utilization_1 + utilization_2)
+            elif self.args.pq == 4:
+                z_q_1, _, utilization_1, _ = self.quantizer1(z_1)
+                z_q_2, _, utilization_2, _ = self.quantizer2(z_2)
+                z_q_3, _, utilization_3, _ = self.quantizer3(z_3)
+                z_q_4, _, utilization_4, _ = self.quantizer4(z_4)
+                z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
+                utilization = 0.25*(utilization_1 + utilization_2 + utilization_3 + utilization_4)
         else:
-            z_q, transplant_loss, quant_error, utilization, perplexity = self.quantizer(z)
+            if self.args.pq == 2:
+                z_q_1, transplant_loss_1, _, utilization_1, _ = self.quantizer1(z_1)
+                z_q_2, transplant_loss_2, _, utilization_2, _ = self.quantizer2(z_2)
+                transplant_loss = 0.5 * (transplant_loss_1 + transplant_loss_2)
+                z_q = torch.cat((z_q_1, z_q_2), dim=1)
+                utilization = 0.5*(utilization_1 + utilization_2)
+            elif self.args.pq == 4:
+                z_q_1, transplant_loss_1, _, utilization_1, _ = self.quantizer1(z_1)
+                z_q_2, transplant_loss_2, _, utilization_2, _ = self.quantizer2(z_2)
+                z_q_3, transplant_loss_3, _, utilization_3, _ = self.quantizer3(z_3)
+                z_q_4, transplant_loss_4, _, utilization_4, _ = self.quantizer4(z_4)
+                transplant_loss = 0.25 * (transplant_loss_1 + transplant_loss_2 + transplant_loss_3 + transplant_loss_4)
+                z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
+                utilization = 0.25*(utilization_1 + utilization_2 + utilization_3 + utilization_4)
 
+        quant_error = F.mse_loss(z_q.detach(), z.detach())
         with torch.no_grad():
             x_rec = self.decoder(z_q)
             
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False: 
-            return  rec_loss, quant_error, utilization, perplexity
+            return  rec_loss, quant_error, utilization
         else:
-            return  transplant_loss, rec_loss, quant_error, utilization, perplexity
+            return  transplant_loss, rec_loss, quant_error, utilization
     
     def refinement(self, x):
         assert self.args.stage == "refinement"
         with torch.no_grad():
             z = self.encoder(x)
+            if self.args.pq == 2:
+                z_1, z_2 = torch.chunk(z, 2, dim=1)
+            elif self.args.pq == 4:
+                z_1, z_2, z_3, z_4 = torch.chunk(z, 4, dim=1)
+
             if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False:
-                z_q, _, _, _ = self.quantizer(z)
+                if self.args.pq == 2:
+                    z_q_1, _, _, _ = self.quantizer1(z_1)
+                    z_q_2, _, _, _ = self.quantizer2(z_2)
+                    z_q = torch.cat((z_q_1, z_q_2), dim=1)
+                elif self.args.pq == 4:
+                    z_q_1, _, _, _ = self.quantizer1(z_1)
+                    z_q_2, _, _, _ = self.quantizer2(z_2)
+                    z_q_3, _, _, _ = self.quantizer3(z_3)
+                    z_q_4, _, _, _ = self.quantizer4(z_4)
+                    z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
             else:
-                z_q, _, _, _, _ = self.quantizer(z)
+                if self.args.pq == 2:
+                    z_q_1, _, _, _, _ = self.quantizer1(z_1)
+                    z_q_2, _, _, _, _ = self.quantizer2(z_2)
+                    z_q = torch.cat((z_q_1, z_q_2), dim=1)
+                elif self.args.pq == 4:
+                    z_q_1, _, _, _, _ = self.quantizer1(z_1)
+                    z_q_2, _, _, _, _ = self.quantizer2(z_2)
+                    z_q_3, _, _, _, _ = self.quantizer3(z_3)
+                    z_q_4, _, _, _, _ = self.quantizer4(z_4)
+                    z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
+
         x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec
 
     def collect_eval_info_transplant(self, x):
         z = self.encoder(x)
-        z_q, quant_error, histogram = self.quantizer.collect_eval_info(z)
+        if self.args.pq == 2:
+            z_1, z_2 = torch.chunk(z, 2, dim=1)
+        elif self.args.pq == 4:
+            z_1, z_2, z_3, z_4 = torch.chunk(z, 4, dim=1)
+
+        if self.args.pq == 2:
+            z_q_1, _, _ = self.quantizer1.collect_eval_info(z_1)
+            z_q_2, _, _ = self.quantizer2.collect_eval_info(z_2)
+            z_q = torch.cat((z_q_1, z_q_2), dim=1)
+        elif self.args.pq == 4:
+            z_q_1, _, _ = self.quantizer1.collect_eval_info(z_1)
+            z_q_2, _, _ = self.quantizer2.collect_eval_info(z_2)
+            z_q_3, _, _ = self.quantizer3.collect_eval_info(z_3)
+            z_q_4, _, _ = self.quantizer4.collect_eval_info(z_4)
+            z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
+
+        quant_error = F.mse_loss(z_q.detach(), z.detach())
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        return x_rec, rec_loss, quant_error, histogram 
+        return x_rec, rec_loss, quant_error
 
     def collect_eval_info_refinement(self, x):
         z = self.encoder(x)
-        z_q, _, _ = self.quantizer.collect_eval_info(z)
-        x_rec = self.decoder(z_q).clamp_(-1, 1)
+        if self.args.pq == 2:
+            z_1, z_2 = torch.chunk(z, 2, dim=1)
+        elif self.args.pq == 4:
+            z_1, z_2, z_3, z_4 = torch.chunk(z, 4, dim=1)
 
+        if self.args.pq == 2:
+            z_q_1, _, _ = self.quantizer1.collect_eval_info(z_1)
+            z_q_2, _, _ = self.quantizer2.collect_eval_info(z_2)
+            z_q = torch.cat((z_q_1, z_q_2), dim=1)
+        elif self.args.pq == 4:
+            z_q_1, _, _ = self.quantizer1.collect_eval_info(z_1)
+            z_q_2, _, _ = self.quantizer2.collect_eval_info(z_2)
+            z_q_3, _, _ = self.quantizer3.collect_eval_info(z_3)
+            z_q_4, _, _ = self.quantizer4.collect_eval_info(z_4)
+            z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
+            
+        x_rec = self.decoder(z_q).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec, rec_loss
