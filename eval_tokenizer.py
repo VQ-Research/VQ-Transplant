@@ -151,20 +151,12 @@ def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
             if args.stage == "transplant":
                 quant_error += info_pack.quant_error.item() * batch_size
 
-        if args.stage == "transplant":
-            codebook_usage_counts = (histogram_all > 0).float().sum()
-            utilization  = codebook_usage_counts.item() / args.codebook_size
-            avg_probs = histogram_all/histogram_all.sum(0)
-            perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
-
     eval_psnr = psnr/len_val_set
     eval_ssim = ssim/len_val_set
     eval_lpips = lpips/len_val_set
     eval_rec_loss = rec_loss/total_num
     if args.stage == "transplant":
         eval_quant_error = quant_error/total_num
-        eval_utilization = utilization
-        eval_perplexity = perplexity.item()
 
     model.train()
     if args.stage == "transplant":
@@ -172,9 +164,16 @@ def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
         model.module.decoder.eval()
     else:
         model.module.encoder.eval()
-        model.module.quantizer.eval()
+        if args.pq == 2:
+            model.module.quantizer1.eval()
+            model.module.quantizer2.eval()
+        elif args.pq == 4:
+            model.module.quantizer1.eval()
+            model.module.quantizer2.eval()
+            model.module.quantizer3.eval()
+            model.module.quantizer4.eval()
 
     if args.stage == "transplant":
-        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)
+        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error)
     else:
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss)
