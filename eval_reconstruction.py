@@ -18,11 +18,16 @@ import numpy as np
 import argparse
 import itertools
 from data.augmentation import center_crop_arr
+from data.lsun_church import LSUNChurchesDataset
+from data.lsun_bedroom import LSUNBedroomsDataset
 from metric.metric import PSNR, LPIPS, SSIM
 
 paths = {
-    "ImageNet": "ImageNet",
+    "ImageNet": "imagenet",
     "FFHQ": "FFHQ",
+    "CelebAHQ":"CelebAHQ",
+    "Bedrooms":"LSUN-Bedrooms",
+    "Churches": "LSUN-Churches",
 }
 
 def create_npz_from_sample_folder(sample_dir, num=50000):
@@ -52,6 +57,28 @@ def load_dataset(args, batch_size=16):
         val_set = ImageFolder(root=os.path.join(data_path, 'val'), transform=transform)
     elif args.dataset_name == "FFHQ":
         val_set = ImageFolder(root=data_path, transform=eval_transform)
+    elif args.dataset_name == "CelebAHQ":
+        val_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=eval_transform)
+    elif args.dataset_name == "Bedrooms":
+        val_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
+    elif args.dataset_name == "Churches":
+        val_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
+
+    len_val_set = len(val_set)
+    dataloader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=6, drop_last=False)
+    return dataloader, len_val_set
+
+def load_dataset(args, batch_size=16):
+    transform = transforms.Compose([
+        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, 256)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
+    ])
+    data_path = os.path.join(args.dataset_dir, paths[args.dataset_name])
+    if args.dataset_name == "ImageNet":
+        val_set = ImageFolder(root=os.path.join(data_path, 'val'), transform=transform)
+    elif args.dataset_name == "FFHQ":
+        val_set = ImageFolder(root=data_path, transform=eval_transform)
 
     len_val_set = len(val_set)
     dataloader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=6, drop_last=False)
@@ -59,10 +86,10 @@ def load_dataset(args, batch_size=16):
 
 def eval_reconstruction(args, model):
     val_dataloader, len_val_set = load_dataset(args, batch_size=16)
-    if args.use_categorical_quantization == True:
-        reconstruction_name = '{}_{}_{}_{}'.format(args.model_name, args.use_categorical_quantization, args.codebook_size, args.L)
+    if args.pq == 1:
+        reconstruction_name = '{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.codebook_size, args.use_multiscale, args.residual)
     else:
-        reconstruction_name = '{}_{}_{}'.format(args.model_name, args.use_categorical_quantization, args.codebook_size)
+        reconstruction_name = '{}_{}_{}'.format(args.VQ, args.stage, args.pq)
     
     reconstruction_path = os.path.join(args.reconstruction_dir, reconstruction_name)
     os.makedirs(reconstruction_path, exist_ok=True)
@@ -77,7 +104,10 @@ def eval_reconstruction(args, model):
         x = x.cuda()
         with torch.no_grad():
             if args.stage == "transplant":
-                x_rec, _, _, _, _, _ = model.module.collect_eval_info_transplant(x)
+                if args.pq == 1:
+                    x_rec, _, _, _ = model.module.collect_eval_info_transplant(x)
+                else:
+                    x_rec, _, _ = model.module.collect_eval_info_transplant(x)
             else:
                 x_rec, _ = model.module.collect_eval_info_refinement(x)
             
@@ -111,10 +141,10 @@ def eval_reconstruction(args, model):
 
 def eval_reconstruction_epoch(args, model, epoch):
     val_dataloader, len_val_set = load_dataset(args, batch_size=16)
-    if args.use_categorical_quantization == True:
-        reconstruction_name = '{}_{}_{}_{}_{}'.format(args.model_name, args.use_categorical_quantization, args.codebook_size, args.L, epoch)
+    if args.pq == 1:
+        reconstruction_name = '{}_{}_{}_{}_{}_{}'.format(args.VQ, args.stage, args.codebook_size, args.use_multiscale, args.residual, epoch)
     else:
-        reconstruction_name = '{}_{}_{}_{}'.format(args.model_name, args.use_categorical_quantization, args.codebook_size, epoch)
+        reconstruction_name = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.pq, epoch)
     
     reconstruction_path = os.path.join(args.reconstruction_dir, reconstruction_name)
     os.makedirs(reconstruction_path, exist_ok=True)
@@ -129,7 +159,10 @@ def eval_reconstruction_epoch(args, model, epoch):
         x = x.cuda()
         with torch.no_grad():
             if args.stage == "transplant":
-                x_rec, _, _, _, _, _ = model.module.collect_eval_info_transplant(x)
+                if args.pq == 1:
+                    x_rec, _, _, _ = model.module.collect_eval_info_transplant(x)
+                else:
+                    x_rec, _, _ = model.module.collect_eval_info_transplant(x)
             else:
                 x_rec, _ = model.module.collect_eval_info_refinement(x)
             
