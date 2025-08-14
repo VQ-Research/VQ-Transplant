@@ -117,7 +117,6 @@ class BaseQuantizer(nn.Module):
                 nn.SiLU(),
                 nn.Linear(1024, self.codebook_dim),
             )
-
         self.projector_out = nn.Sequential(
                 nn.Linear(self.codebook_dim, 1024),
                 nn.BatchNorm2d(1024),
@@ -153,7 +152,6 @@ class MultiscaleBaseQuantizer(nn.Module):
             self.queue = Queue(args)
 
         self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
-
         self.projector_in = nn.Sequential(
                 nn.Linear(self.codebook_dim, 1024),
                 nn.BatchNorm2d(1024),
@@ -163,7 +161,6 @@ class MultiscaleBaseQuantizer(nn.Module):
                 nn.SiLU(),
                 nn.Linear(1024, self.codebook_dim),
             )
-
         self.projector_out = nn.Sequential(
                 nn.Linear(self.codebook_dim, 1024),
                 nn.BatchNorm2d(1024),
