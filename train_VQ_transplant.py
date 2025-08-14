@@ -82,8 +82,8 @@ def main_worker(args):
             all_para = code_para + model_para
         else:
             optimizer = torch.optim.AdamW(code_para, lr=0.001, betas=(0.9, 0.95), weight_decay=0.0001)
+            all_para = code_para
         
-
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
         if args.use_multiscale== True and args.residual==True:
             model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.quantizer.phi.parameters()) + list(vq_model.quantizer.residual.parameters())
@@ -109,7 +109,6 @@ def main_worker(args):
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
     vq_model = DDP(vq_model.to(device), device_ids=[args.gpu], find_unused_parameters=False)
     vq_model.train()
-
 
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error': [], 'utilization':[], 'perplexity':[]}
     train_loss = LossManager()
@@ -142,23 +141,13 @@ def main_worker(args):
                                 break
 
                         if has_nan == False:
-                            if args.use_multiscale == True:
-                                torch.nn.utils.clip_grad_norm_(model_para, 1.0)
-                            torch.nn.utils.clip_grad_norm_(code_para, 1.0)
+                            torch.nn.utils.clip_grad_norm_(all_para, 1.0)
                             optimizer.step()
                         else:
                             print("skip gradient update!")
                     else:
-                        if args.use_multiscale == True:
-                            torch.nn.utils.clip_grad_norm_(model_para, 1.0)
-                        if args.VQ != "ema_vq":
-                            torch.nn.utils.clip_grad_norm_(code_para, 1.0)
+                        torch.nn.utils.clip_grad_norm_(model_para, 1.0)
                         optimizer.step()
-            
-                
-                
-                torch.nn.utils.clip_grad_norm_(code_para, 1.0)
-                optimizer.step()
 
             train_loss.add_loss(info_pack)
             if int(os.environ['LOCAL_RANK']) == 0 and (step+1) %10 ==0:
