@@ -71,14 +71,18 @@ def main_worker(args):
         if args.use_multiscale== True and args.residual==True:
             model_para = list(vq_model.quantizer.phi.parameters()) + list(vq_model.quantizer.residual.parameters())
             optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.001}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+            all_para = code_para + model_para
         elif args.use_multiscale== True and args.residual==False:
             model_para = list(vq_model.quantizer.phi.parameters())
             optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.001}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+            all_para = code_para + model_para
         elif args.use_multiscale== False and args.residual==True:
             model_para = list(vq_model.quantizer.residual.parameters())
             optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.001}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+            all_para = code_para + model_para
         else:
             optimizer = torch.optim.AdamW(code_para, lr=0.001, betas=(0.9, 0.95), weight_decay=0.0001)
+        
 
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
         if args.use_multiscale== True and args.residual==True:
@@ -101,13 +105,13 @@ def main_worker(args):
         elif args.use_multiscale== False and args.residual==True:
             model_para = list(vq_model.quantizer.residual.parameters())
             optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
-            pass
-    
+        
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
     vq_model = DDP(vq_model.to(device), device_ids=[args.gpu], find_unused_parameters=False)
     vq_model.train()
 
-    results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'vq_loss': [], 'prob_commit_loss':[], 'entropy_loss':[], 'avg_entropy_loss':[]}
+
+    results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error': [], 'utilization':[], 'perplexity':[]}
     train_loss = LossManager()
     print("Start training...")
     start_epoch = 1 
@@ -122,10 +126,37 @@ def main_worker(args):
             with torch.autocast(device_type='cuda', dtype=torch.float32):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
-                transplant_loss, rec_loss, vq_loss, categorical_loss, prob_commit_loss, entropy_loss, avg_entropy_loss = vq_model.module.transplant(x)
-                info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, vq_loss=vq_loss, categorical_loss=categorical_loss, prob_commit_loss=prob_commit_loss, entropy_loss=entropy_loss, avg_entropy_loss=avg_entropy_loss)
+
+                if args.VQ == "ema_vq" and args.use_multiscale==False and args.residual==False: 
+                    rec_loss, quant_error, utilization, perplexity = vq_model.module.transplant(x)
+                    info_pack = Pack(rec_loss=rec_loss, quant_error=quant_error, utilization=utilization, perplexity=perplexity)
+                else:
+                    transplant_loss, rec_loss, quant_error, utilization, perplexity = vq_model.module.transplant(x)
+                    info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, quant_error=quant_error, utilization=utilization, perplexity=perplexity)
+                    transplant_loss.backward()
+                    if args.VQ == "wasserstein_vq":
+                        has_nan = False            
+                        for param in all_para:
+                            if param.grad is not None and (torch.isnan(param.grad).any() or torch.isinf(param.grad).any()):
+                                has_nan = True
+                                break
+
+                        if has_nan == False:
+                            if args.use_multiscale == True:
+                                torch.nn.utils.clip_grad_norm_(model_para, 1.0)
+                            torch.nn.utils.clip_grad_norm_(code_para, 1.0)
+                            optimizer.step()
+                        else:
+                            print("skip gradient update!")
+                    else:
+                        if args.use_multiscale == True:
+                            torch.nn.utils.clip_grad_norm_(model_para, 1.0)
+                        if args.VQ != "ema_vq":
+                            torch.nn.utils.clip_grad_norm_(code_para, 1.0)
+                        optimizer.step()
+            
                 
-                transplant_loss.backward()
+                
                 torch.nn.utils.clip_grad_norm_(code_para, 1.0)
                 optimizer.step()
 
@@ -141,7 +172,7 @@ def main_worker(args):
         
         if epoch % args.eval_epochs == 0:
             with torch.no_grad():
-                results_pack = eval_one_epoch(args, vq_model, epoch, val_dataloader, len_val_set)
+                results_pack = eval_one_epoch_vq(args, vq_model, epoch, val_dataloader, len_val_set)
 
             if int(os.environ['LOCAL_RANK']) == 0:
                 results_eval['epoch'].append(epoch)

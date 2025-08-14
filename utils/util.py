@@ -12,19 +12,10 @@ import yaml
 from torch import inf
 import shutil
 
-def adjust_learning_rate(optimizer1, optimizer2, step, args, min_lr_constant=100):
-    if step < args.warmup_iters:
-        lr = args.lr * (step / args.warmup_iters)
-    elif step > args.decay_iters:
-        lr = args.lr/min_lr_constant
-    else:
-        decay_ratio = float(step - args.warmup_iters) / (args.decay_iters - args.warmup_iters)
-        assert 0 <= decay_ratio <= 1
-        coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
-        lr = args.lr / min_lr_constant + coeff * (args.lr - args.lr / min_lr_constant)
-
-    optimizer1.param_groups[0]["lr"] = lr
-    optimizer2.param_groups[0]["lr"] = lr
+def adjust_learning_rate(optimizer, cur_step, total_steps, init_lr, min_lr_constant=50.):
+    min_lr = init_lr/min_lr_constant
+    lr =  min_lr + (init_lr-min_lr) * (1.0 - cur_step/total_steps)
+    optimizer.param_groups[0]["lr"] = lr
     return lr
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
