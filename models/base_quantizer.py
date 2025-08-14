@@ -90,6 +90,8 @@ class BaseQuantizer(nn.Module):
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
+        self.alpha = args.alpha
+        self.beta = args.beta
         self.decay = 0.8
         if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "mmd_vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
@@ -106,13 +108,25 @@ class BaseQuantizer(nn.Module):
         if args.VQ == "wasserstein_vq":
             self.queue = Queue(args)
 
-        if args.residual:
-            self.residual = nn.Sequential(
-                nn.Conv2d(self.codebook_dim, self.codebook_dim*8, kernel_size=3)
-                nn.BatchNorm2d(self.codebook_dim*8),
+        self.projector_in = nn.Sequential(
+                nn.Linear(self.codebook_dim, 1024),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(self.codebook_dim*8, self.codebook_dim, kernel_size=3)
+                nn.Linear(1024, 1024),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Linear(1024, self.codebook_dim),
             )
+
+        self.projector_out = nn.Sequential(
+                nn.Linear(self.codebook_dim, 1024),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Linear(1024, 1024),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Linear(1024, self.codebook_dim),
+            )s
 
 class MultiscaleBaseQuantizer(nn.Module):
     def __init__(self, args):
@@ -120,6 +134,8 @@ class MultiscaleBaseQuantizer(nn.Module):
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
+        self.alpha = args.alpha
+        self.beta = args.beta
         self.decay = 0.8
         if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "mmd_vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
@@ -138,13 +154,26 @@ class MultiscaleBaseQuantizer(nn.Module):
 
         self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
 
-        if args.residual:
-            self.residual = nn.Sequential(
-                nn.Conv2d(self.codebook_dim, self.codebook_dim*8, kernel_size=3)
-                nn.BatchNorm2d(self.codebook_dim*8),
+        self.projector_in = nn.Sequential(
+                nn.Linear(self.codebook_dim, 1024),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(self.codebook_dim*8, self.codebook_dim, kernel_size=3)
+                nn.Linear(1024, 1024),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Linear(1024, self.codebook_dim),
             )
+
+        self.projector_out = nn.Sequential(
+                nn.Linear(self.codebook_dim, 1024),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Linear(1024, 1024),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Linear(1024, self.codebook_dim),
+            )
+
 
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK

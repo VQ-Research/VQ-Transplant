@@ -1,0 +1,58 @@
+/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/launch.py:208: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use-env is set by default in torchrun.
+If your script expects `--local-rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  main()
+[rank0]:[W814 01:04:29.868589927 ProcessGroupNCCL.cpp:4561] [PG ID 0 PG GUID 0 Rank 0]  using GPU 0 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect. Specify device_ids in barrier() to force use of a particular device, or call init_process_group() with a device_id.
+Downloading: "https://download.pytorch.org/models/alexnet-owt-7be5be79.pth" to /home/sunset/.cache/torch/hub/checkpoints/alexnet-owt-7be5be79.pth
+  0%|          | 0.00/233M [00:00<?, ?B/s]  5%|▍         | 11.0M/233M [00:00<00:02, 115MB/s]  9%|▉         | 22.1M/233M [00:00<00:01, 116MB/s] 14%|█▍        | 33.5M/233M [00:00<00:01, 117MB/s] 19%|█▉        | 44.8M/233M [00:00<00:01, 117MB/s] 24%|██▍       | 56.0M/233M [00:00<00:01, 117MB/s] 29%|██▉       | 67.2M/233M [00:00<00:01, 117MB/s] 34%|███▎      | 78.5M/233M [00:00<00:01, 117MB/s] 39%|███▊      | 89.8M/233M [00:00<00:01, 117MB/s] 43%|████▎     | 101M/233M [00:00<00:01, 117MB/s]  48%|████▊     | 112M/233M [00:01<00:01, 117MB/s] 53%|█████▎    | 124M/233M [00:01<00:00, 117MB/s] 58%|█████▊    | 135M/233M [00:01<00:00, 117MB/s] 63%|██████▎   | 146M/233M [00:01<00:00, 117MB/s] 67%|██████▋   | 157M/233M [00:01<00:00, 117MB/s] 72%|███████▏  | 168M/233M [00:01<00:00, 117MB/s] 77%|███████▋  | 180M/233M [00:01<00:00, 117MB/s] 82%|████████▏ | 191M/233M [00:01<00:00, 117MB/s] 87%|████████▋ | 202M/233M [00:01<00:00, 117MB/s] 92%|█████████▏| 214M/233M [00:01<00:00, 118MB/s] 96%|█████████▋| 225M/233M [00:02<00:00, 117MB/s]100%|██████████| 233M/233M [00:02<00:00, 117MB/s]
+  0%|          | 0.00/5.87k [00:00<?, ?B/s]100%|██████████| 5.87k/5.87k [00:00<00:00, 3.51MB/s]
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/project/6105494/sunset/VQ-Projects/VQ-Transplant/code/train_VQ_transplant.py", line 197, in <module>
+[rank0]:     main_worker(args)
+[rank0]:   File "/project/6105494/sunset/VQ-Projects/VQ-Transplant/code/train_VQ_transplant.py", line 165, in main_worker
+[rank0]:     results_pack = eval_one_epoch_vq(args, vq_model, epoch, val_dataloader, len_val_set)
+[rank0]:   File "/project/6105494/sunset/VQ-Projects/VQ-Transplant/code/eval_tokenizer.py", line 67, in eval_one_epoch_vq
+[rank0]:     handler1 = tdist.all_reduce(batch_lpips, async_op=True)
+[rank0]: NameError: name 'tdist' is not defined. Did you mean: 'dist'?
+[rank0]:[W814 03:30:06.064219351 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+E0814 03:30:08.474000 1706570 torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 1706578) of binary: /home/sunset/environment/VQ-Tokenizer/bin/python
+Traceback (most recent call last):
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/launch.py", line 208, in <module>
+    main()
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/typing_extensions.py", line 2956, in wrapper
+    return arg(*args, **kwargs)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/launch.py", line 204, in main
+    launch(args)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/launch.py", line 189, in launch
+    run(args)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/run.py", line 909, in run
+    elastic_launch(
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train_VQ_transplant.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-08-14_03:30:08
+  host      : kn170.paice.vectorinstitute.ai
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 1706578)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

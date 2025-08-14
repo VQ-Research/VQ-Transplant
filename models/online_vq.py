@@ -67,7 +67,8 @@ class OnlineQuantizer(BaseQuantizer):
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
         z = z_enc.permute(0, 2, 3, 1).contiguous()
-        z_flat = z.view(-1, C)
+        z_flat = z.view(-1, C).contiguous()
+        z_flat = self.projector_in(z_flat) 
 
         # distances from z to embeddings
         d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
@@ -75,12 +76,11 @@ class OnlineQuantizer(BaseQuantizer):
             torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape)
+        z_q = self.embedding(token)
+        z_q = self.projector_out(z_q)
 
         # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
-        if self.args.residual:
-            z_dec = z_dec.detach() + self.residual(z_dec.detach())
+        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
 
         quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
         histogram = token.bincount(minlength=self.args.codebook_size).float()

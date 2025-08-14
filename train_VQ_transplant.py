@@ -70,18 +70,18 @@ def main_worker(args):
         code_para = list(vq_model.quantizer.embedding.parameters())
         if args.use_multiscale== True and args.residual==True:
             model_para = list(vq_model.quantizer.phi.parameters()) + list(vq_model.quantizer.residual.parameters())
-            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.001}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
             all_para = code_para + model_para
         elif args.use_multiscale== True and args.residual==False:
             model_para = list(vq_model.quantizer.phi.parameters())
-            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.001}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
             all_para = code_para + model_para
         elif args.use_multiscale== False and args.residual==True:
             model_para = list(vq_model.quantizer.residual.parameters())
-            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.001}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+            optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
             all_para = code_para + model_para
         else:
-            optimizer = torch.optim.AdamW(code_para, lr=0.001, betas=(0.9, 0.95), weight_decay=0.0001)
+            optimizer = torch.optim.AdamW(code_para, lr=0.01, betas=(0.9, 0.95), weight_decay=0.0001)
             all_para = code_para
         
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":

@@ -22,14 +22,16 @@ class WassersteinQuantizer(BaseQuantizer):
         N = z.size(0)
         D = z.size(1)
 
-        c = self.embedding.weight
+        std = z.std(dim=0).max().detach()
+        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
-        z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
+        z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
+        c = self.embedding.weight /  (std + 1e-8)
         c_mean = c.mean(0)
-        c_covariance = torch.cov(c.t()) + 1e-6 * torch.eye(D, device=z.device)
+        c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
         ### calculation of part1
         part_mean =  torch.sum(torch.multiply(z_mean - c_mean, z_mean - c_mean))
@@ -108,7 +110,8 @@ class WassersteinQuantizer(BaseQuantizer):
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
         z = z_enc.permute(0, 2, 3, 1).contiguous()
-        z_flat = z.view(-1, C)
+        z_flat = z.view(-1, C).contiguous()
+        z_flat = self.projector_in(z_flat) 
 
         # distances from z to embeddings
         d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
@@ -116,12 +119,11 @@ class WassersteinQuantizer(BaseQuantizer):
             torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape)
+        z_q = self.embedding(token)
+        z_q = self.projector_out(z_q)
 
         # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
-        if self.args.residual:
-            z_dec = z_dec.detach() + self.residual(z_dec.detach())
+        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
 
         quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
         histogram = token.bincount(minlength=self.args.codebook_size).float()

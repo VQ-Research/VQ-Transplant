@@ -18,8 +18,9 @@ class EMAQuantizer(BaseQuantizer):
         B, C, H, W = z_enc.shape
         # reshape z_enc -> (batch, height, width, channel) and flatten
         #z, 'b c h w -> b h w c'
-        z = rearrange(z_enc, 'b c h w -> b h w c')
-        z_flat = z.reshape(-1, C)
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
+        z_flat = z.reshape(-1, C).contiguous()  
+        z_flat = self.projector_in(z_flat) 
         
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
         d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
@@ -27,7 +28,7 @@ class EMAQuantizer(BaseQuantizer):
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape)
+        z_q = self.embedding(token)
         encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
         if self.training:
             #EMA cluster size
@@ -39,12 +40,12 @@ class EMAQuantizer(BaseQuantizer):
             #normalize embed_avg and update weight
             self.embedding.weight_update(self.args.codebook_size)
 
+        commit_loss = self.beta * F.mse_loss(z_q.detach(), z_flat) 
         # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
-
-        if self.args.residual:
-            z_dec = z_dec.detach() + self.residual(z_dec.detach())
-            loss = F.mse_loss(z_dec, z_enc.detach())
+        z_q = z_flat + (z_q - z_flat).detach()
+        z_q = self.projector_out(z_q)
+        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
+        vq_loss = F.mse_loss(z_dec, z_enc.detach())
 
         ## Criterion Triple defined in the paper
         quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
@@ -59,15 +60,14 @@ class EMAQuantizer(BaseQuantizer):
         avg_probs = histogram/histogram.sum(0)
         codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        if self.args.residual:
-            return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
-        else:
-            return z_dec, quant_error, codebook_utilization, codebook_perplexity
+        loss = vq_loss + commit_loss
+        return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
         z = z_enc.permute(0, 2, 3, 1).contiguous()
-        z_flat = z.view(-1, C)
+        z_flat = z.view(-1, C).contiguous()
+        z_flat = self.projector_in(z_flat) 
 
         # distances from z to embeddings
         d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
@@ -75,12 +75,11 @@ class EMAQuantizer(BaseQuantizer):
             torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape)
+        z_q = self.embedding(token)
+        z_q = self.projector_out(z_q)
 
         # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
-        if self.args.residual:
-            z_dec = z_dec.detach() + self.residual(z_dec.detach())
+        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
 
         quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
         histogram = token.bincount(minlength=self.args.codebook_size).float()

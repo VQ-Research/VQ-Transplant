@@ -22,7 +22,7 @@ import torchvision
 from data.dataloader import build_dataloader
 import torchvision.models as torchvision_models
 from torchvision import models, datasets, transforms
-from torch import distributed as dist
+from torch import distributed as tdist
 import itertools
 from copy import deepcopy
 

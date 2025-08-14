@@ -15,7 +15,7 @@ from utils.misc import str2bool
 import ruamel.yaml as yaml
 
 def parse_arg():
-    parser = argparse.ArgumentParser(description='VQ-Transplant based on SANA Tokenizer.') 
+    parser = argparse.ArgumentParser(description='VQ-Transplant based on pretrained DCAE-SANA Tokenizer.') 
 
     ### Dataset and Dataloader Configuration
     parser.add_argument('--dataset_dir', default="/project/6105494/shared/data/", type=str, help='the directory of dataset') 
@@ -29,12 +29,14 @@ def parse_arg():
     parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8", type=str, help='multi-scale patch size.')
     parser.add_argument('--max_patch_size', default=8, type=int, help='the maximum patch size.')
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
-    parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors.')
+    parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors for pq and vq.')
     parser.add_argument('--project_dim', default=16, type=int, help='the dimension of after projector in fsq, bsq, and lfq.')
     parser.add_argument('--pq', default=1, type=int, help='the modules of product quantizer.', choices=[1, 2, 4, 8])
     parser.add_argument('--L', default=4, type=int, help='finite discrete values for each dimension.', choices=[2, 3, 4, 5, 6, 8])
 
     ### Loss Configuration
+    parser.add_argument('--alpha', type=float, default=1.0, help="transplant stage: the hyperparameter of code commit loss.")
+    parser.add_argument('--beta', type=float, default=0.2, help="transplant stage: the hyperparameter of feature commit loss.")
     parser.add_argument('--gamma', type=float, default=0.5, help="transplant stage: wasserstein loss or mmd loss.")
     parser.add_argument('--disc_weight', type=float, default=0.2, help="refinement stage: discriminator loss weight for gan training")
     parser.add_argument('--lecam_loss_weight', type=float, default=0.001, help='refinement stage: lecam_loss_weight')
@@ -42,7 +44,6 @@ def parse_arg():
 
     ### Training Configuration
     parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'online_vq', 'mmd_vq', 'original_sana', 'bsq', 'fsq', 'lfq'])
-    parser.add_argument('--residual', action='store_true', help='during the transplant phase, whether use the residual network for quantization approaches.')
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--transplant_epochs', type=int, default=5, help="training epochs, 5 epochs for transplant stage.")
     parser.add_argument('--refinement_epochs', type=int, default=5, help="training epochs, 5 epochs for refinement stage.")
@@ -102,7 +103,7 @@ def parse_arg():
         args.refinement_epochs = 10
         args.eval_epochs = 2
     else:
-        args.transplant_epochs = 20
+        args.transplant_epochs = 40
         args.refinement_epochs = 20
         args.eval_epochs = 4
 
@@ -121,17 +122,17 @@ def parse_arg():
     if args.VQ == "original_sana":
         args.loss_pre = 'loss_'
     elif args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
-        args.loss_pre = 'loss_{}_{}'.format(args.gamma, args.disc_weight)
+        args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.alpha, args.beta, args.gamma, args.disc_weight)
     else:
-        args.loss_pre = 'loss_{}'.format(args.disc_weight)
+        args.loss_pre = 'loss_{}_{}'.format(args.beta, args.disc_weight)
 
     ### train prefix 
     if args.VQ == "original_sana":
         args.training_pre = '{}'.format(args.VQ)
     elif args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
-        args.training_pre = '{}_{}_{}_{}'.format(args.VQ, args.stage, args.use_multiscale, args.residual)
+        args.training_pre = '{}_{}_{}'.format(args.VQ, args.stage, args.use_multiscale)
     else:
-        args.training_pre = '{}_{}_{}'.format(args.VQ, args.stage, args.residual)
+        args.training_pre = '{}_{}'.format(args.VQ, args.stage)
     args.saver_name_pre = args.training_pre + '_' + args.data_pre + '_' + args.model_pre + '_' + args.loss_pre
 
     dict_args = vars(args)
