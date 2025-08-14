@@ -35,8 +35,6 @@ def parse_arg():
     parser.add_argument('--L', default=4, type=int, help='finite discrete values for each dimension.', choices=[2, 3, 4, 5, 6, 8])
 
     ### Loss Configuration
-    parser.add_argument('--alpha', type=float, default=1.0, help="transplant stage: commit_loss for code vectors.")
-    parser.add_argument('--beta', type=float, default=0.2, help="transplant stage: commit_loss for latent feature.")
     parser.add_argument('--gamma', type=float, default=0.5, help="transplant stage: wasserstein loss or mmd loss.")
     parser.add_argument('--disc_weight', type=float, default=0.2, help="refinement stage: discriminator loss weight for gan training")
     parser.add_argument('--lecam_loss_weight', type=float, default=0.001, help='refinement stage: lecam_loss_weight')
@@ -123,9 +121,9 @@ def parse_arg():
     if args.VQ == "original_sana":
         args.loss_pre = 'loss_'
     elif args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
-        args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.alpha, args.beta, args.gamma, args.disc_weight)
+        args.loss_pre = 'loss_{}_{}'.format(args.gamma, args.disc_weight)
     else:
-        args.loss_pre = 'loss_{}_{}_{}'.format(args.alpha, args.beta, args.disc_weight)
+        args.loss_pre = 'loss_{}'.format(args.disc_weight)
 
     ### train prefix 
     if args.VQ == "original_sana":

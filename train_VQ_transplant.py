@@ -109,6 +109,8 @@ def main_worker(args):
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
     vq_model = DDP(vq_model.to(device), device_ids=[args.gpu], find_unused_parameters=False)
     vq_model.train()
+    vq_model.module.encoder.eval()
+    vq_model.module.decoder.eval()
 
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error': [], 'utilization':[], 'perplexity':[]}
     train_loss = LossManager()
@@ -139,7 +141,6 @@ def main_worker(args):
                             if param.grad is not None and (torch.isnan(param.grad).any() or torch.isinf(param.grad).any()):
                                 has_nan = True
                                 break
-
                         if has_nan == False:
                             torch.nn.utils.clip_grad_norm_(all_para, 1.0)
                             optimizer.step()
@@ -169,10 +170,9 @@ def main_worker(args):
                 results_eval['ssim'].append(results_pack.ssim)
                 results_eval['lpips'].append(results_pack.lpips)
                 results_eval['rec_loss'].append(results_pack.rec_loss)
-                results_eval['vq_loss'].append(results_pack.vq_loss)
-                results_eval['prob_commit_loss'].append(results_pack.prob_commit_loss)
-                results_eval['entropy_loss'].append(results_pack.entropy_loss)
-                results_eval['avg_entropy_loss'].append(results_pack.avg_entropy_loss)
+                results_eval['quant_error'].append(results_pack.quant_error)
+                results_eval['utilization'].append(results_pack.utilization)
+                results_eval['perplexity'].append(results_pack.perplexity)
                 
                 results_val_len = len(results_eval['epoch'])
                 data_frame = pd.DataFrame(data=results_eval, index=range(1, results_val_len+1))
