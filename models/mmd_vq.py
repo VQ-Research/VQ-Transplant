@@ -49,15 +49,14 @@ class MMDQuantizer(BaseQuantizer):
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape)
-        commit_loss = F.mse_loss(z_q, z.detach())
+        z_q = self.embedding(token)
+        commit_loss = self.beta * F.mse_loss(z_q.detach(), z_flat) + self.alpha * F.mse_loss(z_q, z_flat.detach())
 
-        # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
-
-        if self.args.residual:
-            z_dec = z_dec.detach() + self.residual(z_dec.detach())
-            residual_loss = F.mse_loss(z_dec, z_enc.detach())
+        ## adjuest the shape back to match original input shape
+        z_q = z_flat + (z_q - z_flat).detach()
+        z_q = self.projector_out(z_q)
+        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
+        vq_loss = F.mse_loss(z_dec, z_enc.detach())
 
         ## Criterion Triple defined in the paper
         quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
@@ -72,10 +71,7 @@ class MMDQuantizer(BaseQuantizer):
         avg_probs = histogram/histogram.sum(0)
         codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        if self.args.residual:
-            loss = commit_loss + self.args.gamma * mmd_loss + residual_loss
-        else:
-            loss = commit_loss + self.args.gamma * mmd_loss
+        loss = commit_loss + self.args.gamma * mmd_loss + vq_loss
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):

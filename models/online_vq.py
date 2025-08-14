@@ -19,8 +19,9 @@ class OnlineQuantizer(BaseQuantizer):
         B, C, H, W = z_enc.shape
         # reshape z_enc -> (batch, height, width, channel) and flatten
         #z, 'b c h w -> b h w c'
-        z = rearrange(z_enc, 'b c h w -> b h w c')
-        z_flat = z.reshape(-1, C)
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
+        z_flat = z.reshape(-1, C).contiguous()  
+        z_flat = self.projector_in(z_flat) 
         
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
         d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
@@ -28,15 +29,14 @@ class OnlineQuantizer(BaseQuantizer):
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape)
-        commit_loss = F.mse_loss(z_q, z.detach())
+        z_q = self.embedding(token)
+        commit_loss = self.beta * F.mse_loss(z_q.detach(), z_flat) + self.alpha * F.mse_loss(z_q, z_flat.detach())
 
-        # adjuest the shape back to match original input shape
-        z_dec = z_q.permute(0, 3, 1, 2).contiguous()
-
-        if self.args.residual:
-            z_dec = z_dec.detach() + self.residual(z_dec.detach())
-            residual_loss = F.mse_loss(z_dec, z_enc.detach())
+        ## adjuest the shape back to match original input shape
+        z_q = z_flat + (z_q - z_flat).detach()
+        z_q = self.projector_out(z_q)
+        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
+        vq_loss = F.mse_loss(z_dec, z_enc.detach())
 
         histogram = token.bincount(minlength=self.codebook_size).float()
         handler = tdist.all_reduce(histogram, async_op=True)
@@ -58,10 +58,7 @@ class OnlineQuantizer(BaseQuantizer):
         codebook_utilization = codebook_usage_counts.item() / self.args.codebook_size
         codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        if self.args.residual:
-            loss = commit_loss + residual_loss
-        else:
-            loss = commit_loss
+        loss = vq_loss + commit_loss
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
     def collect_eval_info(self, z_enc):
