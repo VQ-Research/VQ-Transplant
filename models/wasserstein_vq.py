@@ -16,7 +16,7 @@ class WassersteinQuantizer(BaseQuantizer):
         self.args = args
 
     def calc_wasserstein_loss(self, z=None):
-        if z==None:
+        if z == None:
             z = self.queue.obtain_feature_from_queue()
 
         N = z.size(0)
@@ -138,20 +138,22 @@ class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
         self.args = args
 
     def calc_wasserstein_loss(self, z=None):
-        if z==None:
+        if z == None:
             z = self.queue.obtain_feature_from_queue()
 
         N = z.size(0)
         D = z.size(1)
 
-        c = self.embedding.weight
+        std = z.std(dim=0).max().detach()
+        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
-        z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
-        z_covariance = z_covariance.detach() 
+        z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
+        z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
+        c = self.embedding.weight /  (std + 1e-8)
         c_mean = c.mean(0)
-        c_covariance = torch.cov(c.t()) + 1e-6 * torch.eye(D, device=z.device)
+        c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
         ### calculation of part1
         part_mean =  torch.sum(torch.multiply(z_mean - c_mean, z_mean - c_mean))

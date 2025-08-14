@@ -36,8 +36,9 @@ class MMDQuantizer(BaseQuantizer):
         B, C, H, W = z_enc.shape
         # reshape z_enc -> (batch, height, width, channel) and flatten
         #z, 'b c h w -> b h w c'
-        z = rearrange(z_enc, 'b c h w -> b h w c')
-        z_flat = z.reshape(-1, C)
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
+        z_flat = z.reshape(-1, C).contiguous()  
+        z_flat = self.projector_in(z_flat) 
 
         ## The only difference to the Vanilla Quantizer
         mmd_loss = self.calc_gaussian_mmd_loss(z_flat.detach())
