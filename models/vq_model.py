@@ -92,28 +92,18 @@ class VQModel(nn.Module):
         with torch.no_grad():
             z = self.encoder(x)
 
-        if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False:
-            z_q, quant_error, utilization, perplexity = self.quantizer(z)
-        else:
-            z_q, transplant_loss, quant_error, utilization, perplexity = self.quantizer(z)
-
+        z_q, transplant_loss, quant_error, utilization, perplexity = self.quantizer(z)
         with torch.no_grad():
             x_rec = self.decoder(z_q)
             
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False: 
-            return  rec_loss, quant_error, utilization, perplexity
-        else:
-            return  transplant_loss, rec_loss, quant_error, utilization, perplexity
+        return  transplant_loss, rec_loss, quant_error, utilization, perplexity
     
     def refinement(self, x):
         assert self.args.stage == "refinement"
         with torch.no_grad():
             z = self.encoder(x)
-            if self.args.VQ == "ema_vq" and self.args.use_multiscale==False and self.args.residual==False:
-                z_q, _, _, _ = self.quantizer(z)
-            else:
-                z_q, _, _, _, _ = self.quantizer(z)
+            z_q, _, _, _, _ = self.quantizer(z)
         x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec
@@ -129,6 +119,5 @@ class VQModel(nn.Module):
         z = self.encoder(x)
         z_q, _, _ = self.quantizer.collect_eval_info(z)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
-
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec, rec_loss
