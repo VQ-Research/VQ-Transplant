@@ -73,20 +73,19 @@ def main_worker(args):
         else:
             model_para = list(vq_model.quantizer.projector_in.parameters()) + list(vq_model.quantizer.projector_out.parameters()) 
         all_para = code_para + model_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.002}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
         if args.use_multiscale== True:
             model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.quantizer.phi.parameters()) + list(vq_model.quantizer.projector_in.parameters()) + list(vq_model.quantizer.projector_out.parameters()) 
         else:
             model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.quantizer.projector_in.parameters()) + list(vq_model.quantizer.projector_out.parameters()) 
-        optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
+        optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "ema_vq":
         if args.use_multiscale== True:
             model_para = list(vq_model.quantizer.phi.parameters()) + list(vq_model.quantizer.projector_in.parameters()) + list(vq_model.quantizer.projector_out.parameters()) 
         else:
             model_para = list(vq_model.quantizer.projector_in.parameters()) + list(vq_model.quantizer.projector_out.parameters()) 
-        optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.0001)
-
+        optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
     vq_model = DDP(vq_model.to(device), device_ids=[args.gpu], find_unused_parameters=False)
     vq_model.train()

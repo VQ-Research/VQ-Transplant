@@ -1,0 +1,117 @@
+dataset_dir: /datasets/
+dataset_name: ImageNet
+global_batch_size: 64
+workers: 8
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8
+max_patch_size: 8
+codebook_size: 16384
+codebook_dim: 32
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 0.5
+disc_weight: 0.2
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: wasserstein_vq
+use_multiscale: False
+transplant_epochs: 5
+refinement_epochs: 5
+eval_epochs: 1
+lr_transplant: 1e-05
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 0.0001
+stage: transplant
+checkpoint_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/Transplant/ImageNet
+results_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/results/Transplant/ImageNet
+saver_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/saver/Transplant/ImageNet
+reconstruction_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/reconstruction/Transplant/ImageNet
+yaml_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/yaml/Transplant/ImageNet
+pretrained_tokenizer: /project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/dc-ae-f32c32-sana-1.0.safetensors
+checkpoint_name: 
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 1
+batch_size: 64
+ms_token_size: (1, 2, 3, 4, 5, 6, 8)
+init_checkpoint_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/
+data_pre: ImageNet
+model_pre: model_16384_32_1
+loss_pre: loss_1.0_1.0_0.5_0.2
+training_pre: wasserstein_vq_transplant_False
+saver_name_pre: wasserstein_vq_transplant_False_ImageNet_model_16384_32_1_loss_1.0_1.0_0.5_0.2
+| distributed init (rank 0): env://
+VQ Model Parameters: 312250275
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.000010
+wasserstein_loss:4.892157077789307   commit_loss:0.2158653736114502   vq_loss:5.006038188934326
+wasserstein_loss:4.9493279457092285   commit_loss:0.213308647274971   vq_loss:5.382481575012207
+wasserstein_loss:4.942220211029053   commit_loss:0.20725196599960327   vq_loss:5.164135932922363
+wasserstein_loss:4.9235358238220215   commit_loss:0.20488491654396057   vq_loss:5.259771347045898
+wasserstein_loss:4.92204475402832   commit_loss:0.20002597570419312   vq_loss:5.094649314880371
+wasserstein_loss:4.9129862785339355   commit_loss:0.1942330002784729   vq_loss:4.69011116027832
+wasserstein_loss:4.872896194458008   commit_loss:0.18786048889160156   vq_loss:4.9720458984375
+wasserstein_loss:4.805439472198486   commit_loss:0.18403524160385132   vq_loss:5.110287666320801
+wasserstein_loss:4.66650915145874   commit_loss:0.17817889153957367   vq_loss:5.301862716674805
+wasserstein_loss:4.551183700561523   commit_loss:0.17720580101013184   vq_loss:4.987454414367676
+Train Epoch: [1/5] Iters:[10/20018] transplant_loss 28.8878, rec_loss 0.3009, quant_error 5.0969, utilization 0.1180, perplexity 1185.9471,
+wasserstein_loss:4.4232563972473145   commit_loss:0.17009057104587555   vq_loss:4.940498352050781
+wasserstein_loss:4.306467533111572   commit_loss:0.1668573021888733   vq_loss:5.1593170166015625
+wasserstein_loss:4.205578804016113   commit_loss:0.1633092612028122   vq_loss:4.961832523345947
+wasserstein_loss:4.074151039123535   commit_loss:0.15712176263332367   vq_loss:5.078251838684082
+wasserstein_loss:3.951887369155884   commit_loss:0.15523730218410492   vq_loss:5.143339157104492
+wasserstein_loss:3.831969738006592   commit_loss:0.15553131699562073   vq_loss:5.168489456176758
+wasserstein_loss:3.7028722763061523   commit_loss:0.1514696329832077   vq_loss:5.042082786560059
+wasserstein_loss:3.554927349090576   commit_loss:0.15055428445339203   vq_loss:5.236438274383545
+wasserstein_loss:3.399815797805786   commit_loss:0.14555521309375763   vq_loss:5.217562675476074
+wasserstein_loss:3.2708003520965576   commit_loss:0.1442026048898697   vq_loss:4.875976085662842
+Train Epoch: [1/5] Iters:[20/20018] transplant_loss 28.5079, rec_loss 0.2997, quant_error 5.0896, utilization 0.1566, perplexity 2015.4256,
+wasserstein_loss:3.127443552017212   commit_loss:0.1428726315498352   vq_loss:5.370047092437744
+wasserstein_loss:3.0054683685302734   commit_loss:0.14064551889896393   vq_loss:5.025988578796387
+wasserstein_loss:2.8626790046691895   commit_loss:0.1424035280942917   vq_loss:5.0554986000061035
+wasserstein_loss:2.7123398780822754   commit_loss:0.13914695382118225   vq_loss:4.879379749298096
+wasserstein_loss:2.567798614501953   commit_loss:0.14080433547496796   vq_loss:4.742293357849121
+wasserstein_loss:2.426436185836792   commit_loss:0.13728097081184387   vq_loss:4.66972017288208
+wasserstein_loss:2.278609275817871   commit_loss:0.14221379160881042   vq_loss:5.002208709716797
+wasserstein_loss:2.13425350189209   commit_loss:0.14082413911819458   vq_loss:4.611427307128906
+wasserstein_loss:1.9997379779815674   commit_loss:0.14585021138191223   vq_loss:4.79044246673584
+wasserstein_loss:1.872158408164978   commit_loss:0.14397954940795898   vq_loss:4.650265216827393
+Train Epoch: [1/5] Iters:[30/20018] transplant_loss 27.7906, rec_loss 0.2901, quant_error 5.0197, utilization 0.1691, perplexity 2297.9670,
+wasserstein_loss:1.7525807619094849   commit_loss:0.14184892177581787   vq_loss:5.027671813964844
+wasserstein_loss:1.6531126499176025   commit_loss:0.14800533652305603   vq_loss:4.992214202880859
+wasserstein_loss:1.5478606224060059   commit_loss:0.14383721351623535   vq_loss:4.5643720626831055
+wasserstein_loss:1.4729251861572266   commit_loss:0.15227991342544556   vq_loss:4.899106025695801
+wasserstein_loss:1.3787305355072021   commit_loss:0.1443794071674347   vq_loss:5.013182163238525
+wasserstein_loss:1.292868733406067   commit_loss:0.149146169424057   vq_loss:4.85325288772583
+wasserstein_loss:1.205261468887329   commit_loss:0.1491665244102478   vq_loss:4.874998569488525
+wasserstein_loss:1.1458996534347534   commit_loss:0.1588793694972992   vq_loss:4.444971084594727
+wasserstein_loss:1.1039888858795166   commit_loss:0.16178745031356812   vq_loss:4.8980536460876465
+wasserstein_loss:1.0201799869537354   commit_loss:0.15261372923851013   vq_loss:4.736570835113525
+Train Epoch: [1/5] Iters:[40/20018] transplant_loss 27.2384, rec_loss 0.2820, quant_error 4.9724, utilization 0.1704, perplexity 2306.9837,
+wasserstein_loss:0.9592598676681519   commit_loss:0.15221895277500153   vq_loss:4.778412818908691
+wasserstein_loss:0.8979308605194092   commit_loss:0.15731462836265564   vq_loss:4.607776641845703
+wasserstein_loss:0.8544985055923462   commit_loss:0.15477506816387177   vq_loss:4.412543773651123
+wasserstein_loss:0.8032795190811157   commit_loss:0.15249517560005188   vq_loss:4.546609878540039
+wasserstein_loss:0.7671816945075989   commit_loss:0.15832750499248505   vq_loss:4.594355583190918
+wasserstein_loss:0.716663122177124   commit_loss:0.1531926393508911   vq_loss:4.624655723571777
+wasserstein_loss:0.6425949335098267   commit_loss:0.15093785524368286   vq_loss:4.537032127380371
+wasserstein_loss:0.622951865196228   commit_loss:0.15829670429229736   vq_loss:4.487902641296387
+wasserstein_loss:0.5844791531562805   commit_loss:0.15776292979717255   vq_loss:4.732387542724609
+wasserstein_loss:0.5487918853759766   commit_loss:0.15432649850845337   vq_loss:4.6087493896484375
+Train Epoch: [1/5] Iters:[50/20018] transplant_loss 26.6127, rec_loss 0.2706, quant_error 4.8965, utilization 0.1640, perplexity 2092.2045,
+wasserstein_loss:0.5240010023117065   commit_loss:0.15491224825382233   vq_loss:4.590414524078369
+wasserstein_loss:0.5130899548530579   commit_loss:0.15876871347427368   vq_loss:4.600988388061523
+wasserstein_loss:0.5010585784912109   commit_loss:0.16262191534042358   vq_loss:4.674266338348389
+wasserstein_loss:0.48464277386665344   commit_loss:0.1570819765329361   vq_loss:4.679409980773926

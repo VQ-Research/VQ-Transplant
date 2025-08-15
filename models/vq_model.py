@@ -95,7 +95,6 @@ class VQModel(nn.Module):
         z_q, transplant_loss, quant_error, utilization, perplexity = self.quantizer(z)
         with torch.no_grad():
             x_rec = self.decoder(z_q)
-            
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return  transplant_loss, rec_loss, quant_error, utilization, perplexity
     

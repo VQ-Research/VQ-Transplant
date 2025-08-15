@@ -109,23 +109,23 @@ class BaseQuantizer(nn.Module):
             self.queue = Queue(args)
 
         self.projector_in = nn.Sequential(
-                nn.Linear(self.codebook_dim, 1024),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(self.codebook_dim, 256, kernel_size=3, padding=1),
+                nn.BatchNorm2d(256),
                 nn.SiLU(),
-                nn.Linear(1024, 1024),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(256, 256, kernel_size=3, padding=1),
+                nn.BatchNorm2d(256),
                 nn.SiLU(),
-                nn.Linear(1024, self.codebook_dim),
+                nn.Conv2d(256, self.codebook_dim, kernel_size=3, padding=1),
             )
         self.projector_out = nn.Sequential(
-                nn.Linear(self.codebook_dim, 1024),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(self.codebook_dim, 256, kernel_size=3, padding=1),
+                nn.BatchNorm2d(256),
                 nn.SiLU(),
-                nn.Linear(1024, 1024),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(256, 256, kernel_size=3, padding=1),
+                nn.BatchNorm2d(256),
                 nn.SiLU(),
-                nn.Linear(1024, self.codebook_dim),
-            )s
+                nn.Conv2d(256, self.codebook_dim, kernel_size=3, padding=1),
+            )
 
 class MultiscaleBaseQuantizer(nn.Module):
     def __init__(self, args):
@@ -170,8 +170,7 @@ class MultiscaleBaseQuantizer(nn.Module):
                 nn.SiLU(),
                 nn.Linear(1024, self.codebook_dim),
             )
-
-
+            
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK
     def obtain_multiscale_image_token(self, z_enc):
