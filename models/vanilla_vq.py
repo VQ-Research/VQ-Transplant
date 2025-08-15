@@ -122,18 +122,18 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec, z_no_grad)
+                multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_pre)
             
             ## residual quantization loss
             multi_vq_loss *= 1. / len(ms_token_size)
 
             ### projector out layer
-            z = rearrange(z_enc, 'b c h w -> b h w c') 
-            z_flat = z.reshape(-1, C).contiguous()  
-            z_flat = self.projector_in(z_flat)
-            z_pre = z_flat.view(z.shape).permute(0, 3, 1, 2).contiguous()
-
-            vq_loss = F.mse_loss(z_dec, z_no_grad) 
+            z_dec = z_pre + (z_dec-z_pre).detach()
+            zq = rearrange(z_dec, 'b c h w -> b h w c') 
+            zq_flat = zq.reshape(-1, C).contiguous()  
+            zq_flat = self.projector_out(zq_flat)
+            z_dec = zq_flat.view(zq.shape).permute(0, 3, 1, 2).contiguous()
+            vq_loss = F.mse_loss(z_dec, z_enc.detach()) 
 
             token_cat = torch.cat(token_cat, 0)
             ## Criterion Triple defined in the paper
@@ -154,7 +154,12 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
-        z_no_grad = z_enc.detach()
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
+        z_flat = z.reshape(-1, C).contiguous()  
+        z_flat = self.projector_in(z_flat)
+        z_pre = z_flat.view(z.shape).permute(0, 3, 1, 2).contiguous()
+
+        z_no_grad = z_pre.detach()
         z_rest = z_no_grad.clone()
         z_dec = torch.zeros_like(z_rest)
 
@@ -181,14 +186,15 @@ class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)
 
-            ### residual layer
-            if self.args.residual:
-                z_dec = z_dec.detach() + self.residual(z_dec.detach())
+            ### projector out layer
+            zq = rearrange(z_dec, 'b c h w -> b h w c') 
+            zq_flat = zq.reshape(-1, C).contiguous()  
+            zq_flat = self.projector_out(zq_flat)
+            z_dec = zq_flat.view(zq.shape).permute(0, 3, 1, 2).contiguous()
 
             token_cat = torch.cat(token_cat, 0)
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)
             handler.wait()
-            
         return z_dec, quant_error, histogram
