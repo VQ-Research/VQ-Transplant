@@ -28,21 +28,27 @@ class EMAVectorQuantizer(VectorQuantizer):
 
         token = torch.argmin(d, dim=1)
         encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
-        if self.training:
-            #EMA cluster size
-            encodings_sum = encodings.sum(0)            
-            self.embedding.cluster_size_ema_update(encodings_sum)
-            #EMA embedding average
-            embed_sum = encodings.transpose(0,1) @ z_flat            
-            self.embedding.embed_avg_ema_update(embed_sum)
-            #normalize embed_avg and update weight
-            self.embedding.weight_update(self.args.codebook_size)
+
+        histogram = token.bincount(minlength=self.codebook_size).float()
+        codebook_usage_counts = (histogram > 0).float().sum()
+        codebook_utilization = codebook_usage_counts.item() / self.codebook_size
+        print("codebook_utilization:", codebook_utilization)
+        
+        #EMA cluster size
+        encodings_sum = encodings.sum(0)            
+        self.embedding.cluster_size_ema_update(encodings_sum)
+        #EMA embedding average
+        embed_sum = encodings.transpose(0,1) @ z_flat            
+        self.embedding.embed_avg_ema_update(embed_sum)
+        #normalize embed_avg and update weight
+        self.embedding.weight_update(self.args.codebook_size)
 
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
         commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc)
 
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss
+        print("commit_loss:"+str(commit_loss.item()))
         return z_dec, loss
 
     def collect_eval_info(self, z_enc):

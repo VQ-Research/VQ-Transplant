@@ -79,12 +79,16 @@ class WassersteinVectorQuantizer(VectorQuantizer):
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        #commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc) + self.alpha * F.mse_loss(z_dec, z_enc.detach())
-        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc)
+        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc) + self.alpha * F.mse_loss(z_dec, z_enc.detach())
+
+        histogram = token.bincount(minlength=self.codebook_size).float()
+        codebook_usage_counts = (histogram > 0).float().sum()
+        codebook_utilization = codebook_usage_counts.item() / self.codebook_size
+        print("codebook_utilization:", codebook_utilization)
 
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss + self.args.gamma * wasserstein_loss
-        #print("commit_loss:"+str(commit_loss.item())+"    wasserstein_loss:"+str(wasserstein_loss.item()))
+        print("commit_loss:"+str(commit_loss.item())+"    wasserstein_loss:"+str(wasserstein_loss.item()))
         return z_dec, loss
 
     def collect_eval_info(self, z_enc):
