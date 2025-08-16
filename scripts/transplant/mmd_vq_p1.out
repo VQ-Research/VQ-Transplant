@@ -40,8 +40,8 @@ node_rank: -1
 local_rank: 0
 dist_url: tcp://224.66.41.62:23456
 dist_backend: nccl
-world_size: 1
-batch_size: 64
+world_size: 2
+batch_size: 32
 ms_token_size: (1, 2, 3, 4, 5, 6, 8)
 init_checkpoint_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/
 data_pre: ImageNet
@@ -50,17 +50,17 @@ loss_pre: loss_1.0_1.0_2.0_0.2
 training_pre: mmd_vq_transplant_False
 saver_name_pre: mmd_vq_transplant_False_ImageNet_model_16384_8_1_loss_1.0_1.0_2.0_0.2
 | distributed init (rank 0): env://
+| distributed init (rank 1): env://
 VQ Model Parameters: 312250275
 dataset name: ImageNet
 len train_set: 1281167
 len val_set: 50000
 Start training...
 epoch:1, cur_lr:0.000100
-Train Epoch: [1/5] Iters:[10/20018] transplant_loss 68.3023, rec_loss 0.1885, quant_error 3.7335,
-Train Epoch: [1/5] Iters:[20/20018] transplant_loss 68.5408, rec_loss 0.1590, quant_error 3.1132,
-Train Epoch: [1/5] Iters:[30/20018] transplant_loss 62.7737, rec_loss 0.1433, quant_error 2.7406,
-Train Epoch: [1/5] Iters:[40/20018] transplant_loss 57.3541, rec_loss 0.1339, quant_error 2.5058,
-Train Epoch: [1/5] Iters:[50/20018] transplant_loss 52.7528, rec_loss 0.1284, quant_error 2.3398,
-Train Epoch: [1/5] Iters:[60/20018] transplant_loss 45.1548, rec_loss 0.1114, quant_error 1.9246,
-Train Epoch: [1/5] Iters:[70/20018] transplant_loss 36.6581, rec_loss 0.1060, quant_error 1.7485,
-Train Epoch: [1/5] Iters:[80/20018] transplant_loss 30.8863, rec_loss 0.1043, quant_error 1.6589,
+Train Epoch: [1/5] Iters:[10/20018] transplant_loss 46.6909, rec_loss 0.3105, quant_error 4.9940,
+Train Epoch: [1/5] Iters:[20/20018] transplant_loss 64.2031, rec_loss 0.3081, quant_error 4.9634,
+Train Epoch: [1/5] Iters:[30/20018] transplant_loss 98.6705, rec_loss 0.2876, quant_error 4.8446,
+Train Epoch: [1/5] Iters:[40/20018] transplant_loss 129.9262, rec_loss 0.2725, quant_error 4.7492,
+Train Epoch: [1/5] Iters:[50/20018] transplant_loss 139.4441, rec_loss 0.2576, quant_error 4.6377,
+Train Epoch: [1/5] Iters:[60/20018] transplant_loss 153.0169, rec_loss 0.2319, quant_error 4.4657,
+Train Epoch: [1/5] Iters:[70/20018] transplant_loss 151.8967, rec_loss 0.2042, quant_error 4.2421,
