@@ -54,10 +54,10 @@ class VQModel(nn.Module):
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(1024,  4*self.codebook_dim, kernel_size=3, padding=1),
+                nn.Conv2d(1024,  4 * args.codebook_dim, kernel_size=3, padding=1),
             )
         self.projector_out = nn.Sequential(
-                nn.Conv2d(4*self.codebook_dim, 1024, kernel_size=3, padding=1),
+                nn.Conv2d(4 * args.codebook_dim, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
@@ -154,21 +154,21 @@ class VQModel(nn.Module):
         with torch.no_grad():
             z = self.encoder(x)
 
-        z_p = self.projector_in(z)
+        z_p = z + self.projector_in(z)
         z_1, z_2, z_3, z_4 = torch.chunk(z_p, 4, dim=1)
         z_q_1, vq_loss_1 = self.quantizer1(z_1)
         z_q_2, vq_loss_2 = self.quantizer2(z_2)
         z_q_3, vq_loss_3 = self.quantizer3(z_3)
         z_q_4, vq_loss_4 = self.quantizer4(z_4)
         z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
-        z_q = self.projector_out(z_q)
+        z_q = z_q + self.projector_out(z_q)
 
         loss = F.mse_loss(z_q, z.detach())
         quant_error = F.mse_loss(z_q.detach(), z.detach())
         with torch.no_grad():
             x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = 5.0 * loss + vq_loss_1 + vq_loss_2 + vq_loss_3 + vq_loss_4
+        transplant_loss = 2.0 * loss + vq_loss_1 + vq_loss_2 + vq_loss_3 + vq_loss_4
         return  transplant_loss, rec_loss, quant_error
     
     def refinement(self, x):

@@ -83,6 +83,7 @@ class WassersteinVectorQuantizer(VectorQuantizer):
 
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss + self.args.gamma * wasserstein_loss
+        #print("commit_loss:"+str(commit_loss.item())+"    wasserstein_loss:"+str(wasserstein_loss.item()))
         return z_dec, loss
 
     def collect_eval_info(self, z_enc):

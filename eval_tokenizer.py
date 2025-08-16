@@ -40,8 +40,7 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
     lpips_metric = LPIPS()
 
     if args.stage == "transplant":
-        ssim, psnr, lpips, rec_loss, quant_error, utilization, perplexity, total_num =  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
-        histogram_all: torch.Tensor = 0.0 
+        ssim, psnr, lpips, rec_loss, quant_error, total_num =  0.0, 0.0, 0.0, 0.0, 0.0, 0
     if args.stage == "refinement":
         ssim, psnr, lpips, rec_loss, total_num = 0.0, 0.0, 0.0, 0.0, 0  
 
@@ -51,9 +50,8 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         total_num += batch_size
         with torch.no_grad():
             if args.stage == "transplant":
-                x_rec, rec_loss_eval, quant_error_eval, histogram_eval = model.module.collect_eval_info_transplant(x)
+                x_rec, rec_loss_eval, quant_error_eval = model.module.collect_eval_info_transplant(x)
                 info_pack = Pack(rec_loss=rec_loss_eval, quant_error=quant_error_eval)
-                histogram_all += histogram_eval
             else:
                 x_rec, rec_loss_eval = model.module.collect_eval_info_refinement(x)
                 info_pack = Pack(rec_loss=rec_loss_eval)
@@ -79,20 +77,12 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
             if args.stage == "transplant":
                 quant_error += info_pack.quant_error.item() * batch_size
 
-        if args.stage == "transplant":
-            codebook_usage_counts = (histogram_all > 0).float().sum()
-            utilization  = codebook_usage_counts.item() / args.codebook_size
-            avg_probs = histogram_all/histogram_all.sum(0)
-            perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
-
     eval_psnr = psnr/len_val_set
     eval_ssim = ssim/len_val_set
     eval_lpips = lpips/len_val_set
     eval_rec_loss = rec_loss/total_num
     if args.stage == "transplant":
         eval_quant_error = quant_error/total_num
-        eval_utilization = utilization
-        eval_perplexity = perplexity.item()
 
     model.train()
     if args.stage == "transplant":
@@ -100,10 +90,15 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         model.module.decoder.eval()
     else:
         model.module.encoder.eval()
-        model.module.quantizer.eval()
+        model.module.quantizer1.eval()
+        model.module.quantizer2.eval()
+        model.module.quantizer3.eval()
+        model.module.quantizer4.eval()
+        model.module.projector_in.eval()
+        model.module.projector_out.eval()
 
     if args.stage == "transplant":
-        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)
+        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error)
     else:
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss)
 
