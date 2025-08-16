@@ -63,9 +63,8 @@ class WassersteinVectorQuantizer(VectorQuantizer):
     def forward(self, z_enc):
         # reshape z_enc -> (batch, height, width, channel) and flatten
         #z, 'b c h w -> b h w c'
-        z_pre = self.projector_in(z_enc) 
-        B, C, H, W = z_pre.shape
-        z = rearrange(z_pre, 'b c h w -> b h w c') 
+        B, C, H, W = z_enc.shape
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
         z_flat = z.reshape(-1, C).contiguous()  
 
         ## The only difference to the Vanilla Quantizer
@@ -79,36 +78,17 @@ class WassersteinVectorQuantizer(VectorQuantizer):
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        commit_loss = self.beta * F.mse_loss(z_q.detach(), z_pre) + self.alpha * F.mse_loss(z_q, z_pre.detach())
+        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
+        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc) + self.alpha * F.mse_loss(z_dec, z_enc.detach())
 
-        ## adjuest the shape back to match original input shape
-        z_q = z_pre + (z_q - z_pre).detach()
-        z_dec = self.projector_out(z_q)
-        vq_loss = F.mse_loss(z_dec, z_enc.detach())
-
-        ## Criterion Triple defined in the paper
-        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
-
-        histogram = token.bincount(minlength=self.args.codebook_size).float()
-        handler = tdist.all_reduce(histogram, async_op=True)
-        handler.wait()
-
-        codebook_usage_counts = (histogram > 0).float().sum()
-        codebook_utilization = codebook_usage_counts.item() / self.args.codebook_size
-            
-        avg_probs = histogram/histogram.sum(0)
-        codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
-
-        loss = 5.0 * commit_loss + self.args.gamma * wasserstein_loss +  2.0 * vq_loss
-        print("wasserstein_loss:"+str(wasserstein_loss.item()) + "   commit_loss:"+str(commit_loss.item())+ "   vq_loss:"+str(vq_loss.item()))
-        return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
+        z_dec = z_enc + (z_dec - z_enc).detach()
+        loss = commit_loss + self.args.gamma * wasserstein_loss
+        return z_dec, loss
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
-        z = z_enc.permute(0, 2, 3, 1).contiguous()
-        z_flat = z.view(-1, C).contiguous()
-        z_flat = self.projector_in(z_flat) 
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
+        z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
         d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
@@ -116,17 +96,8 @@ class WassersteinVectorQuantizer(VectorQuantizer):
             torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token)
-        z_q = self.projector_out(z_q)
-
-        # adjuest the shape back to match original input shape
-        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
-
-        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
-        histogram = token.bincount(minlength=self.args.codebook_size).float()
-        handler = tdist.all_reduce(histogram, async_op=True)
-        handler.wait()
-        return z_dec, quant_error, histogram
+        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
+        return z_dec
     
 ##### multi-scale quantizer
 class WassersteinVARQuantizer(MultiscaleVectorQuantizer):

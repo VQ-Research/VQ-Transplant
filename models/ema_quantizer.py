@@ -1,26 +1,25 @@
 import os
-import math
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+import math
 from torch import einsum
 from einops import rearrange
 from torch import distributed as tdist
 from models.base_quantizer import VectorQuantizer, MultiscaleVectorQuantizer
 
-class VanillaVectorQuantizer(VectorQuantizer):
+class EMAVectorQuantizer(VectorQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args
 
     def forward(self, z_enc):
-        B, C, H, W = z_enc.shape
         # reshape z_enc -> (batch, height, width, channel) and flatten
         #z, 'b c h w -> b h w c'
+        B, C, H, W = z_enc.shape
         z = rearrange(z_enc, 'b c h w -> b h w c') 
         z_flat = z.reshape(-1, C).contiguous()  
-        z_flat = self.projector_in(z_flat) 
         
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
         d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
@@ -28,36 +27,28 @@ class VanillaVectorQuantizer(VectorQuantizer):
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token)
-        commit_loss = self.beta * F.mse_loss(z_q.detach(), z_flat) + self.alpha * F.mse_loss(z_q, z_flat.detach())
+        encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
+        if self.training:
+            #EMA cluster size
+            encodings_sum = encodings.sum(0)            
+            self.embedding.cluster_size_ema_update(encodings_sum)
+            #EMA embedding average
+            embed_sum = encodings.transpose(0,1) @ z_flat            
+            self.embedding.embed_avg_ema_update(embed_sum)
+            #normalize embed_avg and update weight
+            self.embedding.weight_update(self.args.codebook_size)
 
-        ## adjuest the shape back to match original input shape
-        z_q = z_flat + (z_q - z_flat).detach()
-        z_q = self.projector_out(z_q)
-        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
-        vq_loss = F.mse_loss(z_dec, z_enc.detach())
+        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
+        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc)
 
-        ## Criterion Triple defined in the paper
-        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
-
-        histogram = token.bincount(minlength=self.args.codebook_size).float()
-        handler = tdist.all_reduce(histogram, async_op=True)
-        handler.wait()
-
-        codebook_usage_counts = (histogram > 0).float().sum()
-        codebook_utilization = codebook_usage_counts.item() / self.args.codebook_size
-            
-        avg_probs = histogram/histogram.sum(0)
-        codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
-
-        loss = vq_loss + commit_loss
-        return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
+        z_dec = z_enc + (z_dec - z_enc).detach()
+        loss = commit_loss
+        return z_dec, loss
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
-        z = z_enc.permute(0, 2, 3, 1).contiguous()
-        z_flat = z.view(-1, C).contiguous()
-        z_flat = self.projector_in(z_flat) 
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
+        z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
         d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
@@ -65,20 +56,11 @@ class VanillaVectorQuantizer(VectorQuantizer):
             torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
-        z_q = self.embedding(token)
-        z_q = self.projector_out(z_q)
-
-        # adjuest the shape back to match original input shape
-        z_dec = z_q.view(z.shape).permute(0, 3, 1, 2).contiguous()
-
-        quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
-        histogram = token.bincount(minlength=self.args.codebook_size).float()
-        handler = tdist.all_reduce(histogram, async_op=True)
-        handler.wait()
-        return z_dec, quant_error, histogram
+        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
+        return z_dec
     
 ##### multi-scale quantizer
-class VanillaVARQuantizer(MultiscaleVectorQuantizer):
+class EMAVARQuantizer(MultiscaleVectorQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args
@@ -96,6 +78,7 @@ class VanillaVARQuantizer(MultiscaleVectorQuantizer):
         z_dec = torch.zeros_like(z_rest)
 
         token_cat: List[torch.Tensor] = []
+        z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             multi_vq_loss: torch.Tensor = 0.0
             vq_loss: torch.Tensor = 0.0
@@ -104,7 +87,8 @@ class VanillaVARQuantizer(MultiscaleVectorQuantizer):
 
             for level, pn in enumerate(ms_token_size):
                 z_downscale = F.interpolate(z_rest, size=(pn, pn), mode='area').permute(0, 2, 3, 1).reshape(-1, C) if (level != levels -1) else z_rest.permute(0, 2, 3, 1).reshape(-1, C)
-                
+                z_cat.append(z_downscale.detach())
+
                 ## distance [B*ph*pw, vocab_size]
                 distance = torch.sum(z_downscale.detach().square(), dim=1, keepdim=True) + torch.sum(self.embedding.weight.data.square(), dim=1, keepdim=False)
                 distance.addmm_(z_downscale.detach(), self.embedding.weight.data.T, alpha=-2, beta=1)
@@ -117,15 +101,26 @@ class VanillaVARQuantizer(MultiscaleVectorQuantizer):
                 token_Bhw = token.view(B, pn, pn)
 
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale.detach())
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
                 multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_pre)
             
-            ## residual quantization loss
             multi_vq_loss *= 1. / len(ms_token_size)
+            token_cat = torch.cat(token_cat, 0)
+            z_cat = torch.cat(z_cat, 0)
+            encodings = F.one_hot(token_cat, self.args.codebook_size).type(z_cat.dtype).detach()
+            if self.training:
+                #EMA cluster size
+                encodings_sum = encodings.sum(0)            
+                self.embedding.cluster_size_ema_update(encodings_sum)
+                #EMA embedding average
+                embed_sum = encodings.transpose(0,1) @ z_cat            
+                self.embedding.embed_avg_ema_update(embed_sum)
+                #normalize embed_avg and update weight
+                self.embedding.weight_update(self.args.codebook_size)
 
             ### projector out layer
             z_dec = z_pre + (z_dec-z_pre).detach()
@@ -135,7 +130,6 @@ class VanillaVARQuantizer(MultiscaleVectorQuantizer):
             z_dec = zq_flat.view(zq.shape).permute(0, 3, 1, 2).contiguous()
             vq_loss = F.mse_loss(z_dec, z_enc.detach()) 
 
-            token_cat = torch.cat(token_cat, 0)
             ## Criterion Triple defined in the paper
             quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
 
@@ -148,7 +142,6 @@ class VanillaVARQuantizer(MultiscaleVectorQuantizer):
             
             avg_probs = histogram/histogram.sum(0)
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
-
             loss = multi_vq_loss + vq_loss
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
