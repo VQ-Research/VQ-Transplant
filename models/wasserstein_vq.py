@@ -7,10 +7,10 @@ import math
 from torch import einsum
 from einops import rearrange
 from torch import distributed as tdist
-from models.base_quantizer import BaseQuantizer, MultiscaleBaseQuantizer
+from models.base_quantizer import VectorQuantizer, MultiscaleVectorQuantizer
 
 #### not the multi-scale quantizer and no residual quantization
-class WassersteinQuantizer(BaseQuantizer):
+class WassersteinVectorQuantizer(VectorQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args
@@ -61,10 +61,10 @@ class WassersteinQuantizer(BaseQuantizer):
         return wasserstein_loss
 
     def forward(self, z_enc):
-        B, C, H, W = z_enc.shape
         # reshape z_enc -> (batch, height, width, channel) and flatten
         #z, 'b c h w -> b h w c'
         z_pre = self.projector_in(z_enc) 
+        B, C, H, W = z_pre.shape
         z = rearrange(z_pre, 'b c h w -> b h w c') 
         z_flat = z.reshape(-1, C).contiguous()  
 
@@ -84,7 +84,7 @@ class WassersteinQuantizer(BaseQuantizer):
 
         ## adjuest the shape back to match original input shape
         z_q = z_pre + (z_q - z_pre).detach()
-        z_dec = z_q + self.projector_out(z_q)
+        z_dec = self.projector_out(z_q)
         vq_loss = F.mse_loss(z_dec, z_enc.detach())
 
         ## Criterion Triple defined in the paper
@@ -100,7 +100,7 @@ class WassersteinQuantizer(BaseQuantizer):
         avg_probs = histogram/histogram.sum(0)
         codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-        loss = 5.0 * commit_loss + self.args.gamma * wasserstein_loss +  5 * vq_loss
+        loss = 5.0 * commit_loss + self.args.gamma * wasserstein_loss +  2.0 * vq_loss
         print("wasserstein_loss:"+str(wasserstein_loss.item()) + "   commit_loss:"+str(commit_loss.item())+ "   vq_loss:"+str(vq_loss.item()))
         return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
 
@@ -129,7 +129,7 @@ class WassersteinQuantizer(BaseQuantizer):
         return z_dec, quant_error, histogram
     
 ##### multi-scale quantizer
-class MultiscaleWassersteinQuantizer(MultiscaleBaseQuantizer):
+class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args

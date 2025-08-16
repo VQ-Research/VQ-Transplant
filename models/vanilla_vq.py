@@ -7,9 +7,9 @@ import torch.nn.functional as F
 from torch import einsum
 from einops import rearrange
 from torch import distributed as tdist
-from models.base_quantizer import BaseQuantizer, MultiscaleBaseQuantizer
+from models.base_quantizer import VectorQuantizer, MultiscaleVectorQuantizer
 
-class VanillaQuantizer(BaseQuantizer):
+class VanillaVectorQuantizer(VectorQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args
@@ -78,7 +78,7 @@ class VanillaQuantizer(BaseQuantizer):
         return z_dec, quant_error, histogram
     
 ##### multi-scale quantizer
-class MultiscaleVanillaQuantizer(MultiscaleBaseQuantizer):
+class VanillaVARQuantizer(MultiscaleVectorQuantizer):
     def __init__(self, args):
         super().__init__(args)
         self.args = args

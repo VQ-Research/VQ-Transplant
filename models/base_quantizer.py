@@ -84,9 +84,9 @@ class Queue(nn.Module):
     def obtain_feature_from_queue(self):
         return self.queue.detach().clone()
 
-class BaseQuantizer(nn.Module):
+class VectorQuantizer(nn.Module):
     def __init__(self, args):
-        super(BaseQuantizer, self).__init__()
+        super(VectorQuantizer, self).__init__()
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
@@ -109,27 +109,27 @@ class BaseQuantizer(nn.Module):
             self.queue = Queue(args)
 
         self.projector_in = nn.Sequential(
-                nn.Conv2d(self.codebook_dim, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(32, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256, self.codebook_dim, kernel_size=3, padding=1),
+                nn.Conv2d(1024, self.codebook_dim, kernel_size=3, padding=1),
             )
         self.projector_out = nn.Sequential(
-                nn.Conv2d(self.codebook_dim, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(self.codebook_dim, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256, self.codebook_dim, kernel_size=3, padding=1),
+                nn.Conv2d(1024, 32, kernel_size=3, padding=1),
             )
 
-class MultiscaleBaseQuantizer(nn.Module):
+class MultiscaleVectorQuantizer(nn.Module):
     def __init__(self, args):
-        super(MultiscaleBaseQuantizer, self).__init__()
+        super(MultiscaleVectorQuantizer, self).__init__()
         self.args = args
         self.codebook_size = args.codebook_size
         self.codebook_dim = args.codebook_dim
