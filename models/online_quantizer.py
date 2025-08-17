@@ -29,8 +29,7 @@ class OnlineVectorQuantizer(VectorQuantizer):
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        #commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc) + self.alpha * F.mse_loss(z_dec, z_enc.detach())
-        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc)
+        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc) + self.alpha * F.mse_loss(z_dec, z_enc.detach())
 
         histogram = token.bincount(minlength=self.codebook_size).float()
         handler = tdist.all_reduce(histogram, async_op=True)

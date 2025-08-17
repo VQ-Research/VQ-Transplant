@@ -162,14 +162,13 @@ class VQModel(nn.Module):
         z_q_4, vq_loss_4 = self.quantizer4(z_4)
         z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
         z_q = z_q + self.projector_out(z_q)
-        z_q = self.projector_out(z_q)
 
         loss = F.mse_loss(z_q, z.detach())
         quant_error = F.mse_loss(z_q.detach(), z.detach())
         with torch.no_grad():
             x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = 2.0 * loss + vq_loss_1 + vq_loss_2 + vq_loss_3 + vq_loss_4
+        transplant_loss = 5.0 * loss + vq_loss_1 + vq_loss_2 + vq_loss_3 + vq_loss_4
         return  transplant_loss, rec_loss, quant_error
     
     def refinement(self, x):

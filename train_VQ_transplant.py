@@ -70,16 +70,13 @@ def main_worker(args):
         code_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) + list(vq_model.quantizer3.embedding.parameters()) + list(vq_model.quantizer4.embedding.parameters())
         model_para = list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
         all_para = code_para + model_para
-        reg_para = model_para
         optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
         model_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) + list(vq_model.quantizer3.embedding.parameters()) + list(vq_model.quantizer4.embedding.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
-        reg_para = list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
     elif args.VQ == "ema_vq":
         model_para = list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
-        reg_para = model_para 
 
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
     vq_model = DDP(vq_model.to(device), device_ids=[args.gpu], find_unused_parameters=False)
@@ -103,7 +100,7 @@ def main_worker(args):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
 
-                transplant_loss, rec_loss, quant_error = vq_model.module.transplant(x)
+                transplant_loss, rec_loss, quant_error = vq_model.module.transplant(x, cur_iter)
                 info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, quant_error=quant_error)
                 transplant_loss.backward()
                 if args.VQ == "wasserstein_vq":
@@ -113,15 +110,15 @@ def main_worker(args):
                             has_nan = True
                             break
                     if has_nan == False:
-                        torch.nn.utils.clip_grad_norm_(reg_para, 1.0)
+                        torch.nn.utils.clip_grad_norm_(all_para, 1.0)
                         optimizer.step()
                     else:
                         print("skip gradient update!")
                 elif args.VQ == "mmd_vq":
-                    torch.nn.utils.clip_grad_norm_(reg_para, 1.0)
+                    torch.nn.utils.clip_grad_norm_(all_para, 1.0)
                     optimizer.step()
                 else:
-                    torch.nn.utils.clip_grad_norm_(reg_para, 1.0)
+                    torch.nn.utils.clip_grad_norm_(model_para, 1.0)
                     optimizer.step()
                     
             train_loss.add_loss(info_pack)

@@ -105,8 +105,7 @@ class VectorQuantizer(nn.Module):
         elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
         
-        if args.VQ == "wasserstein_vq":
-            self.queue = Queue(args)
+        self.queue = Queue(args)
 
 class ProductQuantizer(nn.Module):
     def __init__(self, args):

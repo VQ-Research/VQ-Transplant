@@ -28,11 +28,6 @@ class EMAVectorQuantizer(VectorQuantizer):
 
         token = torch.argmin(d, dim=1)
         encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
-
-        histogram = token.bincount(minlength=self.codebook_size).float()
-        codebook_usage_counts = (histogram > 0).float().sum()
-        codebook_utilization = codebook_usage_counts.item() / self.codebook_size
-        print("codebook_utilization:", codebook_utilization)
         
         #EMA cluster size
         encodings_sum = encodings.sum(0)            
@@ -48,7 +43,6 @@ class EMAVectorQuantizer(VectorQuantizer):
 
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss
-        print("commit_loss:"+str(commit_loss.item()))
         return z_dec, loss
 
     def collect_eval_info(self, z_enc):
