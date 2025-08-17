@@ -21,7 +21,7 @@ def parse_arg():
     parser.add_argument('--dataset_dir', default="/project/6105494/shared/data/", type=str, help='the directory of dataset') 
     parser.add_argument('--dataset_name', default='ImageNet', help='the name of dataset', choices=['ImageNet', 'FFHQ', 'CelebAHQ', 'Churches', 'Bedrooms'])
     parser.add_argument('--global_batch_size', type=int, default=128, help="the size of batch samples")
-    parser.add_argument('--workers', default=8, type=int, metavar='N', help='number of data loader workers')
+    parser.add_argument('--workers', default=6, type=int, metavar='N', help='number of data loader workers')
     parser.add_argument('--resolution', type=int, choices=[256], default=256, help='resolution of train and test')
     parser.add_argument('--channels', default=3, type=int, metavar='N', help='the channels of images')
     
@@ -45,7 +45,7 @@ def parse_arg():
     ### Training Configuration
     parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'online_vq', 'mmd_vq', 'original_sana', 'bsq', 'fsq', 'lfq'])
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
-    parser.add_argument('--transplant_epochs', type=int, default=5, help="training epochs, 5 epochs for transplant stage.")
+    parser.add_argument('--transplant_epochs', type=int, default=2, help="training epochs, 5 epochs for transplant stage.")
     parser.add_argument('--refinement_epochs', type=int, default=5, help="training epochs, 5 epochs for refinement stage.")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet.")
     parser.add_argument('--lr_transplant', default=1e-4, type=float, metavar='LR', help='initial learning rate for transplant stage.')
@@ -95,7 +95,7 @@ def parse_arg():
         args.yaml_dir = os.path.join(os.path.join(args.yaml_dir, "Refinement"), args.dataset_name) 
 
     if args.dataset_name == "ImageNet":
-        args.transplant_epochs = 5
+        args.transplant_epochs = 2
         args.refinement_epochs = 5
         args.eval_epochs = 1
     elif args.dataset_name == "Bedrooms":
@@ -103,7 +103,7 @@ def parse_arg():
         args.refinement_epochs = 10
         args.eval_epochs = 2
     else:
-        args.transplant_epochs = 40
+        args.transplant_epochs = 20
         args.refinement_epochs = 20
         args.eval_epochs = 4
 

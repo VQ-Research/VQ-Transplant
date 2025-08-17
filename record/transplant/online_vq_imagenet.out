@@ -1,0 +1,77 @@
+dataset_dir: /datasets/
+dataset_name: ImageNet
+global_batch_size: 64
+workers: 6
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8
+max_patch_size: 8
+codebook_size: 16384
+codebook_dim: 8
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 0.0
+disc_weight: 0.2
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: online_vq
+use_multiscale: False
+transplant_epochs: 2
+refinement_epochs: 5
+eval_epochs: 1
+lr_transplant: 0.0001
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 0.0001
+stage: transplant
+checkpoint_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/Transplant/ImageNet
+results_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/results/Transplant/ImageNet
+saver_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/saver/Transplant/ImageNet
+reconstruction_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/reconstruction/Transplant/ImageNet
+yaml_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/yaml/Transplant/ImageNet
+pretrained_tokenizer: /project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/dc-ae-f32c32-sana-1.0.safetensors
+checkpoint_name: 
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 1
+batch_size: 64
+ms_token_size: (1, 2, 3, 4, 5, 6, 8)
+init_checkpoint_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/
+data_pre: ImageNet
+model_pre: model_16384_8_1
+loss_pre: loss_1.0_1.0_0.0_0.2
+training_pre: online_vq_transplant_False
+saver_name_pre: online_vq_transplant_False_ImageNet_model_16384_8_1_loss_1.0_1.0_0.0_0.2
+| distributed init (rank 0): env://
+VQ Model Parameters: 312250275
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.000100
+Train Epoch: [1/2] Iters:[10/20018] transplant_loss 77.0259, rec_loss 0.2301, quant_error 4.7923,
+Train Epoch: [1/2] Iters:[20/20018] transplant_loss 73.6199, rec_loss 0.2083, quant_error 4.4653,
+Train Epoch: [1/2] Iters:[30/20018] transplant_loss 71.0923, rec_loss 0.1955, quant_error 4.2626,
+Train Epoch: [1/2] Iters:[40/20018] transplant_loss 69.4699, rec_loss 0.1869, quant_error 4.1238,
+Train Epoch: [1/2] Iters:[50/20018] transplant_loss 68.1688, rec_loss 0.1809, quant_error 4.0128,
+Train Epoch: [1/2] Iters:[60/20018] transplant_loss 65.0427, rec_loss 0.1658, quant_error 3.7633,
+Train Epoch: [1/2] Iters:[70/20018] transplant_loss 63.1210, rec_loss 0.1590, quant_error 3.6340,
+Train Epoch: [1/2] Iters:[80/20018] transplant_loss 61.6512, rec_loss 0.1548, quant_error 3.5426,
+Train Epoch: [1/2] Iters:[90/20018] transplant_loss 60.3377, rec_loss 0.1526, quant_error 3.4786,
+Train Epoch: [1/2] Iters:[100/20018] transplant_loss 59.1781, rec_loss 0.1510, quant_error 3.4391,
+Train Epoch: [1/2] Iters:[110/20018] transplant_loss 58.1354, rec_loss 0.1486, quant_error 3.3986,
+Train Epoch: [1/2] Iters:[120/20018] transplant_loss 57.1119, rec_loss 0.1463, quant_error 3.3596,
+Train Epoch: [1/2] Iters:[130/20018] transplant_loss 56.2537, rec_loss 0.1445, quant_error 3.3283,
+Train Epoch: [1/2] Iters:[140/20018] transplant_loss 55.3473, rec_loss 0.1406, quant_error 3.2914,
+Train Epoch: [1/2] Iters:[150/20018] transplant_loss 54.6842, rec_loss 0.1379, quant_error 3.2542,
+Train Epoch: [1/2] Iters:[160/20018] transplant_loss 53.9811, rec_loss 0.1354, quant_error 3.2170,
+Train Epoch: [1/2] Iters:[170/20018] transplant_loss 53.3760, rec_loss 0.1330, quant_error 3.1829,
+Train Epoch: [1/2] Iters:[180/20018] transplant_loss 53.0072, rec_loss 0.1311, quant_error 3.1651,
+Train Epoch: [1/2] Iters:[190/20018] transplant_loss 52.7487, rec_loss 0.1303, quant_error 3.1503,

@@ -70,7 +70,7 @@ def main_worker(args):
         code_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) + list(vq_model.quantizer3.embedding.parameters()) + list(vq_model.quantizer4.embedding.parameters())
         model_para = list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
         all_para = code_para + model_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
         model_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) + list(vq_model.quantizer3.embedding.parameters()) + list(vq_model.quantizer4.embedding.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
@@ -100,7 +100,7 @@ def main_worker(args):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
 
-                transplant_loss, rec_loss, quant_error = vq_model.module.transplant(x, cur_iter)
+                transplant_loss, rec_loss, quant_error = vq_model.module.transplant(x)
                 info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, quant_error=quant_error)
                 transplant_loss.backward()
                 if args.VQ == "wasserstein_vq":

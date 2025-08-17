@@ -38,8 +38,6 @@ class MMDVectorQuantizer(VectorQuantizer):
         B, C, H, W = z_enc.shape
         z = rearrange(z_enc, 'b c h w -> b h w c') 
         z_flat = z.reshape(-1, C).contiguous()  
-
-        ## The only difference to the Vanilla Quantizer
         mmd_loss = self.calc_gaussian_mmd_loss(z_flat.detach())
         
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z

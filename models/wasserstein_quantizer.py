@@ -67,28 +67,22 @@ class WassersteinVectorQuantizer(VectorQuantizer):
         z = rearrange(z_enc, 'b c h w -> b h w c') 
         z_flat = z.reshape(-1, C).contiguous()  
 
-        ## The only difference to the Vanilla Quantizer
         with torch.no_grad():
             self.queue.dequeue_and_enqueue(z_flat.detach())
+            
         wasserstein_loss = self.calc_wasserstein_loss()
-        
+
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
         d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
             self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
-
+                
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc) + self.alpha * F.mse_loss(z_dec, z_enc.detach())
-
-        histogram = token.bincount(minlength=self.codebook_size).float()
-        codebook_usage_counts = (histogram > 0).float().sum()
-        codebook_utilization = codebook_usage_counts.item() / self.codebook_size
-        print("codebook_utilization:", codebook_utilization)
+        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc) +  self.alpha * F.mse_loss(z_dec, z_enc.detach())
 
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss + self.args.gamma * wasserstein_loss
-        #print("commit_loss:"+str(commit_loss.item())+"    wasserstein_loss:"+str(wasserstein_loss.item()))
         return z_dec, loss
 
     def collect_eval_info(self, z_enc):

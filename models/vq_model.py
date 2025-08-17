@@ -48,22 +48,22 @@ class VQModel(nn.Module):
             self.quantizer4 = MMDVectorQuantizer(args)
 
         self.projector_in = nn.Sequential(
-                nn.Conv2d(32, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(32, 2048, kernel_size=3, padding=1),
+                nn.BatchNorm2d(2048),
                 nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(2048, 2048, kernel_size=3, padding=1),
+                nn.BatchNorm2d(2048),
                 nn.SiLU(),
-                nn.Conv2d(1024,  4 * args.codebook_dim, kernel_size=3, padding=1),
+                nn.Conv2d(2048,  4 * args.codebook_dim, kernel_size=3, padding=1),
             )
         self.projector_out = nn.Sequential(
-                nn.Conv2d(4 * args.codebook_dim, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(4 * args.codebook_dim, 2048, kernel_size=3, padding=1),
+                nn.BatchNorm2d(2048),
                 nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm2d(1024),
+                nn.Conv2d(2048, 2048, kernel_size=3, padding=1),
+                nn.BatchNorm2d(2048),
                 nn.SiLU(),
-                nn.Conv2d(1024, 32, kernel_size=3, padding=1),
+                nn.Conv2d(2048, 32, kernel_size=3, padding=1),
             )
 
         if args.stage == "transplant":
@@ -177,13 +177,12 @@ class VQModel(nn.Module):
             z = self.encoder(x)
             z_p = z + self.projector_in(z)
             z_1, z_2, z_3, z_4 = torch.chunk(z_p, 4, dim=1)
-            z_q_1, _ = self.quantizer1(z_1)
-            z_q_2, _ = self.quantizer2(z_2)
-            z_q_3, _ = self.quantizer3(z_3)
-            z_q_4, _ = self.quantizer4(z_4)
+            z_q_1 = self.quantizer1.collect_eval_info(z_1)
+            z_q_2 = self.quantizer2.collect_eval_info(z_2)
+            z_q_3 = self.quantizer3.collect_eval_info(z_3)
+            z_q_4 = self.quantizer4.collect_eval_info(z_4)
             z_q = torch.cat((z_q_1, z_q_2, z_q_3, z_q_4), dim=1)
             z_q = z_q + self.projector_out(z_q)
-
         x_rec = self.decoder(z_q)
         return x_rec
 

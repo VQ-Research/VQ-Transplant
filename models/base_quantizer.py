@@ -84,6 +84,17 @@ class Queue(nn.Module):
     def obtain_feature_from_queue(self):
         return self.queue.detach().clone()
 
+    @torch.no_grad()
+    def obatin_latest_feature_from_queue(self):
+        assert self.codebook_size < self.queue_size
+        ptr = int(self.queue_ptr)
+        if ptr >= self.codebook_size:
+            return self.queue[(ptr-self.codebook_size):ptr, :].detach().clone()
+        else:
+            part1 = self.queue[0:ptr, :].detach().clone()
+            part2 = self.queue[(self.queue_size-(self.codebook_size-ptr)):self.queue_size,:].detach().clone()
+            return torch.cat((part1, part2), 0)
+
 class VectorQuantizer(nn.Module):
     def __init__(self, args):
         super(VectorQuantizer, self).__init__()
@@ -104,8 +115,9 @@ class VectorQuantizer(nn.Module):
             self.register_buffer("embed_prob", torch.zeros(self.codebook_size))
         elif args.VQ == "ema_vq":
             self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-        
-        self.queue = Queue(args)
+            
+        if args.VQ == "wasserstein_vq":
+            self.queue = Queue(args)
 
 class ProductQuantizer(nn.Module):
     def __init__(self, args):
