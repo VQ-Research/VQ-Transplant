@@ -91,7 +91,7 @@ def eval_reconstruction(args, model):
         x = x.cuda()
         with torch.no_grad():
             if args.stage == "transplant":
-                x_rec, _, _ = model.module.collect_eval_info_transplant(x)
+                x_rec, _, _, _ = model.module.collect_eval_info_transplant(x)
             else:
                 x_rec, _ = model.module.collect_eval_info_refinement(x)
             
@@ -146,7 +146,7 @@ def eval_reconstruction_epoch(args, model, epoch):
         x = x.cuda()
         with torch.no_grad():
             if args.stage == "transplant":
-                x_rec, _, _ = model.module.collect_eval_info_transplant(x)
+                x_rec, _, _, _ = model.module.collect_eval_info_transplant(x)
             else:
                 x_rec, _ = model.module.collect_eval_info_refinement(x)
             
