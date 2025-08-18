@@ -27,22 +27,33 @@ class EMAVectorQuantizer(VectorQuantizer):
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
-        encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
-        #EMA cluster size
-        encodings_sum = encodings.sum(0)            
-        self.embedding.cluster_size_ema_update(encodings_sum)
-        #EMA embedding average
-        embed_sum = encodings.transpose(0,1) @ z_flat            
-        self.embedding.embed_avg_ema_update(embed_sum)
-        #normalize embed_avg and update weight
-        self.embedding.weight_update(self.args.codebook_size)
-
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
         commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc)
+
+        if self.training:
+            encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
+            #EMA cluster size
+            encodings_sum = encodings.sum(0)            
+            self.embedding.cluster_size_ema_update(encodings_sum)
+            #EMA embedding average
+            embed_sum = encodings.transpose(0,1) @ z_flat            
+            self.embedding.embed_avg_ema_update(embed_sum)
+            #normalize embed_avg and update weight
+            self.embedding.weight_update(self.args.codebook_size)
+
+        histogram = token.bincount(minlength=self.args.codebook_size).float()
+        handler = tdist.all_reduce(histogram, async_op=True)
+        handler.wait()
+
+        codebook_usage_counts = (histogram > 0).float().sum()
+        utilization = codebook_usage_counts.item() / self.args.codebook_size
+            
+        avg_probs = histogram/histogram.sum(0)
+        perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
         
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss
-        return z_dec, loss
+        return z_dec, loss, utilization, perplexity
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
@@ -56,7 +67,10 @@ class EMAVectorQuantizer(VectorQuantizer):
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        return z_dec
+        histogram = token.bincount(minlength=self.args.codebook_size).float()
+        handler = tdist.all_reduce(histogram, async_op=True)
+        handler.wait()
+        return z_dec, histogram
     
 ##### multi-scale quantizer
 class EMAVARQuantizer(MultiscaleVectorQuantizer):

@@ -45,9 +45,13 @@ class OnlineVectorQuantizer(VectorQuantizer):
         decay = torch.exp(-(self.embed_prob * self.codebook_size * 10)/(1-self.decay) - 1e-3).unsqueeze(1).repeat(1, self.codebook_dim)
         self.embedding.weight.data = self.embedding.weight.data * (1 - decay) + random_feat * decay
 
+        codebook_usage_counts = (histogram > 0).float().sum()
+        utilization = codebook_usage_counts.item() / self.args.codebook_size
+        perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
+
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss
-        return z_dec, loss
+        return z_dec, loss, utilization, perplexity
 
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
@@ -61,7 +65,10 @@ class OnlineVectorQuantizer(VectorQuantizer):
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        return z_dec
+        histogram = token.bincount(minlength=self.args.codebook_size).float()
+        handler = tdist.all_reduce(histogram, async_op=True)
+        handler.wait()
+        return z_dec, histogram
 
 ##### multi-scale quantizer
 class OnlineVARQuantizer(MultiscaleVectorQuantizer):

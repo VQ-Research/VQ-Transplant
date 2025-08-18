@@ -15,7 +15,7 @@ from utils.misc import str2bool
 import ruamel.yaml as yaml
 
 def parse_arg():
-    parser = argparse.ArgumentParser(description='VQ-Transplant based on pretrained DCAE-SANA Tokenizer.') 
+    parser = argparse.ArgumentParser(description='VQ-Transplant based on pretrained LDM Continuous Tokenizer.') 
 
     ### Dataset and Dataloader Configuration
     parser.add_argument('--dataset_dir', default="/project/6105494/shared/data/", type=str, help='the directory of dataset') 
@@ -43,7 +43,7 @@ def parse_arg():
     parser.add_argument('--disc_cr_loss_weight', type=float, default=4.0, help='refinement stage: disc_cr_loss_weight')
 
     ### Training Configuration
-    parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'online_vq', 'mmd_vq', 'original_sana', 'bsq', 'fsq', 'lfq'])
+    parser.add_argument('--VQ', default='wasserstein_vq', help='various vq approaches.', choices=['wasserstein_vq', 'vanilla_vq', 'ema_vq', 'online_vq', 'mmd_vq', 'original_ldm', 'bsq', 'fsq', 'lfq'])
     parser.add_argument('--use_multiscale', action='store_true', help='False: employ single VQ; True: use multiscale-VQ as original VAR.')
     parser.add_argument('--transplant_epochs', type=int, default=2, help="training epochs, 5 epochs for transplant stage.")
     parser.add_argument('--refinement_epochs', type=int, default=5, help="training epochs, 5 epochs for refinement stage.")
@@ -61,7 +61,7 @@ def parse_arg():
     parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/saver/", type=str, help='the directory of saver.')
     parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/yaml/", type=str, help='the directory of saver.')
-    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/dc-ae-f32c32-sana-1.0.safetensors", type=str, help='the directory of sana checkpoint.')
+    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
@@ -111,7 +111,7 @@ def parse_arg():
     args.data_pre = '{}'.format(args.dataset_name)
 
     ### model prefix 
-    if args.VQ == "original_sana":
+    if args.VQ == "original_ldm":
         args.model_pre = 'model_'
     elif args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
         args.model_pre = 'model_{}_{}_{}'.format(args.codebook_size, args.codebook_dim, args.pq)
@@ -119,7 +119,7 @@ def parse_arg():
         args.model_pre = 'model_{}_{}'.format(args.project_dim, args.L)
     
     ### loss prefix 
-    if args.VQ == "original_sana":
+    if args.VQ == "original_ldm":
         args.loss_pre = 'loss_'
     elif args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
         args.loss_pre = 'loss_{}_{}_{}_{}'.format(args.alpha, args.beta, args.gamma, args.disc_weight)
@@ -127,7 +127,7 @@ def parse_arg():
         args.loss_pre = 'loss_{}_{}'.format(args.beta, args.disc_weight)
 
     ### train prefix 
-    if args.VQ == "original_sana":
+    if args.VQ == "original_ldm":
         args.training_pre = '{}'.format(args.VQ)
     elif args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
         args.training_pre = '{}_{}_{}'.format(args.VQ, args.stage, args.use_multiscale)

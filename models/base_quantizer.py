@@ -103,7 +103,7 @@ class VectorQuantizer(nn.Module):
         self.codebook_dim = args.codebook_dim
         self.alpha = args.alpha
         self.beta = args.beta
-        self.decay = 0.99
+        self.decay = 0.8
         if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "mmd_vq":
             self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)

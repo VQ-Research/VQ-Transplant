@@ -1,382 +1,433 @@
-from dataclasses import dataclass, field
-from typing import Any, Optional
-from typing import Union, List
-
+import math
 import torch
 import torch.nn as nn
-from omegaconf import MISSING, OmegaConf
+import numpy as np
+from einops import rearrange
 
-from models.efficientvit.nn.act import build_act
-from models.efficientvit.nn.norm import build_norm
-from models.efficientvit.nn.ops import (
-    ChannelDuplicatingPixelUnshuffleUpSampleLayer,
-    ConvLayer,
-    ConvPixelShuffleUpSampleLayer,
-    ConvPixelUnshuffleDownSampleLayer,
-    EfficientViTBlock,
-    IdentityLayer,
-    InterpolateConvUpSampleLayer,
-    OpSequential,
-    PixelUnshuffleChannelAveragingDownSampleLayer,
-    ResBlock,
-    ResidualBlock,
-)
+def get_timestep_embedding(timesteps, embedding_dim):
+    """
+    This matches the implementation in Denoising Diffusion Probabilistic Models:
+    From Fairseq.
+    Build sinusoidal embeddings.
+    This matches the implementation in tensor2tensor, but differs slightly
+    from the description in Section 3.5 of "Attention Is All You Need".
+    """
+    assert len(timesteps.shape) == 1
 
-@dataclass
-class EncoderConfig:
-    in_channels: int = 3
-    latent_channels: int = 32
-    width_list = [128,256,512,512,1024,1024]
-    depth_list = [2,2,2,3,3,3]
-    block_type = ["ResBlock","ResBlock","ResBlock","EViTS5_GLU","EViTS5_GLU","EViTS5_GLU"]
-    norm: str = "trms2d"
-    act: str = "silu"
-    downsample_block_type: str = "Conv"
-    downsample_match_channel: bool = True
-    downsample_shortcut: Optional[str] = "averaging"
-    out_norm: Optional[str] = None
-    out_act: Optional[str] = None
-    out_shortcut: Optional[str] = "averaging"
-    double_latent: bool = False
-
-@dataclass
-class DecoderConfig:
-    in_channels: int = 3
-    latent_channels: int = 32
-    in_shortcut: Optional[str] = "duplicating"
-    width_list = [128,256,512,512,1024,1024]
-    depth_list = [3,3,3,3,3,3]
-    block_type = ["ResBlock","ResBlock","ResBlock","EViTS5_GLU","EViTS5_GLU","EViTS5_GLU"]
-    norm="trms2d"
-    act="silu"
-    upsample_block_type: str = "InterpolateConv"
-    upsample_match_channel: bool = True
-    upsample_shortcut: str = "duplicating"
-    out_norm: str = "trms2d"
-    out_act: str = "relu"
-
-def build_block(
-    block_type: str, in_channels: int, out_channels: int, norm: Optional[str], act: Optional[str]
-) -> nn.Module:
-    if block_type == "ResBlock":
-        assert in_channels == out_channels
-        main_block = ResBlock(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=3,
-            stride=1,
-            use_bias=(True, False),
-            norm=(None, norm),
-            act_func=(act, None),
-        )
-        block = ResidualBlock(main_block, IdentityLayer())
-    elif block_type == "EViT_GLU":
-        assert in_channels == out_channels
-        block = EfficientViTBlock(in_channels, norm=norm, act_func=act, local_module="GLUMBConv", scales=())
-    elif block_type == "EViTS5_GLU":
-        assert in_channels == out_channels
-        block = EfficientViTBlock(in_channels, norm=norm, act_func=act, local_module="GLUMBConv", scales=(5,))
-    else:
-        raise ValueError(f"block_type {block_type} is not supported")
-    return block
+    half_dim = embedding_dim // 2
+    emb = math.log(10000) / (half_dim - 1)
+    emb = torch.exp(torch.arange(half_dim, dtype=torch.float32) * -emb)
+    emb = emb.to(device=timesteps.device)
+    emb = timesteps.float()[:, None] * emb[None, :]
+    emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
+    if embedding_dim % 2 == 1:  # zero pad
+        emb = torch.nn.functional.pad(emb, (0,1,0,0))
+    return emb
 
 
-def build_stage_main(
-    width: int, depth: int, block_type: Union[str, List[str]], norm: str, act: str, input_width: int
-):
-    assert isinstance(block_type, str) or (isinstance(block_type, list) and depth == len(block_type))
-    stage = []
-    for d in range(depth):
-        current_block_type = block_type[d] if isinstance(block_type, list) else block_type
-        block = build_block(
-            block_type=current_block_type,
-            in_channels=width if d > 0 else input_width,
-            out_channels=width,
-            norm=norm,
-            act=act,
-        )
-        stage.append(block)
-    return stage
+def nonlinearity(x):
+    # swish
+    return x*torch.sigmoid(x)
 
 
-def build_downsample_block(block_type: str, in_channels: int, out_channels: int, shortcut: Optional[str]) -> nn.Module:
-    if block_type == "Conv":
-        block = ConvLayer(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=3,
-            stride=2,
-            use_bias=True,
-            norm=None,
-            act_func=None,
-        )
-    elif block_type == "ConvPixelUnshuffle":
-        block = ConvPixelUnshuffleDownSampleLayer(
-            in_channels=in_channels, out_channels=out_channels, kernel_size=3, factor=2
-        )
-    else:
-        raise ValueError(f"block_type {block_type} is not supported for downsampling")
-    if shortcut is None:
-        pass
-    elif shortcut == "averaging":
-        shortcut_block = PixelUnshuffleChannelAveragingDownSampleLayer(
-            in_channels=in_channels, out_channels=out_channels, factor=2
-        )
-        block = ResidualBlock(block, shortcut_block)
-    else:
-        raise ValueError(f"shortcut {shortcut} is not supported for downsample")
-    return block
+def Normalize(in_channels, num_groups=32):
+    return torch.nn.GroupNorm(num_groups=num_groups, num_channels=in_channels, eps=1e-6, affine=True)
 
 
-def build_upsample_block(block_type: str, in_channels: int, out_channels: int, shortcut: Optional[str]) -> nn.Module:
-    if block_type == "ConvPixelShuffle":
-        block = ConvPixelShuffleUpSampleLayer(
-            in_channels=in_channels, out_channels=out_channels, kernel_size=3, factor=2
-        )
-    elif block_type == "InterpolateConv":
-        block = InterpolateConvUpSampleLayer(
-            in_channels=in_channels, out_channels=out_channels, kernel_size=3, factor=2
-        )
-    else:
-        raise ValueError(f"block_type {block_type} is not supported for upsampling")
-    if shortcut is None:
-        pass
-    elif shortcut == "duplicating":
-        shortcut_block = ChannelDuplicatingPixelUnshuffleUpSampleLayer(
-            in_channels=in_channels, out_channels=out_channels, factor=2
-        )
-        block = ResidualBlock(block, shortcut_block)
-    else:
-        raise ValueError(f"shortcut {shortcut} is not supported for upsample")
-    return block
-
-
-def build_encoder_project_in_block(in_channels: int, out_channels: int, factor: int, downsample_block_type: str):
-    if factor == 1:
-        block = ConvLayer(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=3,
-            stride=1,
-            use_bias=True,
-            norm=None,
-            act_func=None,
-        )
-    elif factor == 2:
-        block = build_downsample_block(
-            block_type=downsample_block_type, in_channels=in_channels, out_channels=out_channels, shortcut=None
-        )
-    else:
-        raise ValueError(f"downsample factor {factor} is not supported for encoder project in")
-    return block
-
-
-def build_encoder_project_out_block(
-    in_channels: int, out_channels: int, norm: Optional[str], act: Optional[str], shortcut: Optional[str]
-):
-    block = OpSequential(
-        [
-            build_norm(norm),
-            build_act(act),
-            ConvLayer(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=3,
-                stride=1,
-                use_bias=True,
-                norm=None,
-                act_func=None,
-            ),
-        ]
-    )
-    if shortcut is None:
-        pass
-    elif shortcut == "averaging":
-        shortcut_block = PixelUnshuffleChannelAveragingDownSampleLayer(
-            in_channels=in_channels, out_channels=out_channels, factor=1
-        )
-        block = ResidualBlock(block, shortcut_block)
-    else:
-        raise ValueError(f"shortcut {shortcut} is not supported for encoder project out")
-    return block
-
-
-def build_decoder_project_in_block(in_channels: int, out_channels: int, shortcut: Optional[str]):
-    block = ConvLayer(
-        in_channels=in_channels,
-        out_channels=out_channels,
-        kernel_size=3,
-        stride=1,
-        use_bias=True,
-        norm=None,
-        act_func=None,
-    )
-    if shortcut is None:
-        pass
-    elif shortcut == "duplicating":
-        shortcut_block = ChannelDuplicatingPixelUnshuffleUpSampleLayer(
-            in_channels=in_channels, out_channels=out_channels, factor=1
-        )
-        block = ResidualBlock(block, shortcut_block)
-    else:
-        raise ValueError(f"shortcut {shortcut} is not supported for decoder project in")
-    return block
-
-
-def build_decoder_project_out_block(
-    in_channels: int, out_channels: int, factor: int, upsample_block_type: str, norm: Optional[str], act: Optional[str]
-):
-    layers: list[nn.Module] = [
-        build_norm(norm, in_channels),
-        build_act(act),
-    ]
-    if factor == 1:
-        layers.append(
-            ConvLayer(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=3,
-                stride=1,
-                use_bias=True,
-                norm=None,
-                act_func=None,
-            )
-        )
-    elif factor == 2:
-        layers.append(
-            build_upsample_block(
-                block_type=upsample_block_type, in_channels=in_channels, out_channels=out_channels, shortcut=None
-            )
-        )
-    else:
-        raise ValueError(f"upsample factor {factor} is not supported for decoder project out")
-    return OpSequential(layers)
-
-class Encoder(nn.Module):
-    def __init__(self, cfg: EncoderConfig):
+class Upsample(nn.Module):
+    def __init__(self, in_channels, with_conv):
         super().__init__()
-        self.cfg = cfg
-        num_stages = len(cfg.width_list)
-        self.num_stages = num_stages
-        assert len(cfg.depth_list) == num_stages
-        assert len(cfg.width_list) == num_stages
-        assert isinstance(cfg.block_type, str) or (
-            isinstance(cfg.block_type, list) and len(cfg.block_type) == num_stages
-        )
+        self.with_conv = with_conv
+        if self.with_conv:
+            self.conv = torch.nn.Conv2d(in_channels,
+                                        in_channels,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
 
-        self.project_in = build_encoder_project_in_block(
-            in_channels=cfg.in_channels,
-            out_channels=cfg.width_list[0] if cfg.depth_list[0] > 0 else cfg.width_list[1],
-            factor=1 if cfg.depth_list[0] > 0 else 2,
-            downsample_block_type=cfg.downsample_block_type,
-        )
-
-        self.stages: list[OpSequential] = []
-        for stage_id, (width, depth) in enumerate(zip(cfg.width_list, cfg.depth_list)):
-            block_type = cfg.block_type[stage_id] if isinstance(cfg.block_type, list) else cfg.block_type
-            stage = build_stage_main(
-                width=width, depth=depth, block_type=block_type, norm=cfg.norm, act=cfg.act, input_width=width
-            )
-
-            if stage_id < num_stages - 1 and depth > 0:
-                downsample_block = build_downsample_block(
-                    block_type=cfg.downsample_block_type,
-                    in_channels=width,
-                    out_channels=cfg.width_list[stage_id + 1] if cfg.downsample_match_channel else width,
-                    shortcut=cfg.downsample_shortcut,
-                )
-                stage.append(downsample_block)
-            self.stages.append(OpSequential(stage))
-        self.stages = nn.ModuleList(self.stages)
-
-        self.project_out = build_encoder_project_out_block(
-            in_channels=cfg.width_list[-1],
-            out_channels=2 * cfg.latent_channels if cfg.double_latent else cfg.latent_channels,
-            norm=cfg.out_norm,
-            act=cfg.out_act,
-            shortcut=cfg.out_shortcut,
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.project_in(x)
-        for stage in self.stages:
-            if len(stage.op_list) == 0:
-                continue
-            x = stage(x)
-        x = self.project_out(x)
+    def forward(self, x):
+        x = torch.nn.functional.interpolate(x, scale_factor=2.0, mode="nearest")
+        if self.with_conv:
+            x = self.conv(x)
         return x
 
 
-class Decoder(nn.Module):
-    def __init__(self, cfg: DecoderConfig):
+class Downsample(nn.Module):
+    def __init__(self, in_channels, with_conv):
         super().__init__()
-        self.cfg = cfg
-        num_stages = len(cfg.width_list)
-        self.num_stages = num_stages
-        assert len(cfg.depth_list) == num_stages
-        assert len(cfg.width_list) == num_stages
-        assert isinstance(cfg.block_type, str) or (
-            isinstance(cfg.block_type, list) and len(cfg.block_type) == num_stages
-        )
-        assert isinstance(cfg.norm, str) or (isinstance(cfg.norm, list) and len(cfg.norm) == num_stages)
-        assert isinstance(cfg.act, str) or (isinstance(cfg.act, list) and len(cfg.act) == num_stages)
+        self.with_conv = with_conv
+        if self.with_conv:
+            # no asymmetric padding in torch conv, must do it ourselves
+            self.conv = torch.nn.Conv2d(in_channels,
+                                        in_channels,
+                                        kernel_size=3,
+                                        stride=2,
+                                        padding=0)
 
-        self.project_in = build_decoder_project_in_block(
-            in_channels=cfg.latent_channels,
-            out_channels=cfg.width_list[-1],
-            shortcut=cfg.in_shortcut,
-        )
+    def forward(self, x):
+        if self.with_conv:
+            pad = (0,1,0,1)
+            x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
+            x = self.conv(x)
+        else:
+            x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
+        return x
 
-        self.stages: list[OpSequential] = []
-        for stage_id, (width, depth) in reversed(list(enumerate(zip(cfg.width_list, cfg.depth_list)))):
-            stage = []
-            if stage_id < num_stages - 1 and depth > 0:
-                upsample_block = build_upsample_block(
-                    block_type=cfg.upsample_block_type,
-                    in_channels=cfg.width_list[stage_id + 1],
-                    out_channels=width if cfg.upsample_match_channel else cfg.width_list[stage_id + 1],
-                    shortcut=cfg.upsample_shortcut,
-                )
-                stage.append(upsample_block)
 
-            block_type = cfg.block_type[stage_id] if isinstance(cfg.block_type, list) else cfg.block_type
-            norm = cfg.norm[stage_id] if isinstance(cfg.norm, list) else cfg.norm
-            act = cfg.act[stage_id] if isinstance(cfg.act, list) else cfg.act
-            stage.extend(
-                build_stage_main(
-                    width=width,
-                    depth=depth,
-                    block_type=block_type,
-                    norm=norm,
-                    act=act,
-                    input_width=(
-                        width if cfg.upsample_match_channel else cfg.width_list[min(stage_id + 1, num_stages - 1)]
-                    ),
-                )
-            )
-            self.stages.insert(0, OpSequential(stage))
-        self.stages = nn.ModuleList(self.stages)
+class ResnetBlock(nn.Module):
+    def __init__(self, *, in_channels, out_channels=None, conv_shortcut=False,
+                 dropout, temb_channels=512):
+        super().__init__()
+        self.in_channels = in_channels
+        out_channels = in_channels if out_channels is None else out_channels
+        self.out_channels = out_channels
+        self.use_conv_shortcut = conv_shortcut
 
-        self.project_out = build_decoder_project_out_block(
-            in_channels=cfg.width_list[0] if cfg.depth_list[0] > 0 else cfg.width_list[1],
-            out_channels=cfg.in_channels,
-            factor=1 if cfg.depth_list[0] > 0 else 2,
-            upsample_block_type=cfg.upsample_block_type,
-            norm=cfg.out_norm,
-            act=cfg.out_act,
-        )
+        self.norm1 = Normalize(in_channels)
+        self.conv1 = torch.nn.Conv2d(in_channels,
+                                     out_channels,
+                                     kernel_size=3,
+                                     stride=1,
+                                     padding=1)
+        if temb_channels > 0:
+            self.temb_proj = torch.nn.Linear(temb_channels,
+                                             out_channels)
+        self.norm2 = Normalize(out_channels)
+        self.dropout = torch.nn.Dropout(dropout)
+        self.conv2 = torch.nn.Conv2d(out_channels,
+                                     out_channels,
+                                     kernel_size=3,
+                                     stride=1,
+                                     padding=1)
+        if self.in_channels != self.out_channels:
+            if self.use_conv_shortcut:
+                self.conv_shortcut = torch.nn.Conv2d(in_channels,
+                                                     out_channels,
+                                                     kernel_size=3,
+                                                     stride=1,
+                                                     padding=1)
+            else:
+                self.nin_shortcut = torch.nn.Conv2d(in_channels,
+                                                    out_channels,
+                                                    kernel_size=1,
+                                                    stride=1,
+                                                    padding=0)
+
+    def forward(self, x, temb):
+        h = x
+        h = self.norm1(h)
+        h = nonlinearity(h)
+        h = self.conv1(h)
+
+        if temb is not None:
+            h = h + self.temb_proj(nonlinearity(temb))[:,:,None,None]
+
+        h = self.norm2(h)
+        h = nonlinearity(h)
+        h = self.dropout(h)
+        h = self.conv2(h)
+
+        if self.in_channels != self.out_channels:
+            if self.use_conv_shortcut:
+                x = self.conv_shortcut(x)
+            else:
+                x = self.nin_shortcut(x)
+
+        return x+h
+
 
     @property
     def last_layer(self):
         return self.project_out.op_list[2].conv.weight
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.project_in(x)
-        for stage in reversed(self.stages):
-            if len(stage.op_list) == 0:
-                continue
-            x = stage(x)
-        x = self.project_out(x)
-        return x
+class LinearAttention(nn.Module):
+    def __init__(self, dim, heads=4, dim_head=32):
+        super().__init__()
+        self.heads = heads
+        hidden_dim = dim_head * heads
+        self.to_qkv = nn.Conv2d(dim, hidden_dim * 3, 1, bias = False)
+        self.to_out = nn.Conv2d(hidden_dim, dim, 1)
 
+    def forward(self, x):
+        b, c, h, w = x.shape
+        qkv = self.to_qkv(x)
+        q, k, v = rearrange(qkv, 'b (qkv heads c) h w -> qkv b heads c (h w)', heads = self.heads, qkv=3)
+        k = k.softmax(dim=-1)  
+        context = torch.einsum('bhdn,bhen->bhde', k, v)
+        out = torch.einsum('bhde,bhdn->bhen', context, q)
+        out = rearrange(out, 'b heads c (h w) -> b (heads c) h w', heads=self.heads, h=h, w=w)
+        return self.to_out(out)
+
+class LinAttnBlock(LinearAttention):
+    """to match AttnBlock usage"""
+    def __init__(self, in_channels):
+        super().__init__(dim=in_channels, heads=1, dim_head=in_channels)
+
+
+class AttnBlock(nn.Module):
+    def __init__(self, in_channels):
+        super().__init__()
+        self.in_channels = in_channels
+
+        self.norm = Normalize(in_channels)
+        self.q = torch.nn.Conv2d(in_channels,
+                                 in_channels,
+                                 kernel_size=1,
+                                 stride=1,
+                                 padding=0)
+        self.k = torch.nn.Conv2d(in_channels,
+                                 in_channels,
+                                 kernel_size=1,
+                                 stride=1,
+                                 padding=0)
+        self.v = torch.nn.Conv2d(in_channels,
+                                 in_channels,
+                                 kernel_size=1,
+                                 stride=1,
+                                 padding=0)
+        self.proj_out = torch.nn.Conv2d(in_channels,
+                                        in_channels,
+                                        kernel_size=1,
+                                        stride=1,
+                                        padding=0)
+
+
+    def forward(self, x):
+        h_ = x
+        h_ = self.norm(h_)
+        q = self.q(h_)
+        k = self.k(h_)
+        v = self.v(h_)
+
+        # compute attention
+        b,c,h,w = q.shape
+        q = q.reshape(b,c,h*w)
+        q = q.permute(0,2,1)   # b,hw,c
+        k = k.reshape(b,c,h*w) # b,c,hw
+        w_ = torch.bmm(q,k)     # b,hw,hw    w[b,i,j]=sum_c q[b,i,c]k[b,c,j]
+        w_ = w_ * (int(c)**(-0.5))
+        w_ = torch.nn.functional.softmax(w_, dim=2)
+
+        # attend to values
+        v = v.reshape(b,c,h*w)
+        w_ = w_.permute(0,2,1)   # b,hw,hw (first hw of k, second of q)
+        h_ = torch.bmm(v,w_)     # b, c,hw (hw of q) h_[b,c,j] = sum_i v[b,c,i] w_[b,i,j]
+        h_ = h_.reshape(b,c,h,w)
+
+        h_ = self.proj_out(h_)
+
+        return x+h_
+
+
+def make_attn(in_channels, attn_type="vanilla"):
+    assert attn_type in ["vanilla", "linear", "none"], f'attn_type {attn_type} unknown'
+    print(f"making attention of type '{attn_type}' with {in_channels} in_channels")
+    if attn_type == "vanilla":
+        return AttnBlock(in_channels)
+    elif attn_type == "none":
+        return nn.Identity(in_channels)
+    else:
+        return LinAttnBlock(in_channels)    
+
+class Encoder(nn.Module):
+    def __init__(self, *, ch, out_ch, ch_mult=(1,2,4,8), num_res_blocks,
+                 attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,
+                 resolution, z_channels, double_z=True, use_linear_attn=False, attn_type="vanilla",
+                 **ignore_kwargs):
+        super().__init__()
+        if use_linear_attn: attn_type = "linear"
+        self.ch = ch
+        self.temb_ch = 0
+        self.num_resolutions = len(ch_mult)
+        self.num_res_blocks = num_res_blocks
+        self.resolution = resolution
+        self.in_channels = in_channels
+
+        # downsampling
+        self.conv_in = torch.nn.Conv2d(in_channels,
+                                       self.ch,
+                                       kernel_size=3,
+                                       stride=1,
+                                       padding=1)
+
+        curr_res = resolution
+        in_ch_mult = (1,)+tuple(ch_mult)
+        self.in_ch_mult = in_ch_mult
+        self.down = nn.ModuleList()
+        for i_level in range(self.num_resolutions):
+            block = nn.ModuleList()
+            attn = nn.ModuleList()
+            block_in = ch*in_ch_mult[i_level]
+            block_out = ch*ch_mult[i_level]
+            for i_block in range(self.num_res_blocks):
+                block.append(ResnetBlock(in_channels=block_in,
+                                         out_channels=block_out,
+                                         temb_channels=self.temb_ch,
+                                         dropout=dropout))
+                block_in = block_out
+                if curr_res in attn_resolutions:
+                    attn.append(make_attn(block_in, attn_type=attn_type))
+            down = nn.Module()
+            down.block = block
+            down.attn = attn
+            if i_level != self.num_resolutions-1:
+                down.downsample = Downsample(block_in, resamp_with_conv)
+                curr_res = curr_res // 2
+            self.down.append(down)
+
+        # middle
+        self.mid = nn.Module()
+        self.mid.block_1 = ResnetBlock(in_channels=block_in,
+                                       out_channels=block_in,
+                                       temb_channels=self.temb_ch,
+                                       dropout=dropout)
+        self.mid.attn_1 = make_attn(block_in, attn_type=attn_type)
+        self.mid.block_2 = ResnetBlock(in_channels=block_in,
+                                       out_channels=block_in,
+                                       temb_channels=self.temb_ch,
+                                       dropout=dropout)
+
+        # end
+        self.norm_out = Normalize(block_in)
+        self.conv_out = torch.nn.Conv2d(block_in,
+                                        2*z_channels if double_z else z_channels,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
+
+    def forward(self, x):
+        # timestep embedding
+        temb = None
+
+        # downsampling
+        hs = [self.conv_in(x)]
+        for i_level in range(self.num_resolutions):
+            for i_block in range(self.num_res_blocks):
+                h = self.down[i_level].block[i_block](hs[-1], temb)
+                if len(self.down[i_level].attn) > 0:
+                    h = self.down[i_level].attn[i_block](h)
+                hs.append(h)
+            if i_level != self.num_resolutions-1:
+                hs.append(self.down[i_level].downsample(hs[-1]))
+
+        # middle
+        h = hs[-1]
+        h = self.mid.block_1(h, temb)
+        h = self.mid.attn_1(h)
+        h = self.mid.block_2(h, temb)
+
+        # end
+        h = self.norm_out(h)
+        h = nonlinearity(h)
+        h = self.conv_out(h)
+        return h
+
+
+class Decoder(nn.Module):
+    def __init__(self, *, ch, out_ch, ch_mult=(1,2,4,8), num_res_blocks,
+                 attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,
+                 resolution, z_channels, give_pre_end=False, tanh_out=False, use_linear_attn=False,
+                 attn_type="vanilla", **ignorekwargs):
+        super().__init__()
+        if use_linear_attn: attn_type = "linear"
+        self.ch = ch
+        self.temb_ch = 0
+        self.num_resolutions = len(ch_mult)
+        self.num_res_blocks = num_res_blocks
+        self.resolution = resolution
+        self.in_channels = in_channels
+        self.give_pre_end = give_pre_end
+        self.tanh_out = tanh_out
+
+        # compute in_ch_mult, block_in and curr_res at lowest res
+        in_ch_mult = (1,)+tuple(ch_mult)
+        block_in = ch*ch_mult[self.num_resolutions-1]
+        curr_res = resolution // 2**(self.num_resolutions-1)
+        self.z_shape = (1,z_channels,curr_res,curr_res)
+        print("Working with z of shape {} = {} dimensions.".format(
+            self.z_shape, np.prod(self.z_shape)))
+
+        # z to block_in
+        self.conv_in = torch.nn.Conv2d(z_channels,
+                                       block_in,
+                                       kernel_size=3,
+                                       stride=1,
+                                       padding=1)
+
+        # middle
+        self.mid = nn.Module()
+        self.mid.block_1 = ResnetBlock(in_channels=block_in,
+                                       out_channels=block_in,
+                                       temb_channels=self.temb_ch,
+                                       dropout=dropout)
+        self.mid.attn_1 = make_attn(block_in, attn_type=attn_type)
+        self.mid.block_2 = ResnetBlock(in_channels=block_in,
+                                       out_channels=block_in,
+                                       temb_channels=self.temb_ch,
+                                       dropout=dropout)
+
+        # upsampling
+        self.up = nn.ModuleList()
+        for i_level in reversed(range(self.num_resolutions)):
+            block = nn.ModuleList()
+            attn = nn.ModuleList()
+            block_out = ch*ch_mult[i_level]
+            for i_block in range(self.num_res_blocks+1):
+                block.append(ResnetBlock(in_channels=block_in,
+                                         out_channels=block_out,
+                                         temb_channels=self.temb_ch,
+                                         dropout=dropout))
+                block_in = block_out
+                if curr_res in attn_resolutions:
+                    attn.append(make_attn(block_in, attn_type=attn_type))
+            up = nn.Module()
+            up.block = block
+            up.attn = attn
+            if i_level != 0:
+                up.upsample = Upsample(block_in, resamp_with_conv)
+                curr_res = curr_res * 2
+            self.up.insert(0, up) # prepend to get consistent order
+
+        # end
+        self.norm_out = Normalize(block_in)
+        self.conv_out = torch.nn.Conv2d(block_in,
+                                        out_ch,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
+
+    def forward(self, z):
+        #assert z.shape[1:] == self.z_shape[1:]
+        self.last_z_shape = z.shape
+
+        # timestep embedding
+        temb = None
+
+        # z to block_in
+        h = self.conv_in(z)
+
+        # middle
+        h = self.mid.block_1(h, temb)
+        h = self.mid.attn_1(h)
+        h = self.mid.block_2(h, temb)
+
+        # upsampling
+        for i_level in reversed(range(self.num_resolutions)):
+            for i_block in range(self.num_res_blocks+1):
+                h = self.up[i_level].block[i_block](h, temb)
+                if len(self.up[i_level].attn) > 0:
+                    h = self.up[i_level].attn[i_block](h)
+            if i_level != 0:
+                h = self.up[i_level].upsample(h)
+
+        # end
+        if self.give_pre_end:
+            return h
+
+        h = self.norm_out(h)
+        h = nonlinearity(h)
+        h = self.conv_out(h)
+        if self.tanh_out:
+            h = torch.tanh(h)
+        return h   
 
