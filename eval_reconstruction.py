@@ -90,11 +90,7 @@ def eval_reconstruction(args, model):
     for idx, (x, _) in enumerate(val_dataloader):
         x = x.cuda()
         with torch.no_grad():
-            if args.stage == "transplant":
-                x_rec, _, _, _ = model.module.collect_eval_info_transplant(x)
-            else:
-                x_rec, _ = model.module.collect_eval_info_refinement(x)
-            
+            x_rec = model.module.reconstruction(x)
             samples = torch.clamp(127.5 * x_rec + 128.0, 0, 255).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
             input_samples = torch.clamp(127.5 * x + 128.0, 0, 255).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
             
@@ -145,10 +141,7 @@ def eval_reconstruction_epoch(args, model, epoch):
     for idx, (x, _) in enumerate(val_dataloader):
         x = x.cuda()
         with torch.no_grad():
-            if args.stage == "transplant":
-                x_rec, _, _, _ = model.module.collect_eval_info_transplant(x)
-            else:
-                x_rec, _ = model.module.collect_eval_info_refinement(x)
+            x_rec = model.module.reconstruction(x)
             
             samples = torch.clamp(127.5 * x_rec + 128.0, 0, 255).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
             input_samples = torch.clamp(127.5 * x + 128.0, 0, 255).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()

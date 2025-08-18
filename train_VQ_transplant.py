@@ -67,12 +67,12 @@ def main_worker(args):
     vq_model = nn.SyncBatchNorm.convert_sync_batchnorm(vq_model)
 
     if args.VQ == "wasserstein_vq" or args.VQ == "mmd_vq":
-        code_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) + list(vq_model.quantizer3.embedding.parameters()) + list(vq_model.quantizer4.embedding.parameters())
+        code_para = list(vq_model.quantizer.embedding.parameters()) 
         model_para = list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
         all_para = code_para + model_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
-        model_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) + list(vq_model.quantizer3.embedding.parameters()) + list(vq_model.quantizer4.embedding.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
+        model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "ema_vq":
         model_para = list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) 
@@ -83,8 +83,10 @@ def main_worker(args):
     vq_model.train()
     vq_model.module.encoder.eval()
     vq_model.module.decoder.eval()
+    vq_model.module.quant_conv.eval()
+    vq_model.module.post_quant_conv.eval()
 
-    results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error': []}
+    results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error': [], 'utilization': [], 'perplexity': []}
     train_loss = LossManager()
     print("Start training...")
     start_epoch = 1 
@@ -100,8 +102,8 @@ def main_worker(args):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
 
-                transplant_loss, rec_loss, quant_error = vq_model.module.transplant(x)
-                info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, quant_error=quant_error)
+                transplant_loss, rec_loss, quant_error, utilization, perplexity = vq_model.module.transplant(x)
+                info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, quant_error=quant_error, utilization=utilization, perplexity=perplexity)
                 transplant_loss.backward()
                 if args.VQ == "wasserstein_vq":
                     has_nan = False            
@@ -142,6 +144,8 @@ def main_worker(args):
                 results_eval['lpips'].append(results_pack.lpips)
                 results_eval['rec_loss'].append(results_pack.rec_loss)
                 results_eval['quant_error'].append(results_pack.quant_error)
+                results_eval['utilization'].append(results_pack.utilization)
+                results_eval['perplexity'].append(results_pack.perplexity)
                 
                 results_val_len = len(results_eval['epoch'])
                 data_frame = pd.DataFrame(data=results_eval, index=range(1, results_val_len+1))
@@ -157,6 +161,7 @@ def main_worker(args):
     dist.destroy_process_group()
 
 if __name__ == '__main__':
+    os.environ['NCCL_TIMEOUT_IN_MS'] = '7200000'
     args = config.parse_arg()
     dict_args = vars(args)
     sys.stdout = Logger(args.saver_dir, args.saver_name_pre)

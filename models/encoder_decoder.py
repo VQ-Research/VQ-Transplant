@@ -429,5 +429,9 @@ class Decoder(nn.Module):
         h = self.conv_out(h)
         if self.tanh_out:
             h = torch.tanh(h)
-        return h   
+        return h 
+
+    @property
+    def last_layer(self):
+        return self.conv_out.weight 
 

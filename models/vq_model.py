@@ -9,7 +9,7 @@ from models.ema_quantizer import EMAVectorQuantizer
 from models.online_quantizer import OnlineVectorQuantizer
 from models.wasserstein_quantizer import WassersteinVectorQuantizer
 from models.mmd_quantizer import MMDVectorQuantizer
-from models.encoder_decoder import Encoder, Decoder, EncoderConfig, DecoderConfig
+from models.encoder_decoder import Encoder, Decoder
 from utils.util import Pack
 from safetensors.torch import load_file
 
@@ -55,10 +55,7 @@ class VQModel(nn.Module):
             )
 
         if args.stage == "transplant":
-            pretrain_dict = torch.load(args.pretrained_tokenizer, map_location='cpu')["state_dict"]
-            for k, v in pretrain_dict.items():
-                print("key:", k)
-
+            pretrain_dict = torch.load(args.pretrained_tokenizer, map_location='cpu', weights_only=False)["state_dict"]
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
             quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quant_conv.')}
@@ -157,7 +154,7 @@ class VQModel(nn.Module):
             z_q = self.post_quant_conv(z_q)
             x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = loss + vq_loss
+        transplant_loss = 2.0*loss + vq_loss
         return  transplant_loss, rec_loss, quant_error, utilization, perplexity
     
     def refinement(self, x):
@@ -203,3 +200,18 @@ class VQModel(nn.Module):
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec, rec_loss
+
+    def reconstruction(self, x):
+        z = self.encoder(x)
+        zt = self.quant_conv(z)
+        z, _ = torch.chunk(zt, 2, dim=1)
+
+        z_p = z + self.projector_in(z)
+        z_q = self.quantizer.collect_reconstruction(z_p)
+        z_q = z_q + self.projector_out(z_q)
+
+        quant_error = F.mse_loss(z_q.detach(), z.detach())
+        z_q = self.post_quant_conv(z_q)
+        x_rec = self.decoder(z_q).clamp_(-1, 1)
+        return x_rec
+

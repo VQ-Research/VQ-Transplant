@@ -89,7 +89,7 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         eval_utilization  = codebook_usage_counts.item() / args.codebook_size
 
         avg_probs = histogram_all/histogram_all.sum(0)
-        eval_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
+        eval_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10))).item()
 
     model.train()
     if args.stage == "transplant":

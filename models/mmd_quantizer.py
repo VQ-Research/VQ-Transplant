@@ -84,6 +84,20 @@ class MMDVectorQuantizer(VectorQuantizer):
         handler = tdist.all_reduce(histogram, async_op=True)
         handler.wait()
         return z_dec, histogram
+
+    def collect_reconstruction(self, z_enc):
+        B, C, H, W = z_enc.shape
+        z = rearrange(z_enc, 'b c h w -> b h w c') 
+        z_flat = z.reshape(-1, C).contiguous()  
+
+        # distances from z to embeddings
+        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
+            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
+            torch.matmul(z_flat, self.embedding.weight.data.t())
+
+        token = torch.argmin(d, dim=1)
+        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
+        return z_dec
     
 ##### multi-scale quantizer
 class MMDVARQuantizer(MultiscaleVectorQuantizer):
