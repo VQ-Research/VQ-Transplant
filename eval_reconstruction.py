@@ -56,29 +56,13 @@ def load_dataset(args, batch_size=16):
     if args.dataset_name == "ImageNet":
         val_set = ImageFolder(root=os.path.join(data_path, 'val'), transform=transform)
     elif args.dataset_name == "FFHQ":
-        val_set = ImageFolder(root=data_path, transform=eval_transform)
+        val_set = ImageFolder(root=data_path, transform=transform)
     elif args.dataset_name == "CelebAHQ":
-        val_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=eval_transform)
+        val_set = ImageFolder(root=data_path, transform=transform)
     elif args.dataset_name == "Bedrooms":
         val_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
     elif args.dataset_name == "Churches":
         val_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
-
-    len_val_set = len(val_set)
-    dataloader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=6, drop_last=False)
-    return dataloader, len_val_set
-
-def load_dataset(args, batch_size=16):
-    transform = transforms.Compose([
-        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, 256)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
-    ])
-    data_path = os.path.join(args.dataset_dir, paths[args.dataset_name])
-    if args.dataset_name == "ImageNet":
-        val_set = ImageFolder(root=os.path.join(data_path, 'val'), transform=transform)
-    elif args.dataset_name == "FFHQ":
-        val_set = ImageFolder(root=data_path, transform=eval_transform)
 
     len_val_set = len(val_set)
     dataloader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=6, drop_last=False)

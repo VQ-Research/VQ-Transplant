@@ -53,14 +53,14 @@ def build_dataloader(args):
         train_set = ImageFolder(root=data_path, transform=train_transform)
         val_set = ImageFolder(root=data_path, transform=eval_transform)
     elif args.dataset_name == "CelebAHQ":
-        train_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=train_transform)
-        val_set = ImageFolder(root=os.path.join(data_path, 'train'), transform=eval_transform)
+        train_set = ImageFolder(root=data_path, transform=train_transform)
+        val_set = ImageFolder(root=data_path, transform=eval_transform)
     elif args.dataset_name == "Bedrooms":
-        train_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
-        val_set = LSUNBedroomsDataset(root=data_path, split='train', transform=transform)
+        train_set = LSUNBedroomsDataset(root=data_path, split='train', transform=train_transform)
+        val_set = LSUNBedroomsDataset(root=data_path, split='train', transform=eval_transform)
     elif args.dataset_name == "Churches":
-        train_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
-        val_set = LSUNChurchesDataset(root=data_path, split='train', transform=transform)
+        train_set = LSUNChurchesDataset(root=data_path, split='train', transform=train_transform)
+        val_set = LSUNChurchesDataset(root=data_path, split='train', transform=eval_transform)
 
     print("dataset name:", args.dataset_name)
     print("len train_set:", len(train_set))

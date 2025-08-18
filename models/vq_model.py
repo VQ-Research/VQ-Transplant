@@ -48,22 +48,22 @@ class VQModel(nn.Module):
             self.quantizer4 = MMDVectorQuantizer(args)
 
         self.projector_in = nn.Sequential(
-                nn.Conv2d(32, 2048, kernel_size=3, padding=1),
-                nn.BatchNorm2d(2048),
+                nn.Conv2d(32, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(2048, 2048, kernel_size=3, padding=1),
-                nn.BatchNorm2d(2048),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(2048,  4 * args.codebook_dim, kernel_size=3, padding=1),
+                nn.Conv2d(1024,  4 * args.codebook_dim, kernel_size=3, padding=1),
             )
         self.projector_out = nn.Sequential(
-                nn.Conv2d(4 * args.codebook_dim, 2048, kernel_size=3, padding=1),
-                nn.BatchNorm2d(2048),
+                nn.Conv2d(4 * args.codebook_dim, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(2048, 2048, kernel_size=3, padding=1),
-                nn.BatchNorm2d(2048),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(2048, 32, kernel_size=3, padding=1),
+                nn.Conv2d(1024, 32, kernel_size=3, padding=1),
             )
 
         if args.stage == "transplant":
@@ -168,7 +168,7 @@ class VQModel(nn.Module):
         with torch.no_grad():
             x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = 5.0 * loss + vq_loss_1 + vq_loss_2 + vq_loss_3 + vq_loss_4
+        transplant_loss = 2.0 * loss + vq_loss_1 + vq_loss_2 + vq_loss_3 + vq_loss_4
         return  transplant_loss, rec_loss, quant_error
     
     def refinement(self, x):

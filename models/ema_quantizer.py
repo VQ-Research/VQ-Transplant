@@ -27,9 +27,6 @@ class EMAVectorQuantizer(VectorQuantizer):
             torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
-        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc)
-
         encodings = F.one_hot(token, self.args.codebook_size).type(z.dtype).detach()
         #EMA cluster size
         encodings_sum = encodings.sum(0)            
@@ -40,6 +37,9 @@ class EMAVectorQuantizer(VectorQuantizer):
         #normalize embed_avg and update weight
         self.embedding.weight_update(self.args.codebook_size)
 
+        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
+        commit_loss = self.beta * F.mse_loss(z_dec.detach(), z_enc)
+        
         z_dec = z_enc + (z_dec - z_enc).detach()
         loss = commit_loss
         return z_dec, loss

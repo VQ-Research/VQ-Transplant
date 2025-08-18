@@ -26,9 +26,14 @@ class MMDVectorQuantizer(VectorQuantizer):
         dyy = (torch.sum(c**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(c, c.t())).div(self.sqrt_d)
         bandwidth = (dxx.sum() + 2*dxy.sum() + dyy.sum()).detach() / (N**2 -N)
 
-        XX = torch.exp(-dxx / bandwidth).mean() 
-        XY = torch.exp(-dxy / bandwidth).mean()
-        YY = torch.exp(-dyy / bandwidth).mean()
+        pxx = -dxx / bandwidth
+        pxy = -dxy / bandwidth
+        pyy = -dyy / bandwidth
+
+        XX = torch.exp(pxx).mean() + torch.exp(pxx/2).mean()
+        XY = torch.exp(pxy).mean() + torch.exp(pxy/2).mean()
+        YY = torch.exp(pyy).mean() + torch.exp(pyy/2).mean()
+
         mmd_loss = XX - 2 * XY + YY
         return mmd_loss
 
