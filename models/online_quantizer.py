@@ -92,14 +92,8 @@ class OnlineVARQuantizer(MultiscaleVectorQuantizer):
         self.decay = 0.99
 
     def forward(self, z_enc):
-        ### projector in layer
         B, C, H, W = z_enc.shape
-        z = rearrange(z_enc, 'b c h w -> b h w c') 
-        z_flat = z.reshape(-1, C).contiguous()  
-        z_flat = self.projector_in(z_flat)
-        z_pre = z_flat.view(z.shape).permute(0, 3, 1, 2).contiguous()
-
-        z_no_grad = z_pre.detach()
+        z_no_grad = z_enc.detach()
         z_rest = z_no_grad.clone()
         z_dec = torch.zeros_like(z_rest)
 
@@ -107,7 +101,6 @@ class OnlineVARQuantizer(MultiscaleVectorQuantizer):
         z_cat: List[torch.Tensor] = []
         with torch.cuda.amp.autocast(enabled=False):
             multi_vq_loss: torch.Tensor = 0.0
-            vq_loss: torch.Tensor = 0.0
             levels = len(self.args.ms_token_size)
             ms_token_size =  self.args.ms_token_size
 
@@ -132,21 +125,13 @@ class OnlineVARQuantizer(MultiscaleVectorQuantizer):
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_pre)
+                multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_enc)
             
-            ## residual quantization loss
             multi_vq_loss *= 1. / len(ms_token_size)
             token_cat = torch.cat(token_cat, 0)
             z_cat = torch.cat(z_cat, 0)
-
-            ### projector out layer
-            z_dec = z_pre + (z_dec-z_pre).detach()
-            zq = rearrange(z_dec, 'b c h w -> b h w c') 
-            zq_flat = zq.reshape(-1, C).contiguous()  
-            zq_flat = self.projector_out(zq_flat)
-            z_dec = zq_flat.view(zq.shape).permute(0, 3, 1, 2).contiguous()
-            vq_loss = F.mse_loss(z_dec, z_enc.detach()) 
-
+            z_dec = z_enc + (z_dec-z_enc).detach()
+            
             histogram = token_cat.bincount(minlength=self.args.codebook_size).float()
             handler = tdist.all_reduce(histogram, async_op=True)
             handler.wait()
@@ -162,15 +147,13 @@ class OnlineVARQuantizer(MultiscaleVectorQuantizer):
             decay = torch.exp(-(self.embed_prob * self.codebook_size * 10)/(1-self.decay) - 1e-3).unsqueeze(1).repeat(1, self.codebook_dim)
             self.embedding.weight.data = self.embedding.weight.data * (1 - decay) + random_feat * decay
 
-            ## Criterion Triple defined in the paper
-            quant_error = F.mse_loss(z_dec.detach(), z_enc.detach())
             codebook_usage_counts = (histogram > 0).float().sum()
             codebook_utilization = codebook_usage_counts.item() / self.args.codebook_size
             codebook_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
-            loss = multi_vq_loss + vq_loss
-        return z_dec, loss, quant_error, codebook_utilization, codebook_perplexity
-
+            loss = multi_vq_loss 
+        return z_dec, loss, codebook_utilization, codebook_perplexity
+        
     def collect_eval_info(self, z_enc):
         B, C, H, W = z_enc.shape
         z_no_grad = z_enc.detach()
