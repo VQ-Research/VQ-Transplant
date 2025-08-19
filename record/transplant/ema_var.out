@@ -1,0 +1,105 @@
+dataset_dir: /datasets/
+dataset_name: ImageNet
+global_batch_size: 128
+workers: 6
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+max_patch_size: 16
+codebook_size: 4096
+codebook_dim: 16
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 0.0
+disc_weight: 0.2
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: ema_vq
+use_multiscale: True
+transplant_epochs: 2
+refinement_epochs: 5
+eval_epochs: 1
+lr_transplant: 0.0001
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 0.0001
+stage: transplant
+checkpoint_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/Transplant/ImageNet
+results_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/results/Transplant/ImageNet
+saver_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/saver/Transplant/ImageNet
+reconstruction_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/reconstruction/Transplant/ImageNet
+yaml_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/yaml/Transplant/ImageNet
+pretrained_tokenizer: /project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/model.ckpt
+checkpoint_name: 
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 2
+batch_size: 64
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+init_checkpoint_dir: /project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/
+data_pre: ImageNet
+model_pre: model_4096_16_1
+loss_pre: loss_1.0_1.0_0.0_0.2
+training_pre: ema_vq_transplant_True
+saver_name_pre: ema_vq_transplant_True_ImageNet_model_4096_16_1_loss_1.0_1.0_0.0_0.2
+| distributed init (rank 0): env://
+| distributed init (rank 1): env://
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+Working with z of shape (1, 16, 16, 16) = 4096 dimensions.
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+VQ Model Parameters: 69609635
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.000100
+Train Epoch: [1/2] Iters:[10/10009] transplant_loss 5.7539, rec_loss 0.1476, quant_error 2.4723, utilization 0.2979, perplexity 765.2116,
+Train Epoch: [1/2] Iters:[20/10009] transplant_loss 4.8799, rec_loss 0.1135, quant_error 1.9428, utilization 0.4610, perplexity 1147.7615,
+Train Epoch: [1/2] Iters:[30/10009] transplant_loss 4.6112, rec_loss 0.0981, quant_error 1.6326, utilization 0.6400, perplexity 1836.1593,
+Train Epoch: [1/2] Iters:[40/10009] transplant_loss 4.5764, rec_loss 0.0883, quant_error 1.4291, utilization 0.7300, perplexity 2223.0680,
+Train Epoch: [1/2] Iters:[50/10009] transplant_loss 4.6066, rec_loss 0.0824, quant_error 1.2927, utilization 0.7840, perplexity 2440.1596,
+Train Epoch: [1/2] Iters:[60/10009] transplant_loss 4.3952, rec_loss 0.0646, quant_error 0.9399, utilization 0.9244, perplexity 2919.4460,
+Train Epoch: [1/2] Iters:[70/10009] transplant_loss 4.5046, rec_loss 0.0598, quant_error 0.7886, utilization 0.9995, perplexity 3219.2475,
+Train Epoch: [1/2] Iters:[80/10009] transplant_loss 4.6017, rec_loss 0.0574, quant_error 0.7176, utilization 0.9998, perplexity 3159.3898,
+Train Epoch: [1/2] Iters:[90/10009] transplant_loss 4.6077, rec_loss 0.0566, quant_error 0.6811, utilization 0.9998, perplexity 3048.5321,
+Train Epoch: [1/2] Iters:[100/10009] transplant_loss 4.5553, rec_loss 0.0556, quant_error 0.6564, utilization 0.9997, perplexity 2943.6381,
+Train Epoch: [1/2] Iters:[110/10009] transplant_loss 4.5074, rec_loss 0.0545, quant_error 0.6395, utilization 0.9996, perplexity 2853.6979,
+Train Epoch: [1/2] Iters:[120/10009] transplant_loss 4.4845, rec_loss 0.0544, quant_error 0.6292, utilization 0.9995, perplexity 2781.2863,
+Train Epoch: [1/2] Iters:[130/10009] transplant_loss 4.4380, rec_loss 0.0537, quant_error 0.6179, utilization 0.9994, perplexity 2718.6389,
+Train Epoch: [1/2] Iters:[140/10009] transplant_loss 4.4133, rec_loss 0.0533, quant_error 0.6108, utilization 0.9993, perplexity 2665.5903,
+Train Epoch: [1/2] Iters:[150/10009] transplant_loss 4.3915, rec_loss 0.0529, quant_error 0.6046, utilization 0.9993, perplexity 2619.3954,
+Train Epoch: [1/2] Iters:[160/10009] transplant_loss 4.3631, rec_loss 0.0529, quant_error 0.5965, utilization 0.9992, perplexity 2582.5036,
+Train Epoch: [1/2] Iters:[170/10009] transplant_loss 4.3282, rec_loss 0.0523, quant_error 0.5924, utilization 0.9992, perplexity 2549.8146,
+Train Epoch: [1/2] Iters:[180/10009] transplant_loss 4.3265, rec_loss 0.0522, quant_error 0.5896, utilization 0.9992, perplexity 2529.9433,
+Train Epoch: [1/2] Iters:[190/10009] transplant_loss 4.3210, rec_loss 0.0525, quant_error 0.5874, utilization 0.9993, perplexity 2514.1337,
+Train Epoch: [1/2] Iters:[200/10009] transplant_loss 4.2976, rec_loss 0.0524, quant_error 0.5852, utilization 0.9992, perplexity 2496.9500,
+Train Epoch: [1/2] Iters:[210/10009] transplant_loss 4.2905, rec_loss 0.0520, quant_error 0.5841, utilization 0.9992, perplexity 2485.0490,
+Train Epoch: [1/2] Iters:[220/10009] transplant_loss 4.2962, rec_loss 0.0520, quant_error 0.5831, utilization 0.9992, perplexity 2474.6394,
+Train Epoch: [1/2] Iters:[230/10009] transplant_loss 4.2600, rec_loss 0.0520, quant_error 0.5787, utilization 0.9992, perplexity 2461.5493,
+Train Epoch: [1/2] Iters:[240/10009] transplant_loss 4.2433, rec_loss 0.0514, quant_error 0.5750, utilization 0.9993, perplexity 2459.0487,
+Train Epoch: [1/2] Iters:[250/10009] transplant_loss 4.2233, rec_loss 0.0509, quant_error 0.5707, utilization 0.9993, perplexity 2447.9403,
+Train Epoch: [1/2] Iters:[260/10009] transplant_loss 4.2107, rec_loss 0.0508, quant_error 0.5662, utilization 0.9993, perplexity 2443.8309,
+Train Epoch: [1/2] Iters:[270/10009] transplant_loss 4.1780, rec_loss 0.0507, quant_error 0.5617, utilization 0.9993, perplexity 2435.7700,
+Train Epoch: [1/2] Iters:[280/10009] transplant_loss 4.1758, rec_loss 0.0507, quant_error 0.5600, utilization 0.9994, perplexity 2435.3032,
+Train Epoch: [1/2] Iters:[290/10009] transplant_loss 4.1496, rec_loss 0.0503, quant_error 0.5563, utilization 0.9993, perplexity 2425.1342,
+Train Epoch: [1/2] Iters:[300/10009] transplant_loss 4.1534, rec_loss 0.0507, quant_error 0.5550, utilization 0.9993, perplexity 2429.8409,
+Train Epoch: [1/2] Iters:[310/10009] transplant_loss 4.1320, rec_loss 0.0507, quant_error 0.5546, utilization 0.9993, perplexity 2423.8127,
+Train Epoch: [1/2] Iters:[320/10009] transplant_loss 4.1163, rec_loss 0.0503, quant_error 0.5538, utilization 0.9994, perplexity 2423.9349,
+Train Epoch: [1/2] Iters:[330/10009] transplant_loss 4.1055, rec_loss 0.0499, quant_error 0.5508, utilization 0.9994, perplexity 2421.1951,
+Train Epoch: [1/2] Iters:[340/10009] transplant_loss 4.0872, rec_loss 0.0497, quant_error 0.5497, utilization 0.9994, perplexity 2420.2325,
+Train Epoch: [1/2] Iters:[350/10009] transplant_loss 4.0715, rec_loss 0.0498, quant_error 0.5483, utilization 0.9994, perplexity 2416.7264,
+Train Epoch: [1/2] Iters:[360/10009] transplant_loss 4.0710, rec_loss 0.0496, quant_error 0.5476, utilization 0.9995, perplexity 2417.7252,
+Train Epoch: [1/2] Iters:[370/10009] transplant_loss 4.0595, rec_loss 0.0499, quant_error 0.5459, utilization 0.9994, perplexity 2414.9946,
+Train Epoch: [1/2] Iters:[380/10009] transplant_loss 4.0519, rec_loss 0.0497, quant_error 0.5456, utilization 0.9994, perplexity 2416.0873,
