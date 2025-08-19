@@ -26,17 +26,17 @@ def parse_arg():
     parser.add_argument('--channels', default=3, type=int, metavar='N', help='the channels of images')
     
     ### Model Configuration
-    parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8", type=str, help='multi-scale patch size.')
-    parser.add_argument('--max_patch_size', default=8, type=int, help='the maximum patch size.')
+    parser.add_argument('--ms_patch_size', default="1_2_3_4_5_6_8_10_13_16", type=str, help='multi-scale patch size.')
+    parser.add_argument('--max_patch_size', default=16, type=int, help='the maximum patch size.')
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
-    parser.add_argument('--codebook_dim', default=32, type=int, help='the dimension of codebook vectors for pq and vq.')
+    parser.add_argument('--codebook_dim', default=16, type=int, help='the dimension of codebook vectors for pq and vq.')
     parser.add_argument('--project_dim', default=16, type=int, help='the dimension of after projector in fsq, bsq, and lfq.')
     parser.add_argument('--pq', default=1, type=int, help='the modules of product quantizer.', choices=[1, 2, 4, 8])
     parser.add_argument('--L', default=4, type=int, help='finite discrete values for each dimension.', choices=[2, 3, 4, 5, 6, 8])
 
     ### Loss Configuration
     parser.add_argument('--alpha', type=float, default=1.0, help="transplant stage: the hyperparameter of code commit loss.")
-    parser.add_argument('--beta', type=float, default=0.2, help="transplant stage: the hyperparameter of feature commit loss.")
+    parser.add_argument('--beta', type=float, default=1.0, help="transplant stage: the hyperparameter of feature commit loss.")
     parser.add_argument('--gamma', type=float, default=0.5, help="transplant stage: wasserstein loss or mmd loss.")
     parser.add_argument('--disc_weight', type=float, default=0.2, help="refinement stage: discriminator loss weight for gan training")
     parser.add_argument('--lecam_loss_weight', type=float, default=0.001, help='refinement stage: lecam_loss_weight')
