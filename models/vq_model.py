@@ -36,22 +36,22 @@ class VQModel(nn.Module):
             self.quantizer = MMDVectorQuantizer(args)
 
         self.projector_in = nn.Sequential(
-                nn.Conv2d(16, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(32, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256,  args.codebook_dim, kernel_size=3, padding=1),
+                nn.Conv2d(1024, args.codebook_dim, kernel_size=3, padding=1),
             )
         self.projector_out = nn.Sequential(
-                nn.Conv2d(args.codebook_dim, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(args.codebook_dim, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256, 256, kernel_size=3, padding=1),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(256, 16, kernel_size=3, padding=1),
+                nn.Conv2d(1024, 16, kernel_size=3, padding=1),
             )
 
         if args.stage == "transplant":
@@ -144,7 +144,7 @@ class VQModel(nn.Module):
             zt = self.quant_conv(z)
             z, _ = torch.chunk(zt, 2, dim=1)
 
-        z_p = z + self.projector_in(z)
+        z_p = z + self.projector_in(zt)
         z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
         z_q = z_q + self.projector_out(z_q)
 
@@ -164,7 +164,7 @@ class VQModel(nn.Module):
             zt = self.quant_conv(z)
             z, _ = torch.chunk(zt, 2, dim=1)
 
-            z_p = z + self.projector_in(z)
+            z_p = z + self.projector_in(zt)
             z_q, _ = self.quantizer.collect_eval_info(z_p)
             z_q = z_q + self.projector_out(z_q)
             z_q = self.post_quant_conv(z_q)
@@ -177,7 +177,7 @@ class VQModel(nn.Module):
         zt = self.quant_conv(z)
         z, _ = torch.chunk(zt, 2, dim=1)
 
-        z_p = z + self.projector_in(z)
+        z_p = z + self.projector_in(zt)
         z_q, histogram = self.quantizer.collect_eval_info(z_p)
         z_q = z_q + self.projector_out(z_q)
 
@@ -192,7 +192,7 @@ class VQModel(nn.Module):
         zt = self.quant_conv(z)
         z, _ = torch.chunk(zt, 2, dim=1)
 
-        z_p = z + self.projector_in(z)
+        z_p = z + self.projector_in(zt)
         z_q, _ = self.quantizer.collect_eval_info(z_p)
         z_q = z_q + self.projector_out(z_q)
 
@@ -206,7 +206,7 @@ class VQModel(nn.Module):
         zt = self.quant_conv(z)
         z, _ = torch.chunk(zt, 2, dim=1)
 
-        z_p = z + self.projector_in(z)
+        z_p = z + self.projector_in(zt)
         z_q = self.quantizer.collect_reconstruction(z_p)
         z_q = z_q + self.projector_out(z_q)
 
