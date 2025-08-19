@@ -17,7 +17,6 @@ class VARModel(nn.Module):
     def __init__(self, args):
         super(VARModel, self).__init__()
         self.args = args
-        print("var model !!")
         enc_ddconfig = dict(double_z=True, z_channels=16, resolution=256, in_channels=3, ch_mult=(1, 1, 2, 2, 4), num_res_blocks=2, out_ch=3, ch=128, attn_resolutions=[16], dropout=0.0,)
         dec_ddconfig = dict(z_channels=16, resolution=256, in_channels=3, ch_mult=(1, 1, 2, 2, 4), num_res_blocks=2, out_ch=3, ch=128, attn_resolutions=[16], dropout=0.0,)
         self.encoder = Encoder(**enc_ddconfig)
@@ -143,7 +142,7 @@ class VARModel(nn.Module):
         with torch.no_grad():
             x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = 5.0*loss + vq_loss
+        transplant_loss = loss + vq_loss
         return  transplant_loss, rec_loss, quant_error, utilization, perplexity
     
     def refinement(self, x):

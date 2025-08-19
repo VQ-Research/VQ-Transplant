@@ -113,9 +113,9 @@ class VanillaVARQuantizer(MultiscaleVectorQuantizer):
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_enc)
+                multi_vq_loss += (self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_enc)) * self.args.importance[level]
             
-            multi_vq_loss *= 1. / len(ms_token_size)
+            multi_vq_loss *= 1. / sum(self.args.importance)
             token_cat = torch.cat(token_cat, 0)
             z_dec = z_enc + (z_dec-z_enc).detach()
             
