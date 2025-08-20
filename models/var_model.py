@@ -118,28 +118,34 @@ class VARModel(nn.Module):
                 param.requires_grad = False
             for param in self.projector_out.parameters():
                 param.requires_grad = False 
+            for param in self.quant_conv.parameters():
+                param.requires_grad = False
+            for param in self.post_quant_conv.parameters():
+                param.requires_grad = False 
             for param in self.decoder.parameters():
                 param.requires_grad = True
             self.encoder.eval()
             self.projector_in.eval()
             self.projector_out.eval()
+            self.quantizer.eval()
             self.quant_conv.eval()
+            self.post_quant_conv.eval()
 
     def transplant(self, x):
         assert self.args.stage == "transplant"
         with torch.no_grad():
             ze = self.encoder(x)
             zt = self.quant_conv(ze)
-            zm, _ = torch.chunk(zt, 2, dim=1)
-            z_obj = self.post_quant_conv(zm)
+            z_obj, _ = torch.chunk(zt, 2, dim=1)
 
-        z_p = self.projector_in(ze)
+        z_p = self.projector_in(zt)
         z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
         z_q = z_q + self.projector_out(z_q)
 
         loss = F.mse_loss(z_q, z_obj.detach())
         quant_error = F.mse_loss(z_q.detach(), z_obj.detach())
         with torch.no_grad():
+            z_q = self.post_quant_conv(z_q)
             x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         transplant_loss = loss + vq_loss

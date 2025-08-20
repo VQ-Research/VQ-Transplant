@@ -207,7 +207,7 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
                 token_Bhw = token.view(B, pn, pn)
 
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                z_upscale = self.phi[level/(levels-1)](z_upscale)
+                #z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale

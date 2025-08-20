@@ -62,7 +62,7 @@ def parse_arg():
     parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/saver/", type=str, help='the directory of saver.')
     parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/yaml/", type=str, help='the directory of saver.')
-    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
+    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/vae_ch160v4096z32.pth", type=str, help='the directory of ldm checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
