@@ -143,7 +143,7 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
         z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
-        z_covariance = z_covariance.detach() * 0.81
+        z_covariance = z_covariance.detach() * 0.64
 
         ### compute the mean and covariance of codebook vectors
         c = self.embedding.weight /  (std + 1e-8)
