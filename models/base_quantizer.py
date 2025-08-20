@@ -245,7 +245,7 @@ class MultiscaleVectorQuantizer(nn.Module):
             token_Bhw = token.view(B, ph, pw)
 
             z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+            #z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_rest.sub_(z_upscale)
             ret.append(token.reshape(B, ph*pw))
@@ -275,7 +275,7 @@ class MultiscaleVectorQuantizer(nn.Module):
             token_Bhw = token.view(B, ph, pw)
 
             z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(patch_hws) -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+            #z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_dec.add_(z_upscale)
             z_rest.sub_(z_upscale)
@@ -297,7 +297,7 @@ class MultiscaleVectorQuantizer(nn.Module):
         for level, pn in enumerate(ms_token_size): # from small to large
             token = multiscale_token[level].view(B, pn, pn)
             z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != len(ms_token_size) -1) else self.embedding(token).permute(0, 3, 1, 2).contiguous()
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+            #z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             z_dec.add_(z_upscale)
             ret.append(z_dec.clone())
@@ -316,7 +316,7 @@ class MultiscaleVectorQuantizer(nn.Module):
         pn_next: int = ms_token_size[0]
         for level in range(num_level-1):
             level_embedding = F.interpolate(self.embedding(multiscale_token[level]).transpose_(1, 2).view(B, C, pn_next, pn_next), size=(H, W), mode='bicubic')
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+            #z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             token_embedding.add_(level_embedding)
             pn_next = ms_token_size[level+1]
@@ -333,7 +333,7 @@ class MultiscaleVectorQuantizer(nn.Module):
 
         if level != len(self.args.ms_token_size)-1:
             h = F.interpolate(self.embedding(predicted_token).transpose_(1, 2).view(B, C, pn, pn), size=(H, W), mode='bicubic')
-            z_upscale = self.phi[level/(levels-1)](z_upscale)
+            #z_upscale = self.phi[level/(levels-1)](z_upscale)
 
             f_hat.add_(h)
             return f_hat, F.interpolate(f_hat, size=(self.args.ms_token_size[level+1], self.args.ms_token_size[level+1]), mode='area')

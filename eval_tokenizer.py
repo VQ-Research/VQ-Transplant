@@ -109,18 +109,6 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 '''
 def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
     model.eval()

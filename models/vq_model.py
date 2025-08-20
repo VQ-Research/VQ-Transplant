@@ -107,7 +107,7 @@ class VQModel(nn.Module):
 
             self.encoder.load_state_dict(encoder_dict, strict=True)
             self.decoder.load_state_dict(decoder_dict, strict=True)
-            self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
+            self.quantizer.load_state_dict(quantizer_dict, strict=True)
             self.projector_in.load_state_dict(projector_in_dict, strict=True)
             self.projector_out.load_state_dict(projector_out_dict, strict=True)
             for param in self.encoder.parameters():
@@ -123,7 +123,7 @@ class VQModel(nn.Module):
             self.encoder.eval()
             self.projector_in.eval()
             self.projector_out.eval()
-            self.quant_conv.eval()
+            self.quantizer.eval()
 
     def transplant(self, x):
         assert self.args.stage == "transplant"
@@ -139,10 +139,9 @@ class VQModel(nn.Module):
 
         loss = F.mse_loss(z_q, z_obj.detach())
         quant_error = F.mse_loss(z_q.detach(), z_obj.detach())
-        with torch.no_grad():
-            x_rec = self.decoder(z_q)
+        x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = 2.0*loss + vq_loss
+        transplant_loss = rec_loss + 2.0*loss + vq_loss
         return  transplant_loss, rec_loss, quant_error, utilization, perplexity
     
     def refinement(self, x):

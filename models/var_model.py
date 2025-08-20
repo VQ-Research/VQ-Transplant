@@ -118,18 +118,12 @@ class VARModel(nn.Module):
                 param.requires_grad = False
             for param in self.projector_out.parameters():
                 param.requires_grad = False 
-            for param in self.quant_conv.parameters():
-                param.requires_grad = False
-            for param in self.post_quant_conv.parameters():
-                param.requires_grad = False 
             for param in self.decoder.parameters():
                 param.requires_grad = True
             self.encoder.eval()
             self.projector_in.eval()
             self.projector_out.eval()
             self.quantizer.eval()
-            self.quant_conv.eval()
-            self.post_quant_conv.eval()
 
     def transplant(self, x):
         assert self.args.stage == "transplant"
