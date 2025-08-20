@@ -60,6 +60,7 @@ class VARModel(nn.Module):
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
             quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quant_conv.')}
             post_quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('post_quant_conv.')}
+
             encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
             decoder_dict = {k.replace('decoder.', '', 1): v for k, v in decoder_dict.items()}
             quant_conv_dict = {k.replace('quant_conv.', '', 1): v for k, v in quant_conv_dict.items()}
