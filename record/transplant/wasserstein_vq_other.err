@@ -1,0 +1,39 @@
+/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/distributed/launch.py:208: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use-env is set by default in torchrun.
+If your script expects `--local-rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  main()
+W0820 06:14:17.422000 3069692 torch/distributed/run.py:792] 
+W0820 06:14:17.422000 3069692 torch/distributed/run.py:792] *****************************************
+W0820 06:14:17.422000 3069692 torch/distributed/run.py:792] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0820 06:14:17.422000 3069692 torch/distributed/run.py:792] *****************************************
+[rank1]:[W820 06:14:22.924788477 ProcessGroupNCCL.cpp:4561] [PG ID 0 PG GUID 0 Rank 1]  using GPU 1 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect. Specify device_ids in barrier() to force use of a particular device, or call init_process_group() with a device_id.
+[rank0]:[W820 06:14:23.419967580 ProcessGroupNCCL.cpp:4561] [PG ID 0 PG GUID 0 Rank 0]  using GPU 0 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect. Specify device_ids in barrier() to force use of a particular device, or call init_process_group() with a device_id.
+Traceback (most recent call last):
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+    obj = _ForkingPickler.dumps(obj)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+    cls(buf, protocol).dump(obj)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 624, in reduce_storage
+    shared_cache[cache_key] = StorageWeakRef(storage)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 85, in __setitem__
+    self.free_dead_references()
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 91, in free_dead_references
+    del self[key]
+KeyError: (204514, 60)
+Traceback (most recent call last):
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+    obj = _ForkingPickler.dumps(obj)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+    cls(buf, protocol).dump(obj)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 624, in reduce_storage
+    shared_cache[cache_key] = StorageWeakRef(storage)
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 85, in __setitem__
+    self.free_dead_references()
+  File "/home/sunset/environment/VQ-Tokenizer/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 91, in free_dead_references
+    del self[key]
+KeyError: (205050, 60)
