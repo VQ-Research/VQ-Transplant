@@ -129,71 +129,19 @@ class ProductQuantizer(nn.Module):
         self.beta = args.beta
         self.decay = 0.8
         if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "mmd_vq":
-            if args.pq == 2:
-                self.embedding1 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding1.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding1.weight.requires_grad = True
-                self.embedding2 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding2.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding2.weight.requires_grad = True
-            elif args.pq == 4:
-                self.embedding1 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding1.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding1.weight.requires_grad = True
-                self.embedding2 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding2.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding2.weight.requires_grad = True
-                self.embedding3 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding3.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding3.weight.requires_grad = True
-                self.embedding4 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding4.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding4.weight.requires_grad = True
+            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
+            self.embedding.weight.requires_grad = True
         elif args.VQ == "online_vq":
-            if args.pq == 2: 
-                self.embedding1 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding1.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding1.weight.requires_grad = True
-                self.register_buffer("embed_prob1", torch.zeros(self.codebook_size))
-                self.embedding2 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding2.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding2.weight.requires_grad = True
-                self.register_buffer("embed_prob2", torch.zeros(self.codebook_size))
-            elif args.pq == 4: 
-                self.embedding1 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding1.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding1.weight.requires_grad = True
-                self.register_buffer("embed_prob1", torch.zeros(self.codebook_size))
-                self.embedding2 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding2.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding2.weight.requires_grad = True
-                self.register_buffer("embed_prob2", torch.zeros(self.codebook_size))
-                self.embedding3 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding3.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding3.weight.requires_grad = True
-                self.register_buffer("embed_prob3", torch.zeros(self.codebook_size))
-                self.embedding4 = nn.Embedding(self.codebook_size, self.codebook_dim)
-                self.embedding4.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-                self.embedding4.weight.requires_grad = True
-                self.register_buffer("embed_prob4", torch.zeros(self.codebook_size))
+            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
+            self.embedding.weight.requires_grad = True
+            self.register_buffer("embed_prob", torch.zeros(self.codebook_size))
         elif args.VQ == "ema_vq":
-            if args.pq == 2: 
-                self.embedding1 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-                self.embedding2 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-            elif args.pq == 4:
-                self.embedding1 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-                self.embedding2 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-                self.embedding3 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-                self.embedding4 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
+            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
+            
         if args.VQ == "wasserstein_vq":
-            if args.pq == 2: 
-                self.queue1 = Queue(args)
-                self.queue2 = Queue(args)
-            elif args.pq == 4:
-                self.queue1 = Queue(args)
-                self.queue2 = Queue(args)
-                self.queue3 = Queue(args)
-                self.queue4 = Queue(args)
+            self.queue = Queue(args)
 
 class MultiscaleVectorQuantizer(nn.Module):
     def __init__(self, args):
