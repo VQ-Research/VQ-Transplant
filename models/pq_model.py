@@ -12,6 +12,7 @@ from models.mmd_quantizer import MMDProductQuantizer
 from models.encoder_decoder import Encoder, Decoder
 from utils.util import Pack
 from safetensors.torch import load_file
+from torch import distributed as tdist
 
 class PQModel(nn.Module):
     def __init__(self, args):

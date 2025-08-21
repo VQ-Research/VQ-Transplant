@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=vanilla_pq
 #SBATCH --account=aip-rudner
-#SBATCH --partition=gpubase_h100_b4
+#SBATCH --partition=gpubase_h100_b3
 #SBATCH --nodes=1
 #SBATCH --mem=50gb
 #SBATCH --cpus-per-task 10
-#SBATCH --time=3-00:00:00
+#SBATCH --time=1-00:00:00
 #SBATCH --gres=gpu:h100:2
 #SBATCH --output /project/6105494/sunset/VQ-Projects/VQ-Transplant/slurm/Transplant/ImageNet/vanilla_pq.out
 #SBATCH --error /project/6105494/sunset/VQ-Projects/VQ-Transplant/slurm/Transplant/ImageNet/vanilla_pq.err
