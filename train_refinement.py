@@ -36,7 +36,7 @@ from models.var_model import VARModel
 from models.vq_model import VQModel
 from models.vq_loss import VQLoss
 from metric.metric import PSNR, LPIPS, SSIM
-from eval_tokenizer import eval_one_epoch
+from eval_tokenizer import eval_one_epoch_vq, eval_one_epoch_pq
 
 from timm.scheduler import create_scheduler_v2 as create_scheduler
 from utils.distributed import init_distributed_mode
@@ -125,7 +125,6 @@ def main_worker(args):
             vq_model.train()
             checkpoint_path = os.path.join(args.checkpoint_dir, 'checkpoint-'+args.saver_name_pre+'-'+str(epoch)+'.pth.tar')
             save_checkpoint({'epoch': epoch, 'model': vq_model.module.state_dict(), 'optimizer': optimizer.state_dict(), "discriminator": vq_loss.module.discriminator.state_dict(), 'optimizer_disc': optimizer_disc.state_dict(), 'args': args}, is_best=False, filename=checkpoint_path) 
-            eval_reconstruction_epoch(args, vq_model, epoch)
         torch.distributed.barrier()
 
         if epoch % args.eval_epochs == 0:
