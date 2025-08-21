@@ -49,6 +49,7 @@ def parse_arg():
     parser.add_argument('--transplant_epochs', type=int, default=2, help="training epochs, 5 epochs for transplant stage.")
     parser.add_argument('--refinement_epochs', type=int, default=5, help="training epochs, 5 epochs for refinement stage.")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet.")
+    parser.add_argument('--disc_epoch', type=int, default=1, help="training epochs, 5 epochs for refinement stage.")
     parser.add_argument('--lr_transplant', default=1e-4, type=float, metavar='LR', help='initial learning rate for transplant stage.')
     parser.add_argument('--lr_refinement', default=1e-5, type=float, metavar='LR', help='initial learning rate for refinement stage.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)

@@ -31,7 +31,9 @@ import ruamel.yaml as yaml
 import config
 from utils.util import Logger, LossManager, Pack, adjust_learning_rate, save_checkpoint
 from data import dataloader
-from models.tokenizer import VQModel
+from models.pq_model import PQModel
+from models.var_model import VARModel
+from models.vq_model import VQModel
 from models.vq_loss import VQLoss
 from metric.metric import PSNR, LPIPS, SSIM
 from eval_tokenizer import eval_one_epoch
