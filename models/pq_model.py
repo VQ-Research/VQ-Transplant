@@ -153,7 +153,7 @@ class PQModel(nn.Module):
             checkpoint_name = args.checkpoint_name
             checkpoint_path = os.path.join(checkpoint_dir, checkpoint_name)
 
-            pretrain_dict = torch.load(checkpoint_path, map_location='cpu')['model']
+            pretrain_dict = torch.load(checkpoint_path, map_location='cpu', weights_only=False)['model']
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
             projector_in_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('projector_in.')}

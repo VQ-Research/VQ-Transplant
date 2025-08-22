@@ -93,7 +93,7 @@ class VARModel(nn.Module):
             checkpoint_name = args.checkpoint_name
             checkpoint_path = os.path.join(checkpoint_dir, checkpoint_name)
 
-            pretrain_dict = torch.load(checkpoint_path, map_location='cpu')['model']
+            pretrain_dict = torch.load(checkpoint_path, map_location='cpu', weights_only=False)['model']
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
             quantizer_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quantizer.')}
@@ -108,7 +108,7 @@ class VARModel(nn.Module):
 
             self.encoder.load_state_dict(encoder_dict, strict=True)
             self.decoder.load_state_dict(decoder_dict, strict=True)
-            self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
+            self.quantizer.load_state_dict(quantizer_dict, strict=True)
             self.projector_in.load_state_dict(projector_in_dict, strict=True)
             self.projector_out.load_state_dict(projector_out_dict, strict=True)
             for param in self.encoder.parameters():

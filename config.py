@@ -32,7 +32,7 @@ def parse_arg():
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
     parser.add_argument('--codebook_dim', default=16, type=int, help='the dimension of codebook vectors for pq and vq.')
     parser.add_argument('--project_dim', default=16, type=int, help='the dimension of after projector in fsq, bsq, and lfq.')
-    parser.add_argument('--pq', default=1, type=int, help='the modules of product quantizer.', choices=[1, 2, 4, 8])
+    parser.add_argument('--pq', default=1, type=int, help='the modules of product quantizer.', choices=[1, 2, 4])
     parser.add_argument('--L', default=4, type=int, help='finite discrete values for each dimension.', choices=[2, 3, 4, 5, 6, 8])
 
     ### Loss Configuration
@@ -49,7 +49,7 @@ def parse_arg():
     parser.add_argument('--transplant_epochs', type=int, default=2, help="training epochs, 5 epochs for transplant stage.")
     parser.add_argument('--refinement_epochs', type=int, default=5, help="training epochs, 5 epochs for refinement stage.")
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet.")
-    parser.add_argument('--disc_epoch', type=int, default=1, help="training epochs, 5 epochs for refinement stage.")
+    parser.add_argument('--disc_epoch', type=int, default=3, help="training epochs, 5 epochs for refinement stage.")
     parser.add_argument('--lr_transplant', default=1e-4, type=float, metavar='LR', help='initial learning rate for transplant stage.')
     parser.add_argument('--lr_refinement', default=1e-5, type=float, metavar='LR', help='initial learning rate for refinement stage.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
