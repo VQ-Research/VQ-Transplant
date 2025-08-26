@@ -17,7 +17,7 @@ from data.lsun_church import LSUNChurchesDataset
 from data.lsun_bedroom import LSUNBedroomsDataset
 
 paths = {
-    "ImageNet": "imagenet",
+    "ImageNet": "ImageNet",
     "FFHQ": "FFHQ",
     "CelebAHQ":"CelebAHQ",
     "Bedrooms":"LSUN-Bedrooms",

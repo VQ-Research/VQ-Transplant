@@ -18,7 +18,7 @@ def parse_arg():
     parser = argparse.ArgumentParser(description='VQ-Transplant based on pretrained LDM Continuous Tokenizer.') 
 
     ### Dataset and Dataloader Configuration
-    parser.add_argument('--dataset_dir', default="/project/6105494/shared/data/", type=str, help='the directory of dataset') 
+    parser.add_argument('--dataset_dir', default="/projects/yuanai/data/", type=str, help='the directory of dataset') 
     parser.add_argument('--dataset_name', default='ImageNet', help='the name of dataset', choices=['ImageNet', 'FFHQ', 'CelebAHQ', 'Churches', 'Bedrooms'])
     parser.add_argument('--global_batch_size', type=int, default=128, help="the size of batch samples")
     parser.add_argument('--workers', default=6, type=int, metavar='N', help='number of data loader workers')
@@ -58,12 +58,12 @@ def parse_arg():
     parser.add_argument('--stage', default='transplant', help='there are two stages: transplant and refinement.', choices=['transplant', 'refinement'])
 
     ##vector:/project/6105494/sunset/VQ-Projects/VQ-Transplant
-    parser.add_argument('--checkpoint_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/checkpoint/", type=str, help='the directory of checkpoint.')
-    parser.add_argument('--results_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/results/", type=str, help='the directory of results.')
-    parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/saver/", type=str, help='the directory of saver.')
-    parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/reconstruction/", type=str, help='the directory of saver.')
-    parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/yaml/", type=str, help='the directory of saver.')
-    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
+    parser.add_argument('--checkpoint_dir', default="/projects/yuanai/projects/VQ-Transplant2/checkpoint/", type=str, help='the directory of checkpoint.')
+    parser.add_argument('--results_dir', default="/projects/yuanai/projects/VQ-Transplant2/results/", type=str, help='the directory of results.')
+    parser.add_argument('--saver_dir', default="/projects/yuanai/projects/VQ-Transplant2/saver/", type=str, help='the directory of saver.')
+    parser.add_argument('--reconstruction_dir', default="/projects/yuanai/projects/VQ-Transplant2/reconstruction/", type=str, help='the directory of saver.')
+    parser.add_argument('--yaml_dir', default="/projects/yuanai/projects/VQ-Transplant2/yaml/", type=str, help='the directory of saver.')
+    parser.add_argument('--pretrained_tokenizer', default="/projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
@@ -79,10 +79,10 @@ def parse_arg():
     args.importance = tuple(map(int, args.importance.replace('-', '_').split('_')))
     args.init_checkpoint_dir = args.checkpoint_dir
 
-    if args.dataset_name == "ImageNet":
-        args.dataset_dir = "/datasets/"
-    else:
-        args.dataset_dir = "/project/6105494/shared/data/"
+    #if args.dataset_name == "ImageNet":
+    #    args.dataset_dir = "/datasets/"
+    #else:
+    #    args.dataset_dir = "/project/6105494/shared/data/"
 
     if args.stage == "transplant":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Transplant"), args.dataset_name)

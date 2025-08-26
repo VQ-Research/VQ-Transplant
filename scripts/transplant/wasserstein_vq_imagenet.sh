@@ -1,17 +1,17 @@
 #!/bin/bash
 #SBATCH --job-name=wasserstein_vq_imagenet
-#SBATCH --account=aip-rudner
-#SBATCH --partition=gpubase_h100_b3,gpubase_h100_b4,gpubase_h100_b5
+#SBATCH --partition=long
 #SBATCH --nodes=1
-#SBATCH --mem=50gb
-#SBATCH --cpus-per-task 10
+#SBATCH --mem=100gb
+#SBATCH --cpus-per-task 12
+#SBATCH --nodelist=gb001
+#SBATCH --gpus-per-node=2
 #SBATCH --time=1-00:00:00
-#SBATCH --gres=gpu:h100:2
-#SBATCH --output /project/6105494/sunset/VQ-Projects/VQ-Transplant2/slurm/Transplant/ImageNet/wasserstein_vq_imagenet.out
-#SBATCH --error /project/6105494/sunset/VQ-Projects/VQ-Transplant2/slurm/Transplant/ImageNet/wasserstein_vq_imagenet.err
+#SBATCH --output /projects/yuanai/projects/VQ-Transplant2/slurm/Transplant/ImageNet/wasserstein_vq_imagenet.out
+#SBATCH --error /projects/yuanai/projects/VQ-Transplant2/slurm/Transplant/ImageNet/wasserstein_vq_imagenet.err
 
-module load gcc opencv/4.8.1
-source /home/sunset/environment/VQ-Tokenizer/bin/activate
+source ~/.bashrc
+conda activate /projects/yuanai/fangxian/packages/anaconda/envs/VQ-Tokenizer
 CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12251 train_VQ_transplant.py --VQ=wasserstein_vq --dataset_name=ImageNet --global_batch_size=64 --codebook_size 16384  --codebook_dim=16 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
 CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12251 train_VQ_transplant.py --VQ=wasserstein_vq --dataset_name=ImageNet --global_batch_size=64 --codebook_size 65536  --codebook_dim=16 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
 CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12251 train_VQ_transplant.py --VQ=wasserstein_vq --dataset_name=ImageNet --global_batch_size=64 --codebook_size 32768  --codebook_dim=16 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0

@@ -22,12 +22,14 @@ class WassersteinVectorQuantizer(VectorQuantizer):
         N = z.size(0)
         D = z.size(1)
 
+        std = z.std(dim=0).max().detach()
+        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
-        c = self.embedding.weight
+        c = self.embedding.weight /  (std + 1e-8)
         c_mean = c.mean(0)
         c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
@@ -136,12 +138,14 @@ class WassersteinProductQuantizer(ProductQuantizer):
         N = z.size(0)
         D = z.size(1)
 
+        std = z.std(dim=0).max().detach()
+        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
-        c = self.embedding.weight
+        c = self.embedding.weight /  (std + 1e-8)
         c_mean = c.mean(0)
         c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         

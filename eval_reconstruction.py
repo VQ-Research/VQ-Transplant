@@ -23,7 +23,7 @@ from data.lsun_bedroom import LSUNBedroomsDataset
 from metric.metric import PSNR, LPIPS, SSIM
 
 paths = {
-    "ImageNet": "imagenet",
+    "ImageNet": "ImageNet",
     "FFHQ": "FFHQ",
     "CelebAHQ":"CelebAHQ",
     "Bedrooms":"LSUN-Bedrooms",
