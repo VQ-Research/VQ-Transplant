@@ -12,6 +12,7 @@ from models.mmd_quantizer import MMDVectorQuantizer
 from models.encoder_decoder import Encoder, Decoder
 from utils.util import Pack
 from safetensors.torch import load_file
+from models.lpips import LPIPS
 
 class VQModel(nn.Module):
     def __init__(self, args):
@@ -36,16 +37,23 @@ class VQModel(nn.Module):
             self.quantizer = MMDVectorQuantizer(args)
 
         self.projector_in = nn.Sequential(
-                nn.Conv2d(32, 1024, kernel_size=3, padding=1),
+                nn.Conv2d(16, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(1024, args.codebook_dim, kernel_size=3, padding=1),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 16, kernel_size=3, padding=1),
             )
+
         self.projector_out = nn.Sequential(
-                nn.Conv2d(args.codebook_dim, 1024, kernel_size=3, padding=1),
+                nn.Conv2d(16, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
@@ -55,11 +63,13 @@ class VQModel(nn.Module):
             )
 
         if args.stage == "transplant":
+            self.perceptual_loss = LPIPS().eval()
             pretrain_dict = torch.load(args.pretrained_tokenizer, map_location='cpu', weights_only=False)["state_dict"]
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
             quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quant_conv.')}
             post_quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('post_quant_conv.')}
+
             encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
             decoder_dict = {k.replace('decoder.', '', 1): v for k, v in decoder_dict.items()}
             quant_conv_dict = {k.replace('quant_conv.', '', 1): v for k, v in quant_conv_dict.items()}
@@ -68,18 +78,19 @@ class VQModel(nn.Module):
             self.decoder.load_state_dict(decoder_dict, strict=True)
             self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
             self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
+
             for param in self.encoder.parameters():
                 param.requires_grad = False
             for param in self.quant_conv.parameters():
                 param.requires_grad = False
+            for param in self.post_quant_conv.parameters():
+                param.requires_grad = False
             for param in self.quantizer.parameters():
-                param.requires_grad = True
-            for param in self.projector_in.parameters():
                 param.requires_grad = True
             for param in self.projector_out.parameters():
                 param.requires_grad = True
-            for param in self.post_quant_conv.parameters():
-                param.requires_grad = False
+            for param in self.projector_in.parameters():
+                param.requires_grad = True
             for param in self.decoder.parameters():
                 param.requires_grad = False
             self.encoder.eval()
@@ -95,32 +106,44 @@ class VQModel(nn.Module):
             pretrain_dict = torch.load(checkpoint_path, map_location='cpu', weights_only=False)['model']
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
+            quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quant_conv.')}
+            post_quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('post_quant_conv.')}
             quantizer_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quantizer.')}
-            projector_in_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('projector_in.')}
             projector_out_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('projector_out.')}
+            projector_in_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('projector_in.')}
 
             encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
             decoder_dict = {k.replace('decoder.', '', 1): v for k, v in decoder_dict.items()}
+            quant_conv_dict = {k.replace('quant_conv.', '', 1): v for k, v in quant_conv_dict.items()}
+            post_quant_conv_dict = {k.replace('post_quant_conv.', '', 1): v for k, v in post_quant_conv_dict.items()}
             quantizer_dict = {k.replace('quantizer.', '', 1): v for k, v in quantizer_dict.items()}
-            projector_in_dict = {k.replace('projector_in.', '', 1): v for k, v in projector_in_dict.items()}
             projector_out_dict = {k.replace('projector_out.', '', 1): v for k, v in projector_out_dict.items()}
+            projector_in_dict = {k.replace('projector_in.', '', 1): v for k, v in projector_in_dict.items()}
 
             self.encoder.load_state_dict(encoder_dict, strict=True)
             self.decoder.load_state_dict(decoder_dict, strict=True)
+            self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
+            self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
             self.quantizer.load_state_dict(quantizer_dict, strict=True)
-            self.projector_in.load_state_dict(projector_in_dict, strict=True)
             self.projector_out.load_state_dict(projector_out_dict, strict=True)
+            self.projector_in.load_state_dict(projector_in_dict, strict=True)
             for param in self.encoder.parameters():
+                param.requires_grad = False
+            for param in self.quant_conv.parameters():
+                param.requires_grad = False
+            for param in self.post_quant_conv.parameters():
                 param.requires_grad = False
             for param in self.quantizer.parameters():
                 param.requires_grad = False
             for param in self.projector_in.parameters():
-                param.requires_grad = False
+                param.requires_grad = False 
             for param in self.projector_out.parameters():
                 param.requires_grad = False 
             for param in self.decoder.parameters():
                 param.requires_grad = True
             self.encoder.eval()
+            self.quant_conv.eval()
+            self.post_quant_conv.eval()
             self.projector_in.eval()
             self.projector_out.eval()
             self.quantizer.eval()
@@ -133,22 +156,29 @@ class VQModel(nn.Module):
             zm, _ = torch.chunk(zt, 2, dim=1)
             z_obj = self.post_quant_conv(zm)
 
-        z_p = self.projector_in(ze)
+        z_p = z_obj + self.projector_in(z_obj)
         z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
         z_q = z_q + self.projector_out(z_q)
 
         loss = F.mse_loss(z_q, z_obj.detach())
         quant_error = F.mse_loss(z_q.detach(), z_obj.detach())
         x_rec = self.decoder(z_q)
+
+        p_loss = self.perceptual_loss(x.contiguous(), x_rec.contiguous())
+        p_loss = torch.mean(p_loss)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = rec_loss + 2.0*loss + vq_loss
-        return  transplant_loss, rec_loss, quant_error, utilization, perplexity
-    
+        transplant_loss = 5.0 * rec_loss + p_loss + loss + vq_loss
+        return  transplant_loss, rec_loss, p_loss, quant_error, utilization, perplexity
+
     def refinement(self, x):
         assert self.args.stage == "refinement"
         with torch.no_grad():
             ze = self.encoder(x)
-            z_p = self.projector_in(ze)
+            zt = self.quant_conv(ze)
+            zm, _ = torch.chunk(zt, 2, dim=1)
+            z_obj = self.post_quant_conv(zm)
+
+            z_p = z_obj + self.projector_in(z_obj)
             z_q, _ = self.quantizer.collect_eval_info(z_p)
             z_q = z_q + self.projector_out(z_q)
             
@@ -161,7 +191,7 @@ class VQModel(nn.Module):
         zm, _ = torch.chunk(zt, 2, dim=1)
         z_obj = self.post_quant_conv(zm)
 
-        z_p = self.projector_in(ze)
+        z_p = z_obj + self.projector_in(z_obj)
         z_q, histogram = self.quantizer.collect_eval_info(z_p)
         z_q = z_q + self.projector_out(z_q)
 
@@ -172,17 +202,25 @@ class VQModel(nn.Module):
 
     def collect_eval_info_refinement(self, x):
         ze = self.encoder(x)
-        z_p = self.projector_in(ze)
+        zt = self.quant_conv(ze)
+        zm, _ = torch.chunk(zt, 2, dim=1)
+        z_obj = self.post_quant_conv(zm)
+
+        z_p = z_obj + self.projector_in(z_obj)
         z_q, _ = self.quantizer.collect_eval_info(z_p)
         z_q = z_q + self.projector_out(z_q)
 
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec, rec_loss
-
+        
     def reconstruction(self, x):
         ze = self.encoder(x)
-        z_p = self.projector_in(ze)
+        zt = self.quant_conv(ze)
+        zm, _ = torch.chunk(zt, 2, dim=1)
+        z_obj = self.post_quant_conv(zm)
+
+        z_p = z_obj + self.projector_in(z_obj)
         z_q = self.quantizer.collect_reconstruction(z_p)
         z_q = z_q + self.projector_out(z_q)
         x_rec = self.decoder(z_q).clamp_(-1, 1)

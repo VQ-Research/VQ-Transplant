@@ -22,14 +22,12 @@ class WassersteinVectorQuantizer(VectorQuantizer):
         N = z.size(0)
         D = z.size(1)
 
-        std = z.std(dim=0).max().detach()
-        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
-        c = self.embedding.weight /  (std + 1e-8)
+        c = self.embedding.weight
         c_mean = c.mean(0)
         c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
@@ -138,14 +136,12 @@ class WassersteinProductQuantizer(ProductQuantizer):
         N = z.size(0)
         D = z.size(1)
 
-        std = z.std(dim=0).max().detach()
-        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
-        c = self.embedding.weight /  (std + 1e-8)
+        c = self.embedding.weight
         c_mean = c.mean(0)
         c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
@@ -241,14 +237,12 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
         N = z.size(0)
         D = z.size(1)
 
-        std = z.std(dim=0).max().detach()
-        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
-        z_covariance = z_covariance.detach() * 0.81
+        z_covariance = 0.49 * z_covariance.detach() 
 
         ### compute the mean and covariance of codebook vectors
-        c = self.embedding.weight /  (std + 1e-8)
+        c = self.embedding.weight
         c_mean = c.mean(0)
         c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
@@ -309,11 +303,11 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
                 token_Bhw = token.view(B, pn, pn)
 
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                #z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
-                multi_vq_loss += (self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_enc)) * self.args.importance[level]
+                multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
 
             multi_vq_loss *= 1. / sum(self.args.importance)
             token_cat = torch.cat(token_cat, 0)
@@ -335,7 +329,7 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
 
             ### compute wasserstein distance
             wasserstein_loss = self.calc_wasserstein_loss()
-            loss =  multi_vq_loss + self.args.gamma * wasserstein_loss
+            loss = multi_vq_loss + self.args.gamma * wasserstein_loss
 
         return z_dec, loss, codebook_utilization, codebook_perplexity
 
@@ -362,7 +356,7 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
 
                 token_Bhw = token.view(B, pn, pn)
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                #z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)
@@ -394,7 +388,7 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
                 token = torch.argmin(distance, dim=1)
                 token_Bhw = token.view(B, pn, pn)
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                #z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)

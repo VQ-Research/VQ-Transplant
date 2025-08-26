@@ -185,12 +185,12 @@ class OnlineVARQuantizer(MultiscaleVectorQuantizer):
                 token_Bhw = token.view(B, pn, pn)
 
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                #z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec = z_dec + z_upscale
                 z_rest = z_rest - z_upscale
 
-                multi_vq_loss += (self.alpha * F.mse_loss(z_dec, z_no_grad) + self.beta * F.mse_loss(z_dec.detach(), z_enc)) * self.args.importance[level]
+                multi_vq_loss += self.alpha * F.mse_loss(z_dec, z_no_grad) * self.args.importance[level]
                 
             multi_vq_loss *= 1. / sum(self.args.importance)
             token_cat = torch.cat(token_cat, 0)
@@ -242,7 +242,7 @@ class OnlineVARQuantizer(MultiscaleVectorQuantizer):
 
                 token_Bhw = token.view(B, pn, pn)
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                #z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)
@@ -274,7 +274,7 @@ class OnlineVARQuantizer(MultiscaleVectorQuantizer):
                 token = torch.argmin(distance, dim=1)
                 token_Bhw = token.view(B, pn, pn)
                 z_upscale = F.interpolate(self.embedding(token_Bhw).permute(0, 3, 1, 2), size=(H, W), mode='bicubic').contiguous() if (level != levels -1) else self.embedding(token_Bhw).permute(0, 3, 1, 2).contiguous()
-                #z_upscale = self.phi[level/(levels-1)](z_upscale)
+                z_upscale = self.phi[level/(levels-1)](z_upscale)
 
                 z_dec.add_(z_upscale)
                 z_rest.sub_(z_upscale)

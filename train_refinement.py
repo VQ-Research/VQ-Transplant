@@ -36,7 +36,7 @@ from models.var_model import VARModel
 from models.vq_model import VQModel
 from models.vq_loss import VQLoss
 from metric.metric import PSNR, LPIPS, SSIM
-from eval_tokenizer import eval_one_epoch_vq, eval_one_epoch_pq
+from eval_tokenizer import eval_one_epoch_vq, eval_one_epoch_pq, eval_one_epoch_var
 
 from timm.scheduler import create_scheduler_v2 as create_scheduler
 from utils.distributed import init_distributed_mode
@@ -81,7 +81,7 @@ def main_worker(args):
     vq_model = nn.SyncBatchNorm.convert_sync_batchnorm(vq_model)
     vq_loss = VQLoss(args).to(device)
 
-    model_para = list(vq_model.decoder.parameters()) 
+    model_para = list(vq_model.decoder.parameters())
     disc_para = vq_loss.discriminator.parameters()
     optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
     optimizer_disc = torch.optim.AdamW(disc_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
@@ -90,8 +90,11 @@ def main_worker(args):
     vq_model = DDP(vq_model.to(device), device_ids=[args.gpu], find_unused_parameters=False)
     vq_model.train()
     vq_model.module.encoder.eval()
-    vq_model.module.projector_in.eval()
+    vq_model.module.quant_conv.eval()
+    vq_model.module.post_quant_conv.eval()
     vq_model.module.projector_out.eval()
+    if args.use_multiscale == False:
+        vq_model.module.projector_in.eval()
     if args.pq == 1:
         vq_model.module.quantizer.eval()
     elif args.pq ==2:
@@ -119,8 +122,8 @@ def main_worker(args):
         start_time = time.time()
         for step, (x, _) in enumerate(train_dataloader):
             cur_iter = len(train_dataloader) * (epoch-1) + step
-            lr1 = adjust_learning_rate(optimizer, cur_iter, total_steps, args.lr_refinement, min_lr_constant=5.)
-            lr2 = adjust_learning_rate(optimizer_disc, cur_iter, total_steps, args.lr_refinement, min_lr_constant=5.)
+            lr1 = adjust_learning_rate(optimizer, cur_iter, total_steps, args.lr_refinement, min_lr_constant=10.)
+            lr2 = adjust_learning_rate(optimizer_disc, cur_iter, total_steps, args.lr_refinement, min_lr_constant=10.)
             with torch.autocast(device_type='cuda', dtype=torch.float32):
                 x = x.to(device, non_blocking=True)
 
@@ -155,7 +158,10 @@ def main_worker(args):
             with torch.no_grad():
                 if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
                     if args.pq == 1:
-                        results_pack = eval_one_epoch_vq(args, vq_model, epoch, val_dataloader, len_val_set)
+                        if args.use_multiscale == False:
+                            results_pack = eval_one_epoch_vq(args, vq_model, epoch, val_dataloader, len_val_set)
+                        else:
+                            results_pack = eval_one_epoch_var(args, vq_model, epoch, val_dataloader, len_val_set)
                     else:
                         results_pack = eval_one_epoch_pq(args, vq_model, epoch, val_dataloader, len_val_set)
                 else:

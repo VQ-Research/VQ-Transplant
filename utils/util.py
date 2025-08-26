@@ -12,7 +12,7 @@ import yaml
 from torch import inf
 import shutil
 
-def adjust_learning_rate(optimizer, cur_step, total_steps, init_lr, min_lr_constant=50.):
+def adjust_learning_rate(optimizer, cur_step, total_steps, init_lr, min_lr_constant=10.):
     min_lr = init_lr/min_lr_constant
     lr =  min_lr + (init_lr-min_lr) * (1.0 - cur_step/total_steps)
     optimizer.param_groups[0]["lr"] = lr

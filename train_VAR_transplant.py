@@ -34,7 +34,7 @@ from data import dataloader
 from models.var_model import VARModel
 from models.vq_loss import VQLoss
 from metric.metric import PSNR, LPIPS, SSIM
-from eval_tokenizer import eval_one_epoch_vq
+from eval_tokenizer import eval_one_epoch_var
 
 from timm.scheduler import create_scheduler_v2 as create_scheduler
 from utils.distributed import init_distributed_mode
@@ -65,17 +65,18 @@ def main_worker(args):
     print("VQ Model Parameters:", total_para)
     var_model = var_model.to(device)    
     var_model = nn.SyncBatchNorm.convert_sync_batchnorm(var_model)
-
+    
     if args.VQ == "wasserstein_vq" or args.VQ == "mmd_vq":
         code_para = list(var_model.quantizer.embedding.parameters()) 
-        model_para = list(var_model.projector_in.parameters()) + list(var_model.projector_out.parameters())
-        all_para = code_para + model_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
+        phi_para = list(var_model.quantizer.phi.parameters())
+        model_para = list(var_model.projector_out.parameters())
+        all_para = code_para + model_para + phi_para
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}, {'params': phi_para, 'lr': 0.001}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
-        model_para = list(var_model.quantizer.embedding.parameters()) + list(var_model.projector_in.parameters()) + list(var_model.projector_out.parameters()) 
+        model_para = list(var_model.quantizer.embedding.parameters()) + list(var_model.quantizer.phi.parameters())  + list(var_model.projector_out.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "ema_vq":
-        model_para = list(var_model.projector_in.parameters()) + list(var_model.projector_out.parameters()) 
+        model_para = list(var_model.quantizer.phi.parameters()) + list(var_model.projector_out.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
 
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
@@ -85,6 +86,7 @@ def main_worker(args):
     var_model.module.decoder.eval()
     var_model.module.quant_conv.eval()
     var_model.module.post_quant_conv.eval()
+    var_model.module.perceptual_loss.eval()
 
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error': [], 'utilization': [], 'perplexity': []}
     train_loss = LossManager()
@@ -102,8 +104,8 @@ def main_worker(args):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
 
-                transplant_loss, rec_loss, quant_error, utilization, perplexity = var_model.module.transplant(x)
-                info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, quant_error=quant_error, utilization=utilization, perplexity=perplexity)
+                transplant_loss, rec_loss, p_loss, quant_error1, quant_error, utilization, perplexity = var_model.module.transplant(x)
+                info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, p_loss=p_loss, quant_error1=quant_error1, quant_error=quant_error, utilization=utilization, perplexity=perplexity)
                 transplant_loss.backward()
                 if args.VQ == "wasserstein_vq":
                     has_nan = False            
@@ -135,7 +137,7 @@ def main_worker(args):
         
         if epoch % args.eval_epochs == 0:
             with torch.no_grad():
-                results_pack = eval_one_epoch_vq(args, var_model, epoch, val_dataloader, len_val_set)
+                results_pack = eval_one_epoch_var(args, var_model, epoch, val_dataloader, len_val_set)
 
             if int(os.environ['LOCAL_RANK']) == 0:
                 results_eval['epoch'].append(epoch)

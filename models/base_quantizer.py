@@ -167,7 +167,7 @@ class MultiscaleVectorQuantizer(nn.Module):
         if args.VQ == "wasserstein_vq":
             self.queue = Queue(args)
 
-        #self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
+        self.phi = PhiPartiallyShared(nn.ModuleList([(Phi(self.codebook_dim, 0.5)) for _ in range(4)]))
     
     ## continous feature (from encoder) into multi-scale image token
     ## r1, r2, r3, ..., rK

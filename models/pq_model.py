@@ -80,7 +80,10 @@ class PQModel(nn.Module):
                 self.quantizer4 = MMDProductQuantizer(args)
 
         self.projector_in = nn.Sequential(
-                nn.Conv2d(32, 1024, kernel_size=3, padding=1),
+                nn.Conv2d(16, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
@@ -88,8 +91,12 @@ class PQModel(nn.Module):
                 nn.SiLU(),
                 nn.Conv2d(1024, args.pq * args.codebook_dim, kernel_size=3, padding=1),
             )
+
         self.projector_out = nn.Sequential(
                 nn.Conv2d(args.pq * args.codebook_dim, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
@@ -156,19 +163,25 @@ class PQModel(nn.Module):
             pretrain_dict = torch.load(checkpoint_path, map_location='cpu', weights_only=False)['model']
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
+            quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quant_conv.')}
+            post_quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('post_quant_conv.')}
             projector_in_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('projector_in.')}
             projector_out_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('projector_out.')}
 
             encoder_dict = {k.replace('encoder.', '', 1): v for k, v in encoder_dict.items()}
             decoder_dict = {k.replace('decoder.', '', 1): v for k, v in decoder_dict.items()}
+            quant_conv_dict = {k.replace('quant_conv.', '', 1): v for k, v in quant_conv_dict.items()}
+            post_quant_conv_dict = {k.replace('post_quant_conv.', '', 1): v for k, v in post_quant_conv_dict.items()}
             projector_in_dict = {k.replace('projector_in.', '', 1): v for k, v in projector_in_dict.items()}
             projector_out_dict = {k.replace('projector_out.', '', 1): v for k, v in projector_out_dict.items()}
 
             self.encoder.load_state_dict(encoder_dict, strict=True)
             self.decoder.load_state_dict(decoder_dict, strict=True)
+            self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
+            self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
             self.projector_in.load_state_dict(projector_in_dict, strict=True)
             self.projector_out.load_state_dict(projector_out_dict, strict=True)
-
+            
             if args.pq ==2:
                 quantizer_dict1 = {k: v for k, v in pretrain_dict.items() if k.startswith('quantizer1.')}
                 quantizer_dict2 = {k: v for k, v in pretrain_dict.items() if k.startswith('quantizer2.')}
@@ -194,6 +207,10 @@ class PQModel(nn.Module):
 
             for param in self.encoder.parameters():
                 param.requires_grad = False
+            for param in self.quant_conv.parameters():
+                param.requires_grad = False
+            for param in self.post_quant_conv.parameters():
+                param.requires_grad = False
             if args.pq ==2:
                 for param in self.quantizer1.parameters():
                     param.requires_grad = False
@@ -216,6 +233,8 @@ class PQModel(nn.Module):
                 param.requires_grad = True
                 
             self.encoder.eval()
+            self.quant_conv.eval()
+            self.post_quant_conv.eval()
             self.projector_in.eval()
             self.projector_out.eval()
             if args.pq ==2:
@@ -235,7 +254,7 @@ class PQModel(nn.Module):
             zm, _ = torch.chunk(zt, 2, dim=1)
             z_obj = self.post_quant_conv(zm)
 
-        z_p = self.projector_in(ze)
+        z_p = z_obj + self.projector_in(z_obj)
         if self.args.pq == 2:
             z_1, z_2 = torch.chunk(z_p, 2, dim=1)
             z_q_1, vq_loss_1, token_1 = self.quantizer1(z_1)
@@ -258,7 +277,7 @@ class PQModel(nn.Module):
         quant_error = F.mse_loss(z_q.detach(), z_obj.detach())
         x_rec = self.decoder(z_q)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = rec_loss + 2.0 * loss + vq_loss
+        transplant_loss = 5.0 * rec_loss + 2.0 * loss + vq_loss
 
         histogram = token.bincount(minlength=self.overall_codebook_size).float()
         handler = tdist.all_reduce(histogram, async_op=True)
@@ -276,7 +295,11 @@ class PQModel(nn.Module):
         assert self.args.stage == "refinement"
         with torch.no_grad():
             ze = self.encoder(x)
-            z_p = self.projector_in(ze)
+            zt = self.quant_conv(ze)
+            zm, _ = torch.chunk(zt, 2, dim=1)
+            z_obj = self.post_quant_conv(zm)
+
+            z_p = z_obj + self.projector_in(z_obj)
             if self.args.pq == 2:
                 z_1, z_2 = torch.chunk(z_p, 2, dim=1)
                 z_q_1, _ = self.quantizer1.collect_eval_info(z_1)
@@ -296,7 +319,11 @@ class PQModel(nn.Module):
 
     def reconstruction(self, x):
         ze = self.encoder(x)
-        z_p = self.projector_in(ze)
+        zt = self.quant_conv(ze)
+        zm, _ = torch.chunk(zt, 2, dim=1)
+        z_obj = self.post_quant_conv(zm)
+
+        z_p = z_obj + self.projector_in(z_obj)
         if self.args.pq == 2:
             z_1, z_2 = torch.chunk(z_p, 2, dim=1)
             z_q_1 = self.quantizer1.collect_reconstruction(z_1)
@@ -319,7 +346,7 @@ class PQModel(nn.Module):
         zm, _ = torch.chunk(zt, 2, dim=1)
         z_obj = self.post_quant_conv(zm)
 
-        z_p = self.projector_in(ze)
+        z_p = z_obj + self.projector_in(z_obj)
         if self.args.pq == 2:
             z_1, z_2 = torch.chunk(z_p, 2, dim=1)
             z_q_1, token_1 = self.quantizer1.collect_eval_info(z_1)
@@ -347,7 +374,11 @@ class PQModel(nn.Module):
 
     def collect_eval_info_refinement(self, x):
         ze = self.encoder(x)
-        z_p = self.projector_in(ze)
+        zt = self.quant_conv(ze)
+        zm, _ = torch.chunk(zt, 2, dim=1)
+        z_obj = self.post_quant_conv(zm)
+
+        z_p = z_obj + self.projector_in(z_obj)
         if self.args.pq == 2:
             z_1, z_2 = torch.chunk(z_p, 2, dim=1)
             z_q_1, _ = self.quantizer1.collect_eval_info(z_1)

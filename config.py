@@ -51,19 +51,19 @@ def parse_arg():
     parser.add_argument('--eval_epochs', type=int, default=1, help="epochs for each eval, 1 epochs for ImageNet.")
     parser.add_argument('--disc_epoch', type=int, default=3, help="training epochs, 5 epochs for refinement stage.")
     parser.add_argument('--lr_transplant', default=1e-4, type=float, metavar='LR', help='initial learning rate for transplant stage.')
-    parser.add_argument('--lr_refinement', default=1e-5, type=float, metavar='LR', help='initial learning rate for refinement stage.')
+    parser.add_argument('--lr_refinement', default=5e-5, type=float, metavar='LR', help='initial learning rate for refinement stage.')
     parser.add_argument('--dropout', help='dropout for the model', type=float, default=0.0)
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
     parser.add_argument('--weight_decay', help='weight decay for optimizer', type=float, default=0.0001)
     parser.add_argument('--stage', default='transplant', help='there are two stages: transplant and refinement.', choices=['transplant', 'refinement'])
 
     ##vector:/project/6105494/sunset/VQ-Projects/VQ-Transplant
-    parser.add_argument('--checkpoint_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/checkpoint/", type=str, help='the directory of checkpoint.')
-    parser.add_argument('--results_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/results/", type=str, help='the directory of results.')
-    parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/saver/", type=str, help='the directory of saver.')
-    parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/reconstruction/", type=str, help='the directory of saver.')
-    parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/yaml/", type=str, help='the directory of saver.')
-    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
+    parser.add_argument('--checkpoint_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/checkpoint/", type=str, help='the directory of checkpoint.')
+    parser.add_argument('--results_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/results/", type=str, help='the directory of results.')
+    parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/saver/", type=str, help='the directory of saver.')
+    parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/reconstruction/", type=str, help='the directory of saver.')
+    parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/yaml/", type=str, help='the directory of saver.')
+    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
@@ -101,14 +101,14 @@ def parse_arg():
         args.transplant_epochs = 2
         args.refinement_epochs = 5
         args.eval_epochs = 1
-    elif args.dataset_name == "Bedrooms":
-        args.transplant_epochs = 10
-        args.refinement_epochs = 10
-        args.eval_epochs = 2
-    else:
+    elif args.dataset_name == "Churches":
         args.transplant_epochs = 20
         args.refinement_epochs = 20
-        args.eval_epochs = 4
+        args.eval_epochs = 2
+    else:
+        args.transplant_epochs = 30
+        args.refinement_epochs = 30
+        args.eval_epochs = 5
 
     ### data prefix  
     args.data_pre = '{}'.format(args.dataset_name)
