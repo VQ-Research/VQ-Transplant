@@ -1,0 +1,106 @@
+dataset_dir: /projects/yuanai/data/
+dataset_name: ImageNet
+global_batch_size: 64
+workers: 6
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+importance: (1, 1, 1, 2, 2, 2, 3, 3, 5, 5)
+max_patch_size: 16
+codebook_size: 16384
+codebook_dim: 16
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 0.0
+disc_weight: 0.5
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: vanilla_vq
+use_multiscale: False
+transplant_epochs: 2
+refinement_epochs: 5
+eval_epochs: 1
+disc_epoch: 3
+lr_transplant: 0.0001
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 0.0001
+stage: refinement
+checkpoint_dir: /projects/yuanai/projects/VQ-Transplant2/checkpoint/Refinement/ImageNet
+results_dir: /projects/yuanai/projects/VQ-Transplant2/results/Refinement/ImageNet
+saver_dir: /projects/yuanai/projects/VQ-Transplant2/saver/Refinement/ImageNet
+reconstruction_dir: /projects/yuanai/projects/VQ-Transplant2/reconstruction/Refinement/ImageNet
+yaml_dir: /projects/yuanai/projects/VQ-Transplant2/yaml/Refinement/ImageNet
+pretrained_tokenizer: /projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt
+checkpoint_name: checkpoint-vanilla_vq_transplant_False_ImageNet_model_16384_16_1_loss_1.0_1.0_0.0_0.2.pth.tar
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 2
+batch_size: 32
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+init_checkpoint_dir: /projects/yuanai/projects/VQ-Transplant2/checkpoint/
+data_pre: ImageNet
+model_pre: model_16384_16_1
+loss_pre: loss_1.0_1.0_0.0_0.5
+training_pre: vanilla_vq_refinement_False
+saver_name_pre: vanilla_vq_refinement_False_ImageNet_model_16384_16_1_loss_1.0_1.0_0.0_0.5
+| distributed init (rank 0): env://
+| distributed init (rank 1): env://
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+Working with z of shape (1, 16, 16, 16) = 4096 dimensions.
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+VQ Model Parameters: 69609635
+loaded pretrained LPIPS loss from /projects/yuanai/projects/VQ-Transplant2/code/models/cache/vgg.pth
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.000010
+Train Epoch: [1/5] Iters:[10/20018] gen_loss 0.9981, rec_loss 0.0770, lpips_loss 0.4606, g_loss -0.1330, disc_weight 0.0000, disc_adaptive_weight 8.1987, d_loss 0.0000, logits_real 0.1237, logits_fake 0.1305,
+Train Epoch: [1/5] Iters:[20/20018] gen_loss 0.9996, rec_loss 0.0762, lpips_loss 0.4617, g_loss -0.1329, disc_weight 0.0000, disc_adaptive_weight 7.7782, d_loss 0.0000, logits_real 0.1317, logits_fake 0.1325,
+Train Epoch: [1/5] Iters:[30/20018] gen_loss 0.9927, rec_loss 0.0728, lpips_loss 0.4600, g_loss -0.1326, disc_weight 0.0000, disc_adaptive_weight 7.1360, d_loss 0.0000, logits_real 0.1303, logits_fake 0.1309,
+Train Epoch: [1/5] Iters:[40/20018] gen_loss 0.9907, rec_loss 0.0718, lpips_loss 0.4594, g_loss -0.1327, disc_weight 0.0000, disc_adaptive_weight 6.6613, d_loss 0.0000, logits_real 0.1314, logits_fake 0.1316,
+Train Epoch: [1/5] Iters:[50/20018] gen_loss 0.9912, rec_loss 0.0709, lpips_loss 0.4601, g_loss -0.1344, disc_weight 0.0000, disc_adaptive_weight 6.3036, d_loss 0.0000, logits_real 0.1334, logits_fake 0.1336,
+Train Epoch: [1/5] Iters:[60/20018] gen_loss 0.9838, rec_loss 0.0682, lpips_loss 0.4578, g_loss -0.1357, disc_weight 0.0000, disc_adaptive_weight 5.8032, d_loss 0.0000, logits_real 0.1368, logits_fake 0.1351,
+Train Epoch: [1/5] Iters:[70/20018] gen_loss 0.9737, rec_loss 0.0651, lpips_loss 0.4543, g_loss -0.1367, disc_weight 0.0000, disc_adaptive_weight 5.2492, d_loss 0.0000, logits_real 0.1356, logits_fake 0.1364,
+Train Epoch: [1/5] Iters:[80/20018] gen_loss 0.9700, rec_loss 0.0643, lpips_loss 0.4529, g_loss -0.1378, disc_weight 0.0000, disc_adaptive_weight 5.0299, d_loss 0.0000, logits_real 0.1375, logits_fake 0.1383,
+Train Epoch: [1/5] Iters:[90/20018] gen_loss 0.9652, rec_loss 0.0632, lpips_loss 0.4510, g_loss -0.1375, disc_weight 0.0000, disc_adaptive_weight 5.1329, d_loss 0.0000, logits_real 0.1382, logits_fake 0.1381,
+Train Epoch: [1/5] Iters:[100/20018] gen_loss 0.9598, rec_loss 0.0623, lpips_loss 0.4487, g_loss -0.1372, disc_weight 0.0000, disc_adaptive_weight 5.0871, d_loss 0.0000, logits_real 0.1370, logits_fake 0.1372,
+Train Epoch: [1/5] Iters:[110/20018] gen_loss 0.9634, rec_loss 0.0630, lpips_loss 0.4502, g_loss -0.1368, disc_weight 0.0000, disc_adaptive_weight 5.2117, d_loss 0.0000, logits_real 0.1365, logits_fake 0.1370,
+Train Epoch: [1/5] Iters:[120/20018] gen_loss 0.9625, rec_loss 0.0635, lpips_loss 0.4495, g_loss -0.1368, disc_weight 0.0000, disc_adaptive_weight 5.1778, d_loss 0.0000, logits_real 0.1372, logits_fake 0.1362,
+Train Epoch: [1/5] Iters:[130/20018] gen_loss 0.9629, rec_loss 0.0641, lpips_loss 0.4494, g_loss -0.1370, disc_weight 0.0000, disc_adaptive_weight 5.1751, d_loss 0.0000, logits_real 0.1372, logits_fake 0.1370,
+Train Epoch: [1/5] Iters:[140/20018] gen_loss 0.9572, rec_loss 0.0628, lpips_loss 0.4472, g_loss -0.1365, disc_weight 0.0000, disc_adaptive_weight 5.1237, d_loss 0.0000, logits_real 0.1361, logits_fake 0.1366,
+Train Epoch: [1/5] Iters:[150/20018] gen_loss 0.9565, rec_loss 0.0629, lpips_loss 0.4468, g_loss -0.1363, disc_weight 0.0000, disc_adaptive_weight 5.0350, d_loss 0.0000, logits_real 0.1365, logits_fake 0.1368,
+Train Epoch: [1/5] Iters:[160/20018] gen_loss 0.9500, rec_loss 0.0618, lpips_loss 0.4441, g_loss -0.1359, disc_weight 0.0000, disc_adaptive_weight 4.8395, d_loss 0.0000, logits_real 0.1354, logits_fake 0.1368,
+Train Epoch: [1/5] Iters:[170/20018] gen_loss 0.9507, rec_loss 0.0614, lpips_loss 0.4446, g_loss -0.1357, disc_weight 0.0000, disc_adaptive_weight 5.1733, d_loss 0.0000, logits_real 0.1356, logits_fake 0.1369,
+Train Epoch: [1/5] Iters:[180/20018] gen_loss 0.9468, rec_loss 0.0610, lpips_loss 0.4429, g_loss -0.1350, disc_weight 0.0000, disc_adaptive_weight 5.4427, d_loss 0.0000, logits_real 0.1358, logits_fake 0.1352,
+Train Epoch: [1/5] Iters:[190/20018] gen_loss 0.9501, rec_loss 0.0618, lpips_loss 0.4442, g_loss -0.1371, disc_weight 0.0000, disc_adaptive_weight 5.3017, d_loss 0.0000, logits_real 0.1372, logits_fake 0.1370,
+Train Epoch: [1/5] Iters:[200/20018] gen_loss 0.9491, rec_loss 0.0618, lpips_loss 0.4436, g_loss -0.1354, disc_weight 0.0000, disc_adaptive_weight 5.4879, d_loss 0.0000, logits_real 0.1358, logits_fake 0.1351,
+Train Epoch: [1/5] Iters:[210/20018] gen_loss 0.9454, rec_loss 0.0614, lpips_loss 0.4420, g_loss -0.1359, disc_weight 0.0000, disc_adaptive_weight 5.2789, d_loss 0.0000, logits_real 0.1368, logits_fake 0.1352,
+Train Epoch: [1/5] Iters:[220/20018] gen_loss 0.9465, rec_loss 0.0615, lpips_loss 0.4425, g_loss -0.1358, disc_weight 0.0000, disc_adaptive_weight 4.7822, d_loss 0.0000, logits_real 0.1369, logits_fake 0.1354,
+Train Epoch: [1/5] Iters:[230/20018] gen_loss 0.9475, rec_loss 0.0612, lpips_loss 0.4432, g_loss -0.1350, disc_weight 0.0000, disc_adaptive_weight 4.5135, d_loss 0.0000, logits_real 0.1354, logits_fake 0.1345,
+Train Epoch: [1/5] Iters:[240/20018] gen_loss 0.9490, rec_loss 0.0619, lpips_loss 0.4435, g_loss -0.1351, disc_weight 0.0000, disc_adaptive_weight 4.5573, d_loss 0.0000, logits_real 0.1347, logits_fake 0.1346,
+Train Epoch: [1/5] Iters:[250/20018] gen_loss 0.9446, rec_loss 0.0611, lpips_loss 0.4418, g_loss -0.1374, disc_weight 0.0000, disc_adaptive_weight 4.4955, d_loss 0.0000, logits_real 0.1370, logits_fake 0.1363,
+Train Epoch: [1/5] Iters:[260/20018] gen_loss 0.9468, rec_loss 0.0611, lpips_loss 0.4428, g_loss -0.1358, disc_weight 0.0000, disc_adaptive_weight 4.5018, d_loss 0.0000, logits_real 0.1357, logits_fake 0.1351,
+Train Epoch: [1/5] Iters:[270/20018] gen_loss 0.9428, rec_loss 0.0612, lpips_loss 0.4408, g_loss -0.1334, disc_weight 0.0000, disc_adaptive_weight 4.8923, d_loss 0.0000, logits_real 0.1340, logits_fake 0.1326,
+Train Epoch: [1/5] Iters:[280/20018] gen_loss 0.9411, rec_loss 0.0610, lpips_loss 0.4400, g_loss -0.1338, disc_weight 0.0000, disc_adaptive_weight 4.7918, d_loss 0.0000, logits_real 0.1349, logits_fake 0.1334,
+Train Epoch: [1/5] Iters:[290/20018] gen_loss 0.9350, rec_loss 0.0600, lpips_loss 0.4375, g_loss -0.1306, disc_weight 0.0000, disc_adaptive_weight 4.6672, d_loss 0.0000, logits_real 0.1339, logits_fake 0.1304,
+Train Epoch: [1/5] Iters:[300/20018] gen_loss 0.9381, rec_loss 0.0612, lpips_loss 0.4385, g_loss -0.1290, disc_weight 0.0000, disc_adaptive_weight 4.7922, d_loss 0.0000, logits_real 0.1323, logits_fake 0.1299,
+Train Epoch: [1/5] Iters:[310/20018] gen_loss 0.9381, rec_loss 0.0607, lpips_loss 0.4387, g_loss -0.1288, disc_weight 0.0000, disc_adaptive_weight 5.1330, d_loss 0.0000, logits_real 0.1317, logits_fake 0.1299,
+Train Epoch: [1/5] Iters:[320/20018] gen_loss 0.9435, rec_loss 0.0617, lpips_loss 0.4409, g_loss -0.1307, disc_weight 0.0000, disc_adaptive_weight 5.0729, d_loss 0.0000, logits_real 0.1329, logits_fake 0.1310,
+Train Epoch: [1/5] Iters:[330/20018] gen_loss 0.9457, rec_loss 0.0625, lpips_loss 0.4416, g_loss -0.1316, disc_weight 0.0000, disc_adaptive_weight 5.0155, d_loss 0.0000, logits_real 0.1323, logits_fake 0.1322,
+Train Epoch: [1/5] Iters:[340/20018] gen_loss 0.9440, rec_loss 0.0625, lpips_loss 0.4407, g_loss -0.1319, disc_weight 0.0000, disc_adaptive_weight 5.3125, d_loss 0.0000, logits_real 0.1328, logits_fake 0.1324,
+Train Epoch: [1/5] Iters:[350/20018] gen_loss 0.9409, rec_loss 0.0613, lpips_loss 0.4398, g_loss -0.1318, disc_weight 0.0000, disc_adaptive_weight 5.1687, d_loss 0.0000, logits_real 0.1331, logits_fake 0.1320,
+Train Epoch: [1/5] Iters:[360/20018] gen_loss 0.9398, rec_loss 0.0618, lpips_loss 0.4390, g_loss -0.1335, disc_weight 0.0000, disc_adaptive_weight 5.2997, d_loss 0.0000, logits_real 0.1348, logits_fake 0.1335,

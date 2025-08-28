@@ -91,7 +91,8 @@ class VQLoss(nn.Module):
                 disc_adaptive_weight = 1.
 
             disc_weight = adopt_weight(1.0, cur_epoch, threshold=self.args.disc_epoch)
-            gen_loss = rec_loss + p_loss + disc_weight * disc_adaptive_weight * g_loss
+            gen_loss = rec_loss + 2.0*p_loss + disc_weight * disc_adaptive_weight * g_loss
+            disc_weight = adopt_weight(self.args.disc_weight, cur_epoch, threshold=self.args.disc_epoch)
             loss_pack = Pack(gen_loss=gen_loss, rec_loss=rec_loss, lpips_loss=p_loss, g_loss=g_loss, disc_weight=disc_weight, disc_adaptive_weight=disc_adaptive_weight)
             return gen_loss, loss_pack
 
