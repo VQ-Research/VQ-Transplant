@@ -138,14 +138,13 @@ class VQModel(nn.Module):
             for param in self.projector_in.parameters():
                 param.requires_grad = False 
             for param in self.projector_out.parameters():
-                param.requires_grad = False 
+                param.requires_grad = True 
             for param in self.decoder.parameters():
                 param.requires_grad = True
             self.encoder.eval()
             self.quant_conv.eval()
             self.post_quant_conv.eval()
             self.projector_in.eval()
-            self.projector_out.eval()
             self.quantizer.eval()
 
     def transplant(self, x):
@@ -180,8 +179,8 @@ class VQModel(nn.Module):
 
             z_p = z_obj + self.projector_in(z_obj)
             z_q, _ = self.quantizer.collect_eval_info(z_p)
-            z_q = z_q + self.projector_out(z_q)
-            
+        
+        z_q = z_q.detach() + self.projector_out(z_q.detach())    
         x_rec = self.decoder(z_q)
         return x_rec
 
