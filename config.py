@@ -104,7 +104,7 @@ def parse_arg():
     elif args.dataset_name == "Churches":
         args.transplant_epochs = 20
         args.refinement_epochs = 20
-        args.eval_epochs = 2
+        args.eval_epochs = 4
     else:
         args.transplant_epochs = 30
         args.refinement_epochs = 30
