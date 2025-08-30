@@ -56,12 +56,6 @@ class VQModel(nn.Module):
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm2d(1024),
-                nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm2d(1024),
-                nn.SiLU(),
                 nn.Conv2d(1024, 8, kernel_size=3, padding=1),
             )
 
@@ -155,8 +149,8 @@ class VQModel(nn.Module):
             z_pre = self.quant_conv(ze)
             z_obj = F.normalize(z_pre, p=2, dim=-1)
 
-        #z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
-        z_q, vq_loss, utilization, perplexity = self.quantizer(z_obj)
+        z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
+        z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
         z_q = F.normalize(z_q + self.projector_out(z_q), p=2, dim=-1)
 
         loss = F.mse_loss(z_q, z_obj.detach())

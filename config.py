@@ -63,7 +63,7 @@ def parse_arg():
     parser.add_argument('--saver_dir', default="/projects/yuanai/projects/VQ-Transplant2/saver/", type=str, help='the directory of saver.')
     parser.add_argument('--reconstruction_dir', default="/projects/yuanai/projects/VQ-Transplant2/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--yaml_dir', default="/projects/yuanai/projects/VQ-Transplant2/yaml/", type=str, help='the directory of saver.')
-    parser.add_argument('--pretrained_tokenizer', default="/projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
+    parser.add_argument('--pretrained_tokenizer', default="/projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/vq_ds16_c2i.pt", type=str, help='the directory of ldm checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
@@ -78,11 +78,6 @@ def parse_arg():
     args.ms_token_size = tuple(map(int, args.ms_patch_size.replace('-', '_').split('_')))
     args.importance = tuple(map(int, args.importance.replace('-', '_').split('_')))
     args.init_checkpoint_dir = args.checkpoint_dir
-
-    #if args.dataset_name == "ImageNet":
-    #    args.dataset_dir = "/datasets/"
-    #else:
-    #    args.dataset_dir = "/project/6105494/shared/data/"
 
     if args.stage == "transplant":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Transplant"), args.dataset_name)
