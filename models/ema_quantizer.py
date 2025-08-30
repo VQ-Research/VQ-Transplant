@@ -22,9 +22,10 @@ class EMAVectorQuantizer(VectorQuantizer):
         z_flat = z.reshape(-1, C).contiguous()  
         
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
+        embedding = F.normalize(self.embedding.weight, p=2, dim=-1)
         d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
-            self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
-            torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
+            torch.sum(embedding.detach().pow(2), dim=1) - 2 * \
+            torch.einsum('bd,nd->bn', z_flat.detach(), embedding.detach()) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
@@ -61,9 +62,10 @@ class EMAVectorQuantizer(VectorQuantizer):
         z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
-        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
-            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
-            torch.matmul(z_flat, self.embedding.weight.data.t())
+        embedding = F.normalize(self.embedding.weight, p=2, dim=-1)
+        d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
+            torch.sum(embedding.detach().pow(2), dim=1) - 2 * \
+            torch.einsum('bd,nd->bn', z_flat.detach(), embedding.detach()) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
@@ -78,9 +80,10 @@ class EMAVectorQuantizer(VectorQuantizer):
         z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
-        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
-            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
-            torch.matmul(z_flat, self.embedding.weight.data.t())
+        embedding = F.normalize(self.embedding.weight, p=2, dim=-1)
+        d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
+            torch.sum(embedding.detach().pow(2), dim=1) - 2 * \
+            torch.einsum('bd,nd->bn', z_flat.detach(), embedding.detach()) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
@@ -128,9 +131,9 @@ class EMAProductQuantizer(ProductQuantizer):
         z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
-        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
-            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
-            torch.matmul(z_flat, self.embedding.weight.data.t())
+        d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
+            self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
+            torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
@@ -142,9 +145,9 @@ class EMAProductQuantizer(ProductQuantizer):
         z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
-        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
-            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
-            torch.matmul(z_flat, self.embedding.weight.data.t())
+        d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
+            self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
+            torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()

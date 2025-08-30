@@ -32,7 +32,6 @@ import config
 from utils.util import Logger, LossManager, Pack, adjust_learning_rate, save_checkpoint
 from data import dataloader
 from models.pq_model import PQModel
-from models.var_model import VARModel
 from models.vq_model import VQModel
 from models.vq_loss import VQLoss
 from metric.metric import PSNR, LPIPS, SSIM
@@ -61,10 +60,7 @@ def main_worker(args):
     torch.cuda.set_device(device)
     if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
         if args.pq == 1:
-            if args.use_multiscale == False:
-                vq_model = VQModel(args)
-            else:
-                vq_model = VARModel(args)
+            vq_model = VQModel(args)
         else:
             vq_model = PQModel(args)
     else:

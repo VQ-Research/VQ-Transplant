@@ -18,12 +18,10 @@ class VQModel(nn.Module):
     def __init__(self, args):
         super(VQModel, self).__init__()
         self.args = args
-        enc_ddconfig = dict(double_z=True, z_channels=16, resolution=256, in_channels=3, ch_mult=(1, 1, 2, 2, 4), num_res_blocks=2, out_ch=3, ch=128, attn_resolutions=[16], dropout=0.0,)
-        dec_ddconfig = dict(z_channels=16, resolution=256, in_channels=3, ch_mult=(1, 1, 2, 2, 4), num_res_blocks=2, out_ch=3, ch=128, attn_resolutions=[16], dropout=0.0,)
-        self.encoder = Encoder(**enc_ddconfig)
-        self.decoder = Decoder(**dec_ddconfig)
-        self.quant_conv = torch.nn.Conv2d(32, 32, 1)
-        self.post_quant_conv = torch.nn.Conv2d(16, 16, 1)
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+        self.quant_conv = torch.nn.Conv2d(256, 8, 1)
+        self.post_quant_conv = torch.nn.Conv2d(8, 256, 1)
 
         if args.VQ == "vanilla_vq":
             self.quantizer = VanillaVectorQuantizer(args)
@@ -37,7 +35,7 @@ class VQModel(nn.Module):
             self.quantizer = MMDVectorQuantizer(args)
 
         self.projector_in = nn.Sequential(
-                nn.Conv2d(16, 1024, kernel_size=3, padding=1),
+                nn.Conv2d(8, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
@@ -46,11 +44,10 @@ class VQModel(nn.Module):
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(1024, 16, kernel_size=3, padding=1),
+                nn.Conv2d(1024, 8, kernel_size=3, padding=1),
             )
-
         self.projector_out = nn.Sequential(
-                nn.Conv2d(16, 1024, kernel_size=3, padding=1),
+                nn.Conv2d(8, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
@@ -59,12 +56,18 @@ class VQModel(nn.Module):
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 nn.BatchNorm2d(1024),
                 nn.SiLU(),
-                nn.Conv2d(1024, 16, kernel_size=3, padding=1),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm2d(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 8, kernel_size=3, padding=1),
             )
 
         if args.stage == "transplant":
             self.perceptual_loss = LPIPS().eval()
-            pretrain_dict = torch.load(args.pretrained_tokenizer, map_location='cpu', weights_only=False)["state_dict"]
+            pretrain_dict = torch.load(args.pretrained_tokenizer, map_location='cpu', weights_only=False)["model"]
             encoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('encoder.')}
             decoder_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('decoder.')}
             quant_conv_dict = {k: v for k, v in pretrain_dict.items() if k.startswith('quant_conv.')}
@@ -78,12 +81,9 @@ class VQModel(nn.Module):
             self.decoder.load_state_dict(decoder_dict, strict=True)
             self.quant_conv.load_state_dict(quant_conv_dict, strict=True)
             self.post_quant_conv.load_state_dict(post_quant_conv_dict, strict=True)
-
             for param in self.encoder.parameters():
                 param.requires_grad = False
             for param in self.quant_conv.parameters():
-                param.requires_grad = False
-            for param in self.post_quant_conv.parameters():
                 param.requires_grad = False
             for param in self.quantizer.parameters():
                 param.requires_grad = True
@@ -91,6 +91,8 @@ class VQModel(nn.Module):
                 param.requires_grad = True
             for param in self.projector_in.parameters():
                 param.requires_grad = True
+            for param in self.post_quant_conv.parameters():
+                param.requires_grad = False
             for param in self.decoder.parameters():
                 param.requires_grad = False
             self.encoder.eval()
@@ -131,37 +133,35 @@ class VQModel(nn.Module):
                 param.requires_grad = False
             for param in self.quant_conv.parameters():
                 param.requires_grad = False
-            for param in self.post_quant_conv.parameters():
-                param.requires_grad = False
             for param in self.quantizer.parameters():
                 param.requires_grad = False
             for param in self.projector_in.parameters():
                 param.requires_grad = False
+            for param in self.post_quant_conv.parameters():
+                param.requires_grad = True
             for param in self.projector_out.parameters():
-                param.requires_grad = False
+                param.requires_grad = True 
             for param in self.decoder.parameters():
                 param.requires_grad = True
             self.encoder.eval()
             self.quant_conv.eval()
-            self.post_quant_conv.eval()
             self.projector_in.eval()
-            self.projector_out.eval()
             self.quantizer.eval()
 
     def transplant(self, x):
         assert self.args.stage == "transplant"
         with torch.no_grad():
             ze = self.encoder(x)
-            zt = self.quant_conv(ze)
-            zm, _ = torch.chunk(zt, 2, dim=1)
-            z_obj = self.post_quant_conv(zm)
+            z_pre = self.quant_conv(ze)
+            z_obj = F.normalize(z_pre, p=2, dim=-1)
 
-        z_p = z_obj + self.projector_in(z_obj)
-        z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
-        z_q = z_q + self.projector_out(z_q)
+        #z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
+        z_q, vq_loss, utilization, perplexity = self.quantizer(z_obj)
+        z_q = F.normalize(z_q + self.projector_out(z_q), p=2, dim=-1)
 
         loss = F.mse_loss(z_q, z_obj.detach())
         quant_error = F.mse_loss(z_q.detach(), z_obj.detach())
+        z_q = self.post_quant_conv(z_q)
         x_rec = self.decoder(z_q)
 
         p_loss = self.perceptual_loss(x.contiguous(), x_rec.contiguous())
@@ -174,55 +174,52 @@ class VQModel(nn.Module):
         assert self.args.stage == "refinement"
         with torch.no_grad():
             ze = self.encoder(x)
-            zt = self.quant_conv(ze)
-            zm, _ = torch.chunk(zt, 2, dim=1)
-            z_obj = self.post_quant_conv(zm)
+            z_pre = self.quant_conv(ze)
 
-            z_p = z_obj + self.projector_in(z_obj)
+            z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
             z_q, _ = self.quantizer.collect_eval_info(z_p)
-            z_q = z_q + self.projector_out(z_q)   
-
-        x_rec = self.decoder(z_q.detach())
+        
+        z_q = F.normalize(z_q.detach() + self.projector_out(z_q.detach()), p=2, dim=-1)
+        z_q = self.post_quant_conv(z_q)  
+        x_rec = self.decoder(z_q)
         return x_rec
 
     def collect_eval_info_transplant(self, x):
         ze = self.encoder(x)
-        zt = self.quant_conv(ze)
-        zm, _ = torch.chunk(zt, 2, dim=1)
-        z_obj = self.post_quant_conv(zm)
+        z_pre = self.quant_conv(ze)
 
-        z_p = z_obj + self.projector_in(z_obj)
+        z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
         z_q, histogram = self.quantizer.collect_eval_info(z_p)
-        z_q = z_q + self.projector_out(z_q)
+        z_q = F.normalize(z_q + self.projector_out(z_q), p=2, dim=-1)
 
         quant_error = F.mse_loss(z_q.detach(), z_obj.detach())
+        z_q = self.post_quant_conv(z_q)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec, rec_loss, quant_error, histogram
 
     def collect_eval_info_refinement(self, x):
         ze = self.encoder(x)
-        zt = self.quant_conv(ze)
-        zm, _ = torch.chunk(zt, 2, dim=1)
-        z_obj = self.post_quant_conv(zm)
+        z_pre = self.quant_conv(ze)
 
-        z_p = z_obj + self.projector_in(z_obj)
+        z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
         z_q, _ = self.quantizer.collect_eval_info(z_p)
-        z_q = z_q + self.projector_out(z_q)
+        z_q = F.normalize(z_q + self.projector_out(z_q), p=2, dim=-1)
 
+        z_q = self.post_quant_conv(z_q)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
         return x_rec, rec_loss
         
     def reconstruction(self, x):
         ze = self.encoder(x)
-        zt = self.quant_conv(ze)
-        zm, _ = torch.chunk(zt, 2, dim=1)
-        z_obj = self.post_quant_conv(zm)
+        z_pre = self.quant_conv(ze)
 
-        z_p = z_obj + self.projector_in(z_obj)
+        z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
         z_q = self.quantizer.collect_reconstruction(z_p)
-        z_q = z_q + self.projector_out(z_q)
+        z_q = F.normalize(z_q + self.projector_out(z_q), p=2, dim=-1)
+        
+        z_q = self.post_quant_conv(z_q)
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         return x_rec
 
