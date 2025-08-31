@@ -104,6 +104,7 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         model.module.encoder.eval()
         model.module.quantizer.eval()
         model.module.quant_conv.eval()
+        model.module.post_quant_conv.eval()
         model.module.projector_in.eval()
         model.module.projector_out.eval()
         
@@ -186,6 +187,7 @@ def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
     else:
         model.module.encoder.eval()
         model.module.quant_conv.eval()
+        model.module.post_quant_conv.eval()
         model.module.projector_in.eval()
         model.module.projector_out.eval()
         if args.pq == 2:
