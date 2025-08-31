@@ -131,15 +131,16 @@ class VQModel(nn.Module):
                 param.requires_grad = False
             for param in self.projector_in.parameters():
                 param.requires_grad = False
+            for param in self.projector_out.parameters():
+                param.requires_grad = False
             for param in self.post_quant_conv.parameters():
                 param.requires_grad = True
-            for param in self.projector_out.parameters():
-                param.requires_grad = True 
             for param in self.decoder.parameters():
                 param.requires_grad = True
             self.encoder.eval()
             self.quant_conv.eval()
             self.projector_in.eval()
+            self.projector_out.eval()
             self.quantizer.eval()
 
     def transplant(self, x):
@@ -161,7 +162,7 @@ class VQModel(nn.Module):
         p_loss = self.perceptual_loss(x.contiguous(), x_rec.contiguous())
         p_loss = torch.mean(p_loss)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        transplant_loss = 5.0 * rec_loss + p_loss + loss + vq_loss
+        transplant_loss = 5.0 * rec_loss + p_loss + 10.0 * loss + vq_loss
         return  transplant_loss, rec_loss, p_loss, quant_error, utilization, perplexity
 
     def refinement(self, x):
@@ -172,8 +173,8 @@ class VQModel(nn.Module):
 
             z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
             z_q, _ = self.quantizer.collect_eval_info(z_p)
-        
-        z_q = F.normalize(z_q.detach() + self.projector_out(z_q.detach()), p=2, dim=-1)
+            z_q = F.normalize(z_q + self.projector_out(z_q), p=2, dim=-1)
+
         z_q = self.post_quant_conv(z_q)  
         x_rec = self.decoder(z_q)
         return x_rec
@@ -181,6 +182,7 @@ class VQModel(nn.Module):
     def collect_eval_info_transplant(self, x):
         ze = self.encoder(x)
         z_pre = self.quant_conv(ze)
+        z_obj = F.normalize(z_pre, p=2, dim=-1)
 
         z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
         z_q, histogram = self.quantizer.collect_eval_info(z_p)
