@@ -129,25 +129,19 @@ class VQModel(nn.Module):
             self.projector_out.load_state_dict(projector_out_dict, strict=True)
             self.projector_in.load_state_dict(projector_in_dict, strict=True)
             for param in self.encoder.parameters():
-                param.requires_grad = False
+                param.requires_grad = True
             for param in self.quant_conv.parameters():
-                param.requires_grad = False
+                param.requires_grad = True
             for param in self.post_quant_conv.parameters():
-                param.requires_grad = False            
+                param.requires_grad = True           
             for param in self.quantizer.parameters():
-                param.requires_grad = False
+                param.requires_grad = True
             for param in self.projector_in.parameters():
-                param.requires_grad = False
+                param.requires_grad = True
             for param in self.projector_out.parameters():
-                param.requires_grad = False
+                param.requires_grad = True
             for param in self.decoder.parameters():
                 param.requires_grad = True
-            self.encoder.eval()
-            self.quant_conv.eval()
-            self.post_quant_conv.eval()
-            self.projector_in.eval()
-            self.projector_out.eval()
-            self.quantizer.eval()
 
     def transplant(self, x):
         assert self.args.stage == "transplant"
@@ -173,18 +167,16 @@ class VQModel(nn.Module):
 
     def refinement(self, x):
         assert self.args.stage == "refinement"
-        with torch.no_grad():
-            ze = self.encoder(x)
-            zt = self.quant_conv(ze)
-            zm, _ = torch.chunk(zt, 2, dim=1)
-            z_obj = self.post_quant_conv(zm)
+        ze = self.encoder(x)
+        zt = self.quant_conv(ze)
+        zm, _ = torch.chunk(zt, 2, dim=1)
+        z_obj = self.post_quant_conv(zm)
 
-            z_p = z_obj + self.projector_in(z_obj)
-            z_q, _ = self.quantizer.collect_eval_info(z_p)
-            z_q = z_q + self.projector_out(z_q)
-            
+        z_p = z_obj + self.projector_in(z_obj)
+        z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
+        z_q = z_q + self.projector_out(z_q)
         x_rec = self.decoder(z_q)
-        return x_rec
+        return x_rec, vq_loss, utilization, perplexity
 
     def collect_eval_info_transplant(self, x):
         ze = self.encoder(x)

@@ -100,13 +100,6 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         model.module.quant_conv.eval()
         model.module.post_quant_conv.eval()
         model.module.perceptual_loss.eval()
-    else:
-        model.module.encoder.eval()
-        model.module.quantizer.eval()
-        model.module.quant_conv.eval()
-        model.module.post_quant_conv.eval()
-        model.module.projector_in.eval()
-        model.module.projector_out.eval()
         
     if args.stage == "transplant":
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)

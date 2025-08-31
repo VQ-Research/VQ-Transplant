@@ -35,7 +35,7 @@ from models.pq_model import PQModel
 from models.vq_model import VQModel
 from models.vq_loss import VQLoss
 from metric.metric import PSNR, LPIPS, SSIM
-from eval_tokenizer import eval_one_epoch_vq, eval_one_epoch_pq, eval_one_epoch_var
+from eval_tokenizer import eval_one_epoch_vq, eval_one_epoch_pq
 
 from timm.scheduler import create_scheduler_v2 as create_scheduler
 from utils.distributed import init_distributed_mode
@@ -77,36 +77,27 @@ def main_worker(args):
     vq_model = nn.SyncBatchNorm.convert_sync_batchnorm(vq_model)
     vq_loss = VQLoss(args).to(device)
 
-    model_para = list(vq_model.decoder.parameters())
-    #if args.use_multiscale == False:
-    #    model_temp_para = list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters())
-    #else:
-    #    model_temp_para = list(vq_model.projector_out.parameters())
-    disc_para = vq_loss.discriminator.parameters()
+    if args.VQ == "wasserstein_vq" or args.VQ == "mmd_vq":
+        code_para = list(vq_model.quantizer.embedding.parameters()) 
+        model_para = list(vq_model.encoder.parameters()) + list(vq_model.quant_conv.parameters()) + list(vq_model.post_quant_conv.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.decoder.parameters())
+        all_para = code_para + model_para
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
+    elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
+        model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.decoder.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters())
+        optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
+    elif args.VQ == "ema_vq":
+        model_para =list(vq_model.decoder.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters()) 
+        optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
 
-    optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
-    #optimizer_temp = torch.optim.AdamW(model_temp_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
+    #model_para = list(vq_model.decoder.parameters()) + list(vq_model.projector_out.parameters())
+    #optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
+
+    disc_para = vq_loss.discriminator.parameters()
     optimizer_disc = torch.optim.AdamW(disc_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
     
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
     vq_model = DDP(vq_model.to(device), device_ids=[args.gpu], find_unused_parameters=False)
     vq_model.train()
-    vq_model.module.encoder.eval()
-    vq_model.module.quant_conv.eval()
-    vq_model.module.post_quant_conv.eval()
-    if args.use_multiscale == False:
-        vq_model.module.projector_in.eval()
-        vq_model.module.projector_out.eval()
-    if args.pq == 1:
-        vq_model.module.quantizer.eval()
-    elif args.pq ==2:
-        vq_model.module.quantizer1.eval()
-        vq_model.module.quantizer2.eval()
-    elif args.pq == 4:
-        vq_model.module.quantizer1.eval()
-        vq_model.module.quantizer2.eval()
-        vq_model.module.quantizer3.eval()
-        vq_model.module.quantizer4.eval()
 
     vq_loss = DDP(vq_loss.to(device), device_ids=[args.gpu])
     vq_loss.train()
@@ -127,7 +118,7 @@ def main_worker(args):
             with torch.autocast(device_type='cuda', dtype=torch.float32):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
-                x_rec = vq_model.module.refinement(x)
+                x_rec, codebook_loss, utilization, perplexity = vq_model.module.refinement(x)
                 gen_loss, gen_loss_pack = vq_loss(x, x_rec, optimizer_idx=0, cur_epoch=epoch, last_layer=vq_model.module.decoder.last_layer)
                 gen_loss.backward()
                 torch.nn.utils.clip_grad_norm_(model_para, 1.0)
