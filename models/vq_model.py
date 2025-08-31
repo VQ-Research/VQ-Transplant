@@ -46,23 +46,11 @@ class VQModel(nn.Module):
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 Normalize(1024),
                 nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-                Normalize(1024),
-                nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-                Normalize(1024),
-                nn.SiLU(),
                 nn.Conv2d(1024, 16, kernel_size=3, padding=1),
             )
 
         self.projector_out = nn.Sequential(
                 nn.Conv2d(16, 1024, kernel_size=3, padding=1),
-                Normalize(1024),
-                nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-                Normalize(1024),
-                nn.SiLU(),
-                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 Normalize(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),

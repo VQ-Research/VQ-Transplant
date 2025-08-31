@@ -12,4 +12,4 @@
 
 source ~/.bashrc
 conda activate /projects/yuanai/fangxian/packages/anaconda/envs/VQ-Tokenizer
-CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12657 train_refinement.py --VQ=vanilla_vq --dataset_name=ImageNet --global_batch_size=64 --codebook_size 16384  --codebook_dim=16 --stage=refinement --alpha=1.0 --beta=1.0 --gamma=0.0 --checkpoint_name checkpoint-vanilla_vq_transplant_False_ImageNet_model_16384_16_1_loss_1.0_1.0_0.0_0.2.pth.tar
+CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12657 train_refinement.py --VQ=vanilla_vq --dataset_name=ImageNet --global_batch_size=64 --codebook_size 16384  --codebook_dim=16 --stage=refinement --alpha=1.0 --beta=1.0 --gamma=0.0 --checkpoint_name checkpoint-vanilla_vq_transplant_False_ImageNet_model_16384_16_1_loss_1.0_1.0_0.0_0.4.pth.tar
