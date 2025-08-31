@@ -22,12 +22,14 @@ class WassersteinVectorQuantizer(VectorQuantizer):
         N = z.size(0)
         D = z.size(1)
 
+        std = z.std(dim=0).max().detach()
+        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
-        c = F.normalize(self.embedding.weight, p=2, dim=-1)
+        c = self.embedding.weight /  (std + 1e-8)
         c_mean = c.mean(0)
         c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
@@ -70,10 +72,9 @@ class WassersteinVectorQuantizer(VectorQuantizer):
         wasserstein_loss = self.calc_wasserstein_loss()
 
         # distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
-        embedding = F.normalize(self.embedding.weight, p=2, dim=-1)
         d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
-            torch.sum(embedding.detach().pow(2), dim=1) - 2 * \
-            torch.einsum('bd,nd->bn', z_flat.detach(), embedding.detach()) # 'n d -> d n'
+            self.embedding.weight.data.pow(2).sum(dim=1) - 2 * \
+            torch.einsum('bd,nd->bn', z_flat.detach(), self.embedding.weight.data) # 'n d -> d n'
                 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
@@ -99,10 +100,9 @@ class WassersteinVectorQuantizer(VectorQuantizer):
         z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
-        embedding = F.normalize(self.embedding.weight, p=2, dim=-1)
-        d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
-            torch.sum(embedding.detach().pow(2), dim=1) - 2 * \
-            torch.einsum('bd,nd->bn', z_flat.detach(), embedding.detach()) # 'n d -> d n'
+        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
+            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
+            torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
@@ -117,10 +117,9 @@ class WassersteinVectorQuantizer(VectorQuantizer):
         z_flat = z.reshape(-1, C).contiguous()  
 
         # distances from z to embeddings
-        embedding = F.normalize(self.embedding.weight, p=2, dim=-1)
-        d = z_flat.detach().pow(2).sum(dim=1, keepdim=True) + \
-            torch.sum(embedding.detach().pow(2), dim=1) - 2 * \
-            torch.einsum('bd,nd->bn', z_flat.detach(), embedding.detach()) # 'n d -> d n'
+        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
+            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
+            torch.matmul(z_flat, self.embedding.weight.data.t())
 
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
@@ -139,12 +138,14 @@ class WassersteinProductQuantizer(ProductQuantizer):
         N = z.size(0)
         D = z.size(1)
 
+        std = z.std(dim=0).max().detach()
+        z = z / (std + 1e-8)
         z_mean = z.mean(0).detach()
         z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
         z_covariance = z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
-        c = self.embedding.weight
+        c = self.embedding.weight /  (std + 1e-8)
         c_mean = c.mean(0)
         c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
         
@@ -226,7 +227,8 @@ class WassersteinProductQuantizer(ProductQuantizer):
         token = torch.argmin(d, dim=1)
         z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
         return z_dec
-    
+
+
 ##### multi-scale quantizer
 class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
     def __init__(self, args):
@@ -234,20 +236,20 @@ class WassersteinVARQuantizer(MultiscaleVectorQuantizer):
         self.args = args
 
     def calc_wasserstein_loss(self, z=None):
-        if z == None:
+        if z==None:
             z = self.queue.obtain_feature_from_queue()
 
         N = z.size(0)
         D = z.size(1)
-
+        
+        c = self.embedding.weight
         z_mean = z.mean(0).detach()
-        z_covariance = torch.cov(z.t()) + 1e-8 * torch.eye(D, device=z.device) 
-        z_covariance = 0.49 * z_covariance.detach() 
+        z_covariance = torch.cov(z.t()) + 1e-6 * torch.eye(D, device=z.device) 
+        z_covariance = 0.25 * z_covariance.detach()
 
         ### compute the mean and covariance of codebook vectors
-        c = self.embedding.weight
         c_mean = c.mean(0)
-        c_covariance = torch.cov(c.t()) + 1e-8 * torch.eye(D, device=z.device)
+        c_covariance = torch.cov(c.t()) + 1e-6 * torch.eye(D, device=z.device)
         
         ### calculation of part1
         part_mean =  torch.sum(torch.multiply(z_mean - c_mean, z_mean - c_mean))

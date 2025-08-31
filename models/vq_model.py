@@ -150,9 +150,9 @@ class VQModel(nn.Module):
             z_pre = self.quant_conv(ze)
             z_obj = F.normalize(z_pre, p=2, dim=-1)
 
-        z_p = F.normalize(z_pre + self.projector_in(z_pre), p=2, dim=-1)
+        z_p = F.normalize(z_pre, p=2, dim=-1)
         z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
-        z_q = F.normalize(z_q + self.projector_out(z_q), p=2, dim=-1)
+        #z_q = F.normalize(z_q, p=2, dim=-1)
 
         loss = F.mse_loss(z_q, z_obj.detach())
         quant_error = F.mse_loss(z_q.detach(), z_obj.detach())
