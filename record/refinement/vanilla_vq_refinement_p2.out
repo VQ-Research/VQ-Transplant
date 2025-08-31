@@ -1,0 +1,76 @@
+dataset_dir: /projects/yuanai/data/
+dataset_name: ImageNet
+global_batch_size: 32
+workers: 6
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+importance: (1, 1, 1, 2, 2, 2, 3, 3, 5, 5)
+max_patch_size: 16
+codebook_size: 32768
+codebook_dim: 16
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 0.0
+disc_weight: 0.4
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: vanilla_vq
+use_multiscale: False
+transplant_epochs: 2
+refinement_epochs: 5
+eval_epochs: 1
+disc_epoch: 2
+lr_transplant: 0.0001
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 1e-05
+stage: refinement
+checkpoint_dir: /projects/yuanai/projects/VQ-Transplant2/checkpoint/Refinement/ImageNet
+results_dir: /projects/yuanai/projects/VQ-Transplant2/results/Refinement/ImageNet
+saver_dir: /projects/yuanai/projects/VQ-Transplant2/saver/Refinement/ImageNet
+reconstruction_dir: /projects/yuanai/projects/VQ-Transplant2/reconstruction/Refinement/ImageNet
+yaml_dir: /projects/yuanai/projects/VQ-Transplant2/yaml/Refinement/ImageNet
+pretrained_tokenizer: /projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt
+checkpoint_name: checkpoint-vanilla_vq_transplant_False_ImageNet_model_32768_16_1_loss_1.0_1.0_0.0_0.4.pth.tar
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 2
+batch_size: 16
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+init_checkpoint_dir: /projects/yuanai/projects/VQ-Transplant2/checkpoint/
+data_pre: ImageNet
+model_pre: model_32768_16_1
+loss_pre: loss_1.0_1.0_0.0_0.4
+training_pre: vanilla_vq_refinement_False
+saver_name_pre: vanilla_vq_refinement_False_ImageNet_model_32768_16_1_loss_1.0_1.0_0.0_0.4
+| distributed init (rank 0): env://
+| distributed init (rank 1): env://
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+Working with z of shape (1, 16, 16, 16) = 4096 dimensions.
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+VQ Model Parameters: 69609635
+loaded pretrained LPIPS loss from /projects/yuanai/projects/VQ-Transplant2/code/models/cache/vgg.pth
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.000010
+Train Epoch: [1/5] Iters:[10/40036] gen_loss 0.5009, rec_loss 0.0560, lpips_loss 0.4449, g_loss 0.2045, disc_weight 0.0000, disc_adaptive_weight 3.5527, codebook_loss 3.9196, utilization 0.0015, perplexity 40.9148, d_loss 0.0000, logits_real -0.1947, logits_fake -0.2080,
+Train Epoch: [1/5] Iters:[20/40036] gen_loss 0.4974, rec_loss 0.0547, lpips_loss 0.4427, g_loss 0.2074, disc_weight 0.0000, disc_adaptive_weight 3.6526, codebook_loss 3.2560, utilization 0.0015, perplexity 41.6974, d_loss 0.0000, logits_real -0.1915, logits_fake -0.2090,
+Train Epoch: [1/5] Iters:[30/40036] gen_loss 0.5047, rec_loss 0.0584, lpips_loss 0.4463, g_loss 0.2098, disc_weight 0.0000, disc_adaptive_weight 3.8217, codebook_loss 2.8352, utilization 0.0016, perplexity 41.7895, d_loss 0.0000, logits_real -0.1961, logits_fake -0.2088,
+Train Epoch: [1/5] Iters:[40/40036] gen_loss 0.5114, rec_loss 0.0608, lpips_loss 0.4506, g_loss 0.2099, disc_weight 0.0000, disc_adaptive_weight 3.8972, codebook_loss 2.5186, utilization 0.0016, perplexity 41.1313, d_loss 0.0000, logits_real -0.2014, logits_fake -0.2081,
+Train Epoch: [1/5] Iters:[50/40036] gen_loss 0.5187, rec_loss 0.0626, lpips_loss 0.4562, g_loss 0.2098, disc_weight 0.0000, disc_adaptive_weight 4.2852, codebook_loss 2.2751, utilization 0.0016, perplexity 40.1031, d_loss 0.0000, logits_real -0.2029, logits_fake -0.2081,
+Train Epoch: [1/5] Iters:[60/40036] gen_loss 0.5278, rec_loss 0.0646, lpips_loss 0.4632, g_loss 0.2110, disc_weight 0.0000, disc_adaptive_weight 4.2761, codebook_loss 1.7093, utilization 0.0017, perplexity 38.3393, d_loss 0.0000, logits_real -0.2057, logits_fake -0.2092,
