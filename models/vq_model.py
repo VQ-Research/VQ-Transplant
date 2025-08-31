@@ -200,12 +200,12 @@ class VQModel(nn.Module):
         z_obj = self.post_quant_conv(zm)
 
         z_p = z_obj + self.projector_in(z_obj)
-        z_q, _ = self.quantizer.collect_eval_info(z_p)
+        z_q, histogram = self.quantizer.collect_eval_info(z_p)
         z_q = z_q + self.projector_out(z_q)
 
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         rec_loss = F.mse_loss(x.contiguous(), x_rec.contiguous())
-        return x_rec, rec_loss
+        return x_rec, rec_loss, histogram
         
     def reconstruction(self, x):
         ze = self.encoder(x)

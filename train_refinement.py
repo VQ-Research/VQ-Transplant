@@ -83,14 +83,11 @@ def main_worker(args):
         all_para = code_para + model_para
         optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
-        model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.decoder.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters())
+        model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.encoder.parameters()) + list(vq_model.quant_conv.parameters()) + list(vq_model.post_quant_conv.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.decoder.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
     elif args.VQ == "ema_vq":
-        model_para =list(vq_model.decoder.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters()) 
+        model_para = list(vq_model.encoder.parameters()) + list(vq_model.quant_conv.parameters()) + list(vq_model.post_quant_conv.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.decoder.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
-
-    #model_para = list(vq_model.decoder.parameters()) + list(vq_model.projector_out.parameters())
-    #optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
 
     disc_para = vq_loss.discriminator.parameters()
     optimizer_disc = torch.optim.AdamW(disc_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
@@ -119,10 +116,27 @@ def main_worker(args):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
                 x_rec, codebook_loss, utilization, perplexity = vq_model.module.refinement(x)
+                info_pack = Pack(codebook_loss=codebook_loss, utilization=utilization, perplexity=perplexity)
                 gen_loss, gen_loss_pack = vq_loss(x, x_rec, optimizer_idx=0, cur_epoch=epoch, last_layer=vq_model.module.decoder.last_layer)
+                gen_loss = gen_loss + codebook_loss
                 gen_loss.backward()
-                torch.nn.utils.clip_grad_norm_(model_para, 1.0)
-                optimizer.step()
+                if args.VQ == "wasserstein_vq":
+                    has_nan = False            
+                    for param in all_para:
+                        if param.grad is not None and (torch.isnan(param.grad).any() or torch.isinf(param.grad).any()):
+                            has_nan = True
+                            break
+                    if has_nan == False:
+                        torch.nn.utils.clip_grad_norm_(all_para, 1.0)
+                        optimizer.step()
+                    else:
+                        print("skip gradient update!")
+                elif args.VQ == "mmd_vq":
+                    torch.nn.utils.clip_grad_norm_(all_para, 1.0)
+                    optimizer.step()
+                else:
+                    torch.nn.utils.clip_grad_norm_(model_para, 1.0)
+                    optimizer.step()
 
                 optimizer_disc.zero_grad()
                 d_loss, loss_pack = vq_loss(x, x_rec, optimizer_idx=1, cur_epoch=epoch)
@@ -131,6 +145,7 @@ def main_worker(args):
                 optimizer_disc.step()
                 
                 torch.cuda.synchronize()
+                gen_loss_pack.add(info_pack)
                 gen_loss_pack.add(loss_pack)
 
             train_loss.add_loss(gen_loss_pack)

@@ -43,9 +43,9 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
 
     if args.stage == "transplant":
         ssim, psnr, lpips, rec_loss, quant_error, utilization, perplexity, total_num =  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
-        histogram_all: torch.Tensor = 0.0
     if args.stage == "refinement":
-        ssim, psnr, lpips, rec_loss, total_num = 0.0, 0.0, 0.0, 0.0, 0  
+        ssim, psnr, lpips, rec_loss, total_num = 0.0, 0.0, 0.0, 0.0, 0 
+     histogram_all: torch.Tensor = 0.0
 
     for step, (x, _) in enumerate(val_dataloader):
         x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
@@ -57,9 +57,10 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
                 info_pack = Pack(rec_loss=rec_loss_eval, quant_error=quant_error_eval)
                 histogram_all += histogram_eval
             else:
-                x_rec, rec_loss_eval = model.module.collect_eval_info_refinement(x)
+                x_rec, rec_loss_eval, histogram_eval = model.module.collect_eval_info_refinement(x)
                 info_pack = Pack(rec_loss=rec_loss_eval)
-
+                histogram_all += histogram_eval
+            
             x_norm = (x + 1.0)/2.0
             x_rec_norm = (x_rec + 1.0)/2.0
             batch_lpips = lpips_metric(x_norm, x_rec_norm).sum()
@@ -87,11 +88,11 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
     eval_rec_loss = rec_loss/total_num
     if args.stage == "transplant":
         eval_quant_error = quant_error/total_num
-        codebook_usage_counts = (histogram_all > 0).float().sum()
-        eval_utilization  = codebook_usage_counts.item() / args.codebook_size
 
-        avg_probs = histogram_all/histogram_all.sum(0)
-        eval_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10))).item()
+    codebook_usage_counts = (histogram_all > 0).float().sum()
+    eval_utilization  = codebook_usage_counts.item() / args.codebook_size
+    avg_probs = histogram_all/histogram_all.sum(0)
+    eval_perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10))).item()
 
     model.train()
     if args.stage == "transplant":
@@ -104,7 +105,7 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
     if args.stage == "transplant":
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)
     else:
-        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss)
+        return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, utilization=eval_utilization, perplexity=eval_perplexity)
 
 ## product_quantizer
 def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
