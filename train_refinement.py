@@ -100,7 +100,7 @@ def main_worker(args):
     vq_loss.train()
     vq_loss.module.perceptual_loss.eval()
 
-    results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': []}
+    results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'utilization': [], 'perplexity': []}
     train_loss = LossManager()
     print("Start training...")
     start_epoch = 1 

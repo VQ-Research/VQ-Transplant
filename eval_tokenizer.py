@@ -33,7 +33,6 @@ from metric.metric import PSNR, LPIPS, SSIM
 import warnings
 warnings.filterwarnings('ignore')
 
-
 ## for vector quantizer
 def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
     model.eval()
@@ -44,8 +43,8 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
     if args.stage == "transplant":
         ssim, psnr, lpips, rec_loss, quant_error, utilization, perplexity, total_num =  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
     if args.stage == "refinement":
-        ssim, psnr, lpips, rec_loss, total_num = 0.0, 0.0, 0.0, 0.0, 0 
-     histogram_all: torch.Tensor = 0.0
+        ssim, psnr, lpips, rec_loss, utilization, perplexity, total_num = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0 
+    histogram_all: torch.Tensor = 0.0
 
     for step, (x, _) in enumerate(val_dataloader):
         x = x.cuda(int(os.environ['LOCAL_RANK']), non_blocking=True)
