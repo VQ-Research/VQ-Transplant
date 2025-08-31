@@ -1,0 +1,213 @@
+dataset_dir: /projects/yuanai/data/
+dataset_name: ImageNet
+global_batch_size: 64
+workers: 6
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+importance: (1, 1, 1, 2, 2, 2, 3, 3, 5, 5)
+max_patch_size: 16
+codebook_size: 65536
+codebook_dim: 16
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 0.0
+disc_weight: 0.4
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: online_vq
+use_multiscale: False
+transplant_epochs: 2
+refinement_epochs: 5
+eval_epochs: 1
+disc_epoch: 2
+lr_transplant: 0.0001
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 1e-05
+stage: refinement
+checkpoint_dir: /projects/yuanai/projects/VQ-Transplant2/checkpoint/Refinement/ImageNet
+results_dir: /projects/yuanai/projects/VQ-Transplant2/results/Refinement/ImageNet
+saver_dir: /projects/yuanai/projects/VQ-Transplant2/saver/Refinement/ImageNet
+reconstruction_dir: /projects/yuanai/projects/VQ-Transplant2/reconstruction/Refinement/ImageNet
+yaml_dir: /projects/yuanai/projects/VQ-Transplant2/yaml/Refinement/ImageNet
+pretrained_tokenizer: /projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt
+checkpoint_name: checkpoint-online_vq_transplant_False_ImageNet_model_65536_16_1_loss_1.0_1.0_0.0_0.4.pth.tar
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 2
+batch_size: 32
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+init_checkpoint_dir: /projects/yuanai/projects/VQ-Transplant2/checkpoint/
+data_pre: ImageNet
+model_pre: model_65536_16_1
+loss_pre: loss_1.0_1.0_0.0_0.4
+training_pre: online_vq_refinement_False
+saver_name_pre: online_vq_refinement_False_ImageNet_model_65536_16_1_loss_1.0_1.0_0.0_0.4
+| distributed init (rank 0): env://
+| distributed init (rank 1): env://
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+Working with z of shape (1, 16, 16, 16) = 4096 dimensions.
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+making attention of type 'vanilla' with 512 in_channels
+VQ Model Parameters: 69609635
+loaded pretrained LPIPS loss from /projects/yuanai/projects/VQ-Transplant2/code/models/cache/vgg.pth
+dataset name: ImageNet
+len train_set: 1281167
+len val_set: 50000
+Start training...
+epoch:1, cur_lr:0.000010
+Train Epoch: [1/5] Iters:[10/20018] gen_loss 0.3856, rec_loss 0.0361, lpips_loss 0.3495, g_loss -0.0312, disc_weight 0.0000, disc_adaptive_weight 3.3211, codebook_loss 1.7245, utilization 0.0317, perplexity 1367.9970, d_loss 0.0000, logits_real 0.0332, logits_fake 0.0310,
+Train Epoch: [1/5] Iters:[20/20018] gen_loss 0.3920, rec_loss 0.0386, lpips_loss 0.3534, g_loss -0.0335, disc_weight 0.0000, disc_adaptive_weight 3.3246, codebook_loss 1.4713, utilization 0.0322, perplexity 1394.8939, d_loss 0.0000, logits_real 0.0355, logits_fake 0.0336,
+Train Epoch: [1/5] Iters:[30/20018] gen_loss 0.3948, rec_loss 0.0384, lpips_loss 0.3565, g_loss -0.0319, disc_weight 0.0000, disc_adaptive_weight 3.3740, codebook_loss 1.2783, utilization 0.0328, perplexity 1392.9444, d_loss 0.0000, logits_real 0.0338, logits_fake 0.0323,
+Train Epoch: [1/5] Iters:[40/20018] gen_loss 0.3996, rec_loss 0.0395, lpips_loss 0.3601, g_loss -0.0334, disc_weight 0.0000, disc_adaptive_weight 3.6979, codebook_loss 1.1342, utilization 0.0336, perplexity 1381.5700, d_loss 0.0000, logits_real 0.0338, logits_fake 0.0346,
+Train Epoch: [1/5] Iters:[50/20018] gen_loss 0.4044, rec_loss 0.0401, lpips_loss 0.3643, g_loss -0.0314, disc_weight 0.0000, disc_adaptive_weight 3.7028, codebook_loss 1.0253, utilization 0.0342, perplexity 1360.3673, d_loss 0.0000, logits_real 0.0322, logits_fake 0.0322,
+Train Epoch: [1/5] Iters:[60/20018] gen_loss 0.4091, rec_loss 0.0408, lpips_loss 0.3684, g_loss -0.0324, disc_weight 0.0000, disc_adaptive_weight 3.8847, codebook_loss 0.7847, utilization 0.0353, perplexity 1337.6110, d_loss 0.0000, logits_real 0.0325, logits_fake 0.0331,
+Train Epoch: [1/5] Iters:[70/20018] gen_loss 0.4110, rec_loss 0.0403, lpips_loss 0.3707, g_loss -0.0318, disc_weight 0.0000, disc_adaptive_weight 4.3796, codebook_loss 0.6352, utilization 0.0365, perplexity 1304.8301, d_loss 0.0000, logits_real 0.0313, logits_fake 0.0319,
+Train Epoch: [1/5] Iters:[80/20018] gen_loss 0.4141, rec_loss 0.0411, lpips_loss 0.3730, g_loss -0.0330, disc_weight 0.0000, disc_adaptive_weight 4.4283, codebook_loss 0.5482, utilization 0.0373, perplexity 1270.6186, d_loss 0.0000, logits_real 0.0315, logits_fake 0.0331,
+Train Epoch: [1/5] Iters:[90/20018] gen_loss 0.4146, rec_loss 0.0410, lpips_loss 0.3736, g_loss -0.0319, disc_weight 0.0000, disc_adaptive_weight 4.0892, codebook_loss 0.4974, utilization 0.0377, perplexity 1247.1954, d_loss 0.0000, logits_real 0.0308, logits_fake 0.0314,
+Train Epoch: [1/5] Iters:[100/20018] gen_loss 0.4130, rec_loss 0.0406, lpips_loss 0.3724, g_loss -0.0333, disc_weight 0.0000, disc_adaptive_weight 4.0130, codebook_loss 0.4678, utilization 0.0380, perplexity 1242.3359, d_loss 0.0000, logits_real 0.0313, logits_fake 0.0328,
+Train Epoch: [1/5] Iters:[110/20018] gen_loss 0.4154, rec_loss 0.0416, lpips_loss 0.3738, g_loss -0.0333, disc_weight 0.0000, disc_adaptive_weight 3.9319, codebook_loss 0.4513, utilization 0.0381, perplexity 1235.9941, d_loss 0.0000, logits_real 0.0313, logits_fake 0.0334,
+Train Epoch: [1/5] Iters:[120/20018] gen_loss 0.4148, rec_loss 0.0421, lpips_loss 0.3727, g_loss -0.0348, disc_weight 0.0000, disc_adaptive_weight 3.6617, codebook_loss 0.4406, utilization 0.0382, perplexity 1238.0636, d_loss 0.0000, logits_real 0.0322, logits_fake 0.0350,
+Train Epoch: [1/5] Iters:[130/20018] gen_loss 0.4138, rec_loss 0.0421, lpips_loss 0.3717, g_loss -0.0336, disc_weight 0.0000, disc_adaptive_weight 3.9619, codebook_loss 0.4322, utilization 0.0383, perplexity 1249.2999, d_loss 0.0000, logits_real 0.0330, logits_fake 0.0342,
+Train Epoch: [1/5] Iters:[140/20018] gen_loss 0.4098, rec_loss 0.0412, lpips_loss 0.3687, g_loss -0.0330, disc_weight 0.0000, disc_adaptive_weight 4.2321, codebook_loss 0.4227, utilization 0.0384, perplexity 1260.5894, d_loss 0.0000, logits_real 0.0328, logits_fake 0.0342,
+Train Epoch: [1/5] Iters:[150/20018] gen_loss 0.4080, rec_loss 0.0411, lpips_loss 0.3668, g_loss -0.0329, disc_weight 0.0000, disc_adaptive_weight 4.3448, codebook_loss 0.4166, utilization 0.0386, perplexity 1265.3400, d_loss 0.0000, logits_real 0.0341, logits_fake 0.0346,
+Train Epoch: [1/5] Iters:[160/20018] gen_loss 0.4039, rec_loss 0.0403, lpips_loss 0.3636, g_loss -0.0313, disc_weight 0.0000, disc_adaptive_weight 4.5341, codebook_loss 0.4110, utilization 0.0387, perplexity 1283.1024, d_loss 0.0000, logits_real 0.0326, logits_fake 0.0328,
+Train Epoch: [1/5] Iters:[170/20018] gen_loss 0.4029, rec_loss 0.0400, lpips_loss 0.3629, g_loss -0.0289, disc_weight 0.0000, disc_adaptive_weight 4.2931, codebook_loss 0.4087, utilization 0.0388, perplexity 1291.6016, d_loss 0.0000, logits_real 0.0317, logits_fake 0.0308,
+Train Epoch: [1/5] Iters:[180/20018] gen_loss 0.3989, rec_loss 0.0395, lpips_loss 0.3593, g_loss -0.0279, disc_weight 0.0000, disc_adaptive_weight 4.0360, codebook_loss 0.4081, utilization 0.0388, perplexity 1299.5763, d_loss 0.0000, logits_real 0.0298, logits_fake 0.0297,
+Train Epoch: [1/5] Iters:[190/20018] gen_loss 0.3989, rec_loss 0.0398, lpips_loss 0.3591, g_loss -0.0302, disc_weight 0.0000, disc_adaptive_weight 4.4553, codebook_loss 0.4093, utilization 0.0389, perplexity 1310.0721, d_loss 0.0000, logits_real 0.0324, logits_fake 0.0316,
+Train Epoch: [1/5] Iters:[200/20018] gen_loss 0.3979, rec_loss 0.0398, lpips_loss 0.3581, g_loss -0.0301, disc_weight 0.0000, disc_adaptive_weight 4.5122, codebook_loss 0.4072, utilization 0.0390, perplexity 1319.3391, d_loss 0.0000, logits_real 0.0320, logits_fake 0.0326,
+Train Epoch: [1/5] Iters:[210/20018] gen_loss 0.3957, rec_loss 0.0396, lpips_loss 0.3561, g_loss -0.0312, disc_weight 0.0000, disc_adaptive_weight 4.3704, codebook_loss 0.4059, utilization 0.0390, perplexity 1329.1126, d_loss 0.0000, logits_real 0.0333, logits_fake 0.0343,
+Train Epoch: [1/5] Iters:[220/20018] gen_loss 0.3950, rec_loss 0.0395, lpips_loss 0.3555, g_loss -0.0328, disc_weight 0.0000, disc_adaptive_weight 4.3703, codebook_loss 0.4058, utilization 0.0391, perplexity 1339.7030, d_loss 0.0000, logits_real 0.0340, logits_fake 0.0361,
+Train Epoch: [1/5] Iters:[230/20018] gen_loss 0.3961, rec_loss 0.0394, lpips_loss 0.3567, g_loss -0.0341, disc_weight 0.0000, disc_adaptive_weight 4.3930, codebook_loss 0.4034, utilization 0.0392, perplexity 1348.2730, d_loss 0.0000, logits_real 0.0350, logits_fake 0.0369,
+Train Epoch: [1/5] Iters:[240/20018] gen_loss 0.3975, rec_loss 0.0404, lpips_loss 0.3571, g_loss -0.0330, disc_weight 0.0000, disc_adaptive_weight 3.9073, codebook_loss 0.4025, utilization 0.0392, perplexity 1351.0692, d_loss 0.0000, logits_real 0.0329, logits_fake 0.0351,
+Train Epoch: [1/5] Iters:[250/20018] gen_loss 0.3948, rec_loss 0.0397, lpips_loss 0.3550, g_loss -0.0330, disc_weight 0.0000, disc_adaptive_weight 3.9729, codebook_loss 0.4012, utilization 0.0392, perplexity 1356.6833, d_loss 0.0000, logits_real 0.0317, logits_fake 0.0344,
+Train Epoch: [1/5] Iters:[260/20018] gen_loss 0.3948, rec_loss 0.0394, lpips_loss 0.3553, g_loss -0.0327, disc_weight 0.0000, disc_adaptive_weight 4.2010, codebook_loss 0.3985, utilization 0.0391, perplexity 1361.4040, d_loss 0.0000, logits_real 0.0314, logits_fake 0.0335,
+Train Epoch: [1/5] Iters:[270/20018] gen_loss 0.3929, rec_loss 0.0394, lpips_loss 0.3534, g_loss -0.0312, disc_weight 0.0000, disc_adaptive_weight 4.3930, codebook_loss 0.3962, utilization 0.0392, perplexity 1364.7842, d_loss 0.0000, logits_real 0.0305, logits_fake 0.0321,
+Train Epoch: [1/5] Iters:[280/20018] gen_loss 0.3909, rec_loss 0.0393, lpips_loss 0.3516, g_loss -0.0313, disc_weight 0.0000, disc_adaptive_weight 4.2609, codebook_loss 0.3945, utilization 0.0393, perplexity 1374.7044, d_loss 0.0000, logits_real 0.0307, logits_fake 0.0318,
+Train Epoch: [1/5] Iters:[290/20018] gen_loss 0.3864, rec_loss 0.0382, lpips_loss 0.3482, g_loss -0.0296, disc_weight 0.0000, disc_adaptive_weight 4.2678, codebook_loss 0.3918, utilization 0.0393, perplexity 1380.9552, d_loss 0.0000, logits_real 0.0303, logits_fake 0.0303,
+Train Epoch: [1/5] Iters:[300/20018] gen_loss 0.3872, rec_loss 0.0390, lpips_loss 0.3482, g_loss -0.0319, disc_weight 0.0000, disc_adaptive_weight 4.0427, codebook_loss 0.3918, utilization 0.0394, perplexity 1389.0959, d_loss 0.0000, logits_real 0.0329, logits_fake 0.0318,
+Train Epoch: [1/5] Iters:[310/20018] gen_loss 0.3875, rec_loss 0.0389, lpips_loss 0.3486, g_loss -0.0297, disc_weight 0.0000, disc_adaptive_weight 3.8087, codebook_loss 0.3905, utilization 0.0394, perplexity 1387.9600, d_loss 0.0000, logits_real 0.0323, logits_fake 0.0299,
+Train Epoch: [1/5] Iters:[320/20018] gen_loss 0.3904, rec_loss 0.0399, lpips_loss 0.3506, g_loss -0.0295, disc_weight 0.0000, disc_adaptive_weight 3.9258, codebook_loss 0.3900, utilization 0.0394, perplexity 1393.3909, d_loss 0.0000, logits_real 0.0316, logits_fake 0.0293,
+Train Epoch: [1/5] Iters:[330/20018] gen_loss 0.3922, rec_loss 0.0404, lpips_loss 0.3519, g_loss -0.0279, disc_weight 0.0000, disc_adaptive_weight 4.0918, codebook_loss 0.3904, utilization 0.0395, perplexity 1401.2026, d_loss 0.0000, logits_real 0.0302, logits_fake 0.0287,
+Train Epoch: [1/5] Iters:[340/20018] gen_loss 0.3915, rec_loss 0.0402, lpips_loss 0.3513, g_loss -0.0282, disc_weight 0.0000, disc_adaptive_weight 3.9268, codebook_loss 0.3907, utilization 0.0395, perplexity 1407.7020, d_loss 0.0000, logits_real 0.0302, logits_fake 0.0300,
+Train Epoch: [1/5] Iters:[350/20018] gen_loss 0.3916, rec_loss 0.0397, lpips_loss 0.3520, g_loss -0.0266, disc_weight 0.0000, disc_adaptive_weight 4.0670, codebook_loss 0.3890, utilization 0.0397, perplexity 1420.8901, d_loss 0.0000, logits_real 0.0285, logits_fake 0.0285,
+Train Epoch: [1/5] Iters:[360/20018] gen_loss 0.3908, rec_loss 0.0400, lpips_loss 0.3508, g_loss -0.0288, disc_weight 0.0000, disc_adaptive_weight 4.0518, codebook_loss 0.3907, utilization 0.0399, perplexity 1432.4615, d_loss 0.0000, logits_real 0.0292, logits_fake 0.0305,
+Train Epoch: [1/5] Iters:[370/20018] gen_loss 0.3874, rec_loss 0.0389, lpips_loss 0.3484, g_loss -0.0299, disc_weight 0.0000, disc_adaptive_weight 4.0292, codebook_loss 0.3889, utilization 0.0401, perplexity 1442.3557, d_loss 0.0000, logits_real 0.0309, logits_fake 0.0315,
+Train Epoch: [1/5] Iters:[380/20018] gen_loss 0.3865, rec_loss 0.0395, lpips_loss 0.3469, g_loss -0.0312, disc_weight 0.0000, disc_adaptive_weight 4.1589, codebook_loss 0.3886, utilization 0.0401, perplexity 1446.4972, d_loss 0.0000, logits_real 0.0319, logits_fake 0.0333,
+Train Epoch: [1/5] Iters:[390/20018] gen_loss 0.3883, rec_loss 0.0398, lpips_loss 0.3485, g_loss -0.0320, disc_weight 0.0000, disc_adaptive_weight 4.2464, codebook_loss 0.3875, utilization 0.0403, perplexity 1455.0044, d_loss 0.0000, logits_real 0.0315, logits_fake 0.0336,
+Train Epoch: [1/5] Iters:[400/20018] gen_loss 0.3851, rec_loss 0.0398, lpips_loss 0.3453, g_loss -0.0334, disc_weight 0.0000, disc_adaptive_weight 4.2207, codebook_loss 0.3870, utilization 0.0403, perplexity 1455.1809, d_loss 0.0000, logits_real 0.0329, logits_fake 0.0346,
+Train Epoch: [1/5] Iters:[410/20018] gen_loss 0.3843, rec_loss 0.0396, lpips_loss 0.3447, g_loss -0.0328, disc_weight 0.0000, disc_adaptive_weight 4.3013, codebook_loss 0.3847, utilization 0.0405, perplexity 1465.6061, d_loss 0.0000, logits_real 0.0326, logits_fake 0.0341,
+Train Epoch: [1/5] Iters:[420/20018] gen_loss 0.3837, rec_loss 0.0394, lpips_loss 0.3443, g_loss -0.0332, disc_weight 0.0000, disc_adaptive_weight 4.0910, codebook_loss 0.3842, utilization 0.0406, perplexity 1468.3213, d_loss 0.0000, logits_real 0.0318, logits_fake 0.0346,
+Train Epoch: [1/5] Iters:[430/20018] gen_loss 0.3822, rec_loss 0.0383, lpips_loss 0.3440, g_loss -0.0341, disc_weight 0.0000, disc_adaptive_weight 4.3017, codebook_loss 0.3820, utilization 0.0408, perplexity 1475.3273, d_loss 0.0000, logits_real 0.0328, logits_fake 0.0338,
+Train Epoch: [1/5] Iters:[440/20018] gen_loss 0.3823, rec_loss 0.0386, lpips_loss 0.3437, g_loss -0.0334, disc_weight 0.0000, disc_adaptive_weight 4.4114, codebook_loss 0.3821, utilization 0.0409, perplexity 1482.3161, d_loss 0.0000, logits_real 0.0332, logits_fake 0.0332,
+Train Epoch: [1/5] Iters:[450/20018] gen_loss 0.3834, rec_loss 0.0384, lpips_loss 0.3450, g_loss -0.0311, disc_weight 0.0000, disc_adaptive_weight 4.3690, codebook_loss 0.3812, utilization 0.0410, perplexity 1490.6073, d_loss 0.0000, logits_real 0.0298, logits_fake 0.0305,
+Train Epoch: [1/5] Iters:[460/20018] gen_loss 0.3818, rec_loss 0.0386, lpips_loss 0.3432, g_loss -0.0320, disc_weight 0.0000, disc_adaptive_weight 4.4839, codebook_loss 0.3819, utilization 0.0412, perplexity 1497.0594, d_loss 0.0000, logits_real 0.0299, logits_fake 0.0303,
+Train Epoch: [1/5] Iters:[470/20018] gen_loss 0.3839, rec_loss 0.0388, lpips_loss 0.3451, g_loss -0.0308, disc_weight 0.0000, disc_adaptive_weight 4.7955, codebook_loss 0.3832, utilization 0.0413, perplexity 1507.6644, d_loss 0.0000, logits_real 0.0302, logits_fake 0.0292,
+Train Epoch: [1/5] Iters:[480/20018] gen_loss 0.3837, rec_loss 0.0388, lpips_loss 0.3449, g_loss -0.0297, disc_weight 0.0000, disc_adaptive_weight 4.2228, codebook_loss 0.3824, utilization 0.0414, perplexity 1510.8275, d_loss 0.0000, logits_real 0.0284, logits_fake 0.0287,
+Train Epoch: [1/5] Iters:[490/20018] gen_loss 0.3811, rec_loss 0.0381, lpips_loss 0.3430, g_loss -0.0302, disc_weight 0.0000, disc_adaptive_weight 4.0464, codebook_loss 0.3806, utilization 0.0416, perplexity 1516.9831, d_loss 0.0000, logits_real 0.0280, logits_fake 0.0295,
+Train Epoch: [1/5] Iters:[500/20018] gen_loss 0.3811, rec_loss 0.0384, lpips_loss 0.3427, g_loss -0.0313, disc_weight 0.0000, disc_adaptive_weight 4.1291, codebook_loss 0.3809, utilization 0.0418, perplexity 1525.0865, d_loss 0.0000, logits_real 0.0305, logits_fake 0.0312,
+Train Epoch: [1/5] Iters:[510/20018] gen_loss 0.3825, rec_loss 0.0386, lpips_loss 0.3440, g_loss -0.0319, disc_weight 0.0000, disc_adaptive_weight 3.9184, codebook_loss 0.3813, utilization 0.0418, perplexity 1529.6872, d_loss 0.0000, logits_real 0.0321, logits_fake 0.0328,
+Train Epoch: [1/5] Iters:[520/20018] gen_loss 0.3797, rec_loss 0.0386, lpips_loss 0.3411, g_loss -0.0343, disc_weight 0.0000, disc_adaptive_weight 3.7123, codebook_loss 0.3779, utilization 0.0418, perplexity 1527.7516, d_loss 0.0000, logits_real 0.0323, logits_fake 0.0356,
+Train Epoch: [1/5] Iters:[530/20018] gen_loss 0.3794, rec_loss 0.0387, lpips_loss 0.3407, g_loss -0.0350, disc_weight 0.0000, disc_adaptive_weight 3.7875, codebook_loss 0.3766, utilization 0.0419, perplexity 1529.8174, d_loss 0.0000, logits_real 0.0327, logits_fake 0.0357,
+Train Epoch: [1/5] Iters:[540/20018] gen_loss 0.3804, rec_loss 0.0392, lpips_loss 0.3412, g_loss -0.0357, disc_weight 0.0000, disc_adaptive_weight 3.9063, codebook_loss 0.3757, utilization 0.0419, perplexity 1533.6825, d_loss 0.0000, logits_real 0.0336, logits_fake 0.0356,
+Train Epoch: [1/5] Iters:[550/20018] gen_loss 0.3804, rec_loss 0.0392, lpips_loss 0.3412, g_loss -0.0345, disc_weight 0.0000, disc_adaptive_weight 3.8696, codebook_loss 0.3747, utilization 0.0420, perplexity 1533.7080, d_loss 0.0000, logits_real 0.0322, logits_fake 0.0347,
+Train Epoch: [1/5] Iters:[560/20018] gen_loss 0.3803, rec_loss 0.0389, lpips_loss 0.3415, g_loss -0.0329, disc_weight 0.0000, disc_adaptive_weight 4.1144, codebook_loss 0.3706, utilization 0.0420, perplexity 1535.0127, d_loss 0.0000, logits_real 0.0308, logits_fake 0.0323,
+Train Epoch: [1/5] Iters:[570/20018] gen_loss 0.3806, rec_loss 0.0388, lpips_loss 0.3417, g_loss -0.0331, disc_weight 0.0000, disc_adaptive_weight 4.0146, codebook_loss 0.3702, utilization 0.0422, perplexity 1542.3414, d_loss 0.0000, logits_real 0.0310, logits_fake 0.0318,
+Train Epoch: [1/5] Iters:[580/20018] gen_loss 0.3801, rec_loss 0.0386, lpips_loss 0.3415, g_loss -0.0345, disc_weight 0.0000, disc_adaptive_weight 4.0476, codebook_loss 0.3723, utilization 0.0424, perplexity 1550.7748, d_loss 0.0000, logits_real 0.0325, logits_fake 0.0326,
+Train Epoch: [1/5] Iters:[590/20018] gen_loss 0.3798, rec_loss 0.0387, lpips_loss 0.3411, g_loss -0.0354, disc_weight 0.0000, disc_adaptive_weight 4.0492, codebook_loss 0.3709, utilization 0.0425, perplexity 1556.9094, d_loss 0.0000, logits_real 0.0329, logits_fake 0.0332,
+Train Epoch: [1/5] Iters:[600/20018] gen_loss 0.3786, rec_loss 0.0382, lpips_loss 0.3404, g_loss -0.0386, disc_weight 0.0000, disc_adaptive_weight 3.9621, codebook_loss 0.3697, utilization 0.0426, perplexity 1559.9514, d_loss 0.0000, logits_real 0.0350, logits_fake 0.0356,
+Train Epoch: [1/5] Iters:[610/20018] gen_loss 0.3770, rec_loss 0.0384, lpips_loss 0.3385, g_loss -0.0387, disc_weight 0.0000, disc_adaptive_weight 3.6333, codebook_loss 0.3711, utilization 0.0426, perplexity 1563.1009, d_loss 0.0000, logits_real 0.0348, logits_fake 0.0366,
+Train Epoch: [1/5] Iters:[620/20018] gen_loss 0.3769, rec_loss 0.0385, lpips_loss 0.3384, g_loss -0.0372, disc_weight 0.0000, disc_adaptive_weight 3.7392, codebook_loss 0.3716, utilization 0.0428, perplexity 1571.8947, d_loss 0.0000, logits_real 0.0346, logits_fake 0.0357,
+Train Epoch: [1/5] Iters:[630/20018] gen_loss 0.3749, rec_loss 0.0381, lpips_loss 0.3368, g_loss -0.0365, disc_weight 0.0000, disc_adaptive_weight 3.6915, codebook_loss 0.3704, utilization 0.0429, perplexity 1576.8551, d_loss 0.0000, logits_real 0.0340, logits_fake 0.0360,
+Train Epoch: [1/5] Iters:[640/20018] gen_loss 0.3741, rec_loss 0.0377, lpips_loss 0.3364, g_loss -0.0345, disc_weight 0.0000, disc_adaptive_weight 3.6373, codebook_loss 0.3707, utilization 0.0429, perplexity 1580.4734, d_loss 0.0000, logits_real 0.0336, logits_fake 0.0352,
+Train Epoch: [1/5] Iters:[650/20018] gen_loss 0.3743, rec_loss 0.0380, lpips_loss 0.3363, g_loss -0.0321, disc_weight 0.0000, disc_adaptive_weight 3.4524, codebook_loss 0.3711, utilization 0.0430, perplexity 1585.3759, d_loss 0.0000, logits_real 0.0323, logits_fake 0.0333,
+Train Epoch: [1/5] Iters:[660/20018] gen_loss 0.3738, rec_loss 0.0377, lpips_loss 0.3361, g_loss -0.0339, disc_weight 0.0000, disc_adaptive_weight 3.3836, codebook_loss 0.3695, utilization 0.0430, perplexity 1589.1738, d_loss 0.0000, logits_real 0.0326, logits_fake 0.0336,
+Train Epoch: [1/5] Iters:[670/20018] gen_loss 0.3745, rec_loss 0.0375, lpips_loss 0.3371, g_loss -0.0320, disc_weight 0.0000, disc_adaptive_weight 3.3093, codebook_loss 0.3698, utilization 0.0430, perplexity 1587.2114, d_loss 0.0000, logits_real 0.0303, logits_fake 0.0321,
+Train Epoch: [1/5] Iters:[680/20018] gen_loss 0.3747, rec_loss 0.0376, lpips_loss 0.3371, g_loss -0.0323, disc_weight 0.0000, disc_adaptive_weight 3.3695, codebook_loss 0.3687, utilization 0.0430, perplexity 1586.7365, d_loss 0.0000, logits_real 0.0309, logits_fake 0.0322,
+Train Epoch: [1/5] Iters:[690/20018] gen_loss 0.3747, rec_loss 0.0376, lpips_loss 0.3371, g_loss -0.0330, disc_weight 0.0000, disc_adaptive_weight 3.5698, codebook_loss 0.3683, utilization 0.0430, perplexity 1585.1437, d_loss 0.0000, logits_real 0.0308, logits_fake 0.0322,
+Train Epoch: [1/5] Iters:[700/20018] gen_loss 0.3741, rec_loss 0.0378, lpips_loss 0.3363, g_loss -0.0352, disc_weight 0.0000, disc_adaptive_weight 3.8987, codebook_loss 0.3682, utilization 0.0431, perplexity 1589.8148, d_loss 0.0000, logits_real 0.0322, logits_fake 0.0341,
+Train Epoch: [1/5] Iters:[710/20018] gen_loss 0.3738, rec_loss 0.0379, lpips_loss 0.3359, g_loss -0.0335, disc_weight 0.0000, disc_adaptive_weight 4.2813, codebook_loss 0.3685, utilization 0.0431, perplexity 1591.3393, d_loss 0.0000, logits_real 0.0318, logits_fake 0.0331,
+Train Epoch: [1/5] Iters:[720/20018] gen_loss 0.3719, rec_loss 0.0380, lpips_loss 0.3339, g_loss -0.0360, disc_weight 0.0000, disc_adaptive_weight 4.5256, codebook_loss 0.3662, utilization 0.0431, perplexity 1591.8018, d_loss 0.0000, logits_real 0.0345, logits_fake 0.0352,
+Train Epoch: [1/5] Iters:[730/20018] gen_loss 0.3734, rec_loss 0.0383, lpips_loss 0.3351, g_loss -0.0349, disc_weight 0.0000, disc_adaptive_weight 4.7731, codebook_loss 0.3644, utilization 0.0432, perplexity 1595.4066, d_loss 0.0000, logits_real 0.0338, logits_fake 0.0339,
+Train Epoch: [1/5] Iters:[740/20018] gen_loss 0.3750, rec_loss 0.0389, lpips_loss 0.3361, g_loss -0.0341, disc_weight 0.0000, disc_adaptive_weight 4.7638, codebook_loss 0.3665, utilization 0.0432, perplexity 1598.3542, d_loss 0.0000, logits_real 0.0330, logits_fake 0.0332,
+Train Epoch: [1/5] Iters:[750/20018] gen_loss 0.3737, rec_loss 0.0385, lpips_loss 0.3352, g_loss -0.0322, disc_weight 0.0000, disc_adaptive_weight 4.7801, codebook_loss 0.3665, utilization 0.0433, perplexity 1601.3818, d_loss 0.0000, logits_real 0.0323, logits_fake 0.0324,
+Train Epoch: [1/5] Iters:[760/20018] gen_loss 0.3741, rec_loss 0.0381, lpips_loss 0.3360, g_loss -0.0326, disc_weight 0.0000, disc_adaptive_weight 4.6317, codebook_loss 0.3658, utilization 0.0433, perplexity 1603.3788, d_loss 0.0000, logits_real 0.0330, logits_fake 0.0332,
+Train Epoch: [1/5] Iters:[770/20018] gen_loss 0.3728, rec_loss 0.0377, lpips_loss 0.3351, g_loss -0.0309, disc_weight 0.0000, disc_adaptive_weight 4.2511, codebook_loss 0.3656, utilization 0.0433, perplexity 1602.7897, d_loss 0.0000, logits_real 0.0315, logits_fake 0.0313,
+Train Epoch: [1/5] Iters:[780/20018] gen_loss 0.3719, rec_loss 0.0375, lpips_loss 0.3344, g_loss -0.0309, disc_weight 0.0000, disc_adaptive_weight 4.0392, codebook_loss 0.3676, utilization 0.0433, perplexity 1601.2547, d_loss 0.0000, logits_real 0.0312, logits_fake 0.0319,
+Train Epoch: [1/5] Iters:[790/20018] gen_loss 0.3711, rec_loss 0.0373, lpips_loss 0.3338, g_loss -0.0313, disc_weight 0.0000, disc_adaptive_weight 3.9323, codebook_loss 0.3666, utilization 0.0433, perplexity 1606.7140, d_loss 0.0000, logits_real 0.0325, logits_fake 0.0323,
+Train Epoch: [1/5] Iters:[800/20018] gen_loss 0.3726, rec_loss 0.0376, lpips_loss 0.3350, g_loss -0.0304, disc_weight 0.0000, disc_adaptive_weight 3.7552, codebook_loss 0.3653, utilization 0.0433, perplexity 1608.2719, d_loss 0.0000, logits_real 0.0308, logits_fake 0.0306,
+Train Epoch: [1/5] Iters:[810/20018] gen_loss 0.3728, rec_loss 0.0380, lpips_loss 0.3348, g_loss -0.0297, disc_weight 0.0000, disc_adaptive_weight 3.6205, codebook_loss 0.3659, utilization 0.0434, perplexity 1608.1857, d_loss 0.0000, logits_real 0.0293, logits_fake 0.0307,
+Train Epoch: [1/5] Iters:[820/20018] gen_loss 0.3733, rec_loss 0.0384, lpips_loss 0.3349, g_loss -0.0305, disc_weight 0.0000, disc_adaptive_weight 4.0000, codebook_loss 0.3673, utilization 0.0436, perplexity 1618.3797, d_loss 0.0000, logits_real 0.0303, logits_fake 0.0318,
+Train Epoch: [1/5] Iters:[830/20018] gen_loss 0.3726, rec_loss 0.0384, lpips_loss 0.3342, g_loss -0.0317, disc_weight 0.0000, disc_adaptive_weight 4.4501, codebook_loss 0.3658, utilization 0.0437, perplexity 1623.4311, d_loss 0.0000, logits_real 0.0298, logits_fake 0.0320,
+Train Epoch: [1/5] Iters:[840/20018] gen_loss 0.3714, rec_loss 0.0381, lpips_loss 0.3333, g_loss -0.0337, disc_weight 0.0000, disc_adaptive_weight 4.5516, codebook_loss 0.3651, utilization 0.0438, perplexity 1629.3468, d_loss 0.0000, logits_real 0.0297, logits_fake 0.0342,
+Train Epoch: [1/5] Iters:[850/20018] gen_loss 0.3698, rec_loss 0.0378, lpips_loss 0.3320, g_loss -0.0339, disc_weight 0.0000, disc_adaptive_weight 4.6755, codebook_loss 0.3647, utilization 0.0439, perplexity 1632.8879, d_loss 0.0000, logits_real 0.0300, logits_fake 0.0347,
+Train Epoch: [1/5] Iters:[860/20018] gen_loss 0.3700, rec_loss 0.0380, lpips_loss 0.3320, g_loss -0.0356, disc_weight 0.0000, disc_adaptive_weight 5.1075, codebook_loss 0.3636, utilization 0.0440, perplexity 1636.4959, d_loss 0.0000, logits_real 0.0314, logits_fake 0.0356,
+Train Epoch: [1/5] Iters:[870/20018] gen_loss 0.3715, rec_loss 0.0380, lpips_loss 0.3335, g_loss -0.0359, disc_weight 0.0000, disc_adaptive_weight 5.1027, codebook_loss 0.3629, utilization 0.0439, perplexity 1632.9486, d_loss 0.0000, logits_real 0.0310, logits_fake 0.0356,
+Train Epoch: [1/5] Iters:[880/20018] gen_loss 0.3722, rec_loss 0.0380, lpips_loss 0.3342, g_loss -0.0351, disc_weight 0.0000, disc_adaptive_weight 4.7391, codebook_loss 0.3631, utilization 0.0440, perplexity 1633.3342, d_loss 0.0000, logits_real 0.0317, logits_fake 0.0355,
+Train Epoch: [1/5] Iters:[890/20018] gen_loss 0.3709, rec_loss 0.0375, lpips_loss 0.3334, g_loss -0.0349, disc_weight 0.0000, disc_adaptive_weight 4.7877, codebook_loss 0.3622, utilization 0.0439, perplexity 1629.0956, d_loss 0.0000, logits_real 0.0334, logits_fake 0.0357,
+Train Epoch: [1/5] Iters:[900/20018] gen_loss 0.3729, rec_loss 0.0380, lpips_loss 0.3349, g_loss -0.0370, disc_weight 0.0000, disc_adaptive_weight 4.6828, codebook_loss 0.3618, utilization 0.0438, perplexity 1624.2716, d_loss 0.0000, logits_real 0.0346, logits_fake 0.0381,
+Train Epoch: [1/5] Iters:[910/20018] gen_loss 0.3727, rec_loss 0.0380, lpips_loss 0.3347, g_loss -0.0355, disc_weight 0.0000, disc_adaptive_weight 4.1748, codebook_loss 0.3620, utilization 0.0437, perplexity 1621.4232, d_loss 0.0000, logits_real 0.0333, logits_fake 0.0363,
+Train Epoch: [1/5] Iters:[920/20018] gen_loss 0.3703, rec_loss 0.0376, lpips_loss 0.3326, g_loss -0.0345, disc_weight 0.0000, disc_adaptive_weight 4.0709, codebook_loss 0.3622, utilization 0.0437, perplexity 1624.7534, d_loss 0.0000, logits_real 0.0338, logits_fake 0.0366,
+Train Epoch: [1/5] Iters:[930/20018] gen_loss 0.3706, rec_loss 0.0378, lpips_loss 0.3327, g_loss -0.0364, disc_weight 0.0000, disc_adaptive_weight 4.0354, codebook_loss 0.3623, utilization 0.0437, perplexity 1628.0351, d_loss 0.0000, logits_real 0.0343, logits_fake 0.0380,
+Train Epoch: [1/5] Iters:[940/20018] gen_loss 0.3703, rec_loss 0.0379, lpips_loss 0.3325, g_loss -0.0344, disc_weight 0.0000, disc_adaptive_weight 3.8811, codebook_loss 0.3624, utilization 0.0438, perplexity 1632.0857, d_loss 0.0000, logits_real 0.0323, logits_fake 0.0365,
+Train Epoch: [1/5] Iters:[950/20018] gen_loss 0.3695, rec_loss 0.0376, lpips_loss 0.3319, g_loss -0.0332, disc_weight 0.0000, disc_adaptive_weight 4.1518, codebook_loss 0.3634, utilization 0.0437, perplexity 1629.7333, d_loss 0.0000, logits_real 0.0327, logits_fake 0.0352,
+Train Epoch: [1/5] Iters:[960/20018] gen_loss 0.3698, rec_loss 0.0376, lpips_loss 0.3322, g_loss -0.0341, disc_weight 0.0000, disc_adaptive_weight 4.2484, codebook_loss 0.3634, utilization 0.0438, perplexity 1635.4559, d_loss 0.0000, logits_real 0.0337, logits_fake 0.0353,
+Train Epoch: [1/5] Iters:[970/20018] gen_loss 0.3709, rec_loss 0.0379, lpips_loss 0.3330, g_loss -0.0358, disc_weight 0.0000, disc_adaptive_weight 4.4622, codebook_loss 0.3630, utilization 0.0439, perplexity 1637.5412, d_loss 0.0000, logits_real 0.0343, logits_fake 0.0360,
+Train Epoch: [1/5] Iters:[980/20018] gen_loss 0.3699, rec_loss 0.0378, lpips_loss 0.3322, g_loss -0.0331, disc_weight 0.0000, disc_adaptive_weight 4.6187, codebook_loss 0.3613, utilization 0.0438, perplexity 1631.6641, d_loss 0.0000, logits_real 0.0335, logits_fake 0.0335,
+Train Epoch: [1/5] Iters:[990/20018] gen_loss 0.3691, rec_loss 0.0377, lpips_loss 0.3313, g_loss -0.0346, disc_weight 0.0000, disc_adaptive_weight 4.6203, codebook_loss 0.3601, utilization 0.0439, perplexity 1631.0608, d_loss 0.0000, logits_real 0.0343, logits_fake 0.0335,
+Train Epoch: [1/5] Iters:[1000/20018] gen_loss 0.3695, rec_loss 0.0383, lpips_loss 0.3311, g_loss -0.0351, disc_weight 0.0000, disc_adaptive_weight 4.6199, codebook_loss 0.3600, utilization 0.0439, perplexity 1632.5032, d_loss 0.0000, logits_real 0.0337, logits_fake 0.0335,
+Train Epoch: [1/5] Iters:[1010/20018] gen_loss 0.3671, rec_loss 0.0379, lpips_loss 0.3292, g_loss -0.0342, disc_weight 0.0000, disc_adaptive_weight 4.4944, codebook_loss 0.3596, utilization 0.0439, perplexity 1632.2477, d_loss 0.0000, logits_real 0.0337, logits_fake 0.0337,
+Train Epoch: [1/5] Iters:[1020/20018] gen_loss 0.3669, rec_loss 0.0378, lpips_loss 0.3291, g_loss -0.0323, disc_weight 0.0000, disc_adaptive_weight 4.2128, codebook_loss 0.3582, utilization 0.0438, perplexity 1628.5389, d_loss 0.0000, logits_real 0.0316, logits_fake 0.0316,
+Train Epoch: [1/5] Iters:[1030/20018] gen_loss 0.3677, rec_loss 0.0379, lpips_loss 0.3298, g_loss -0.0347, disc_weight 0.0000, disc_adaptive_weight 4.0024, codebook_loss 0.3600, utilization 0.0439, perplexity 1636.3040, d_loss 0.0000, logits_real 0.0333, logits_fake 0.0343,
+Train Epoch: [1/5] Iters:[1040/20018] gen_loss 0.3697, rec_loss 0.0383, lpips_loss 0.3314, g_loss -0.0326, disc_weight 0.0000, disc_adaptive_weight 3.9807, codebook_loss 0.3601, utilization 0.0437, perplexity 1631.4152, d_loss 0.0000, logits_real 0.0318, logits_fake 0.0328,
+Train Epoch: [1/5] Iters:[1050/20018] gen_loss 0.3684, rec_loss 0.0378, lpips_loss 0.3306, g_loss -0.0318, disc_weight 0.0000, disc_adaptive_weight 3.7464, codebook_loss 0.3591, utilization 0.0438, perplexity 1634.9294, d_loss 0.0000, logits_real 0.0323, logits_fake 0.0326,
+Train Epoch: [1/5] Iters:[1060/20018] gen_loss 0.3685, rec_loss 0.0377, lpips_loss 0.3308, g_loss -0.0328, disc_weight 0.0000, disc_adaptive_weight 3.9582, codebook_loss 0.3590, utilization 0.0438, perplexity 1637.1910, d_loss 0.0000, logits_real 0.0328, logits_fake 0.0333,
+Train Epoch: [1/5] Iters:[1070/20018] gen_loss 0.3684, rec_loss 0.0373, lpips_loss 0.3311, g_loss -0.0349, disc_weight 0.0000, disc_adaptive_weight 3.8118, codebook_loss 0.3591, utilization 0.0439, perplexity 1636.9545, d_loss 0.0000, logits_real 0.0351, logits_fake 0.0350,
+Train Epoch: [1/5] Iters:[1080/20018] gen_loss 0.3678, rec_loss 0.0373, lpips_loss 0.3306, g_loss -0.0345, disc_weight 0.0000, disc_adaptive_weight 3.7826, codebook_loss 0.3569, utilization 0.0438, perplexity 1633.7960, d_loss 0.0000, logits_real 0.0346, logits_fake 0.0340,
+Train Epoch: [1/5] Iters:[1090/20018] gen_loss 0.3663, rec_loss 0.0370, lpips_loss 0.3293, g_loss -0.0352, disc_weight 0.0000, disc_adaptive_weight 3.8438, codebook_loss 0.3565, utilization 0.0439, perplexity 1641.6558, d_loss 0.0000, logits_real 0.0354, logits_fake 0.0349,
+Train Epoch: [1/5] Iters:[1100/20018] gen_loss 0.3665, rec_loss 0.0369, lpips_loss 0.3295, g_loss -0.0347, disc_weight 0.0000, disc_adaptive_weight 3.8358, codebook_loss 0.3558, utilization 0.0439, perplexity 1644.7198, d_loss 0.0000, logits_real 0.0345, logits_fake 0.0345,
+Train Epoch: [1/5] Iters:[1110/20018] gen_loss 0.3651, rec_loss 0.0368, lpips_loss 0.3283, g_loss -0.0341, disc_weight 0.0000, disc_adaptive_weight 3.7332, codebook_loss 0.3566, utilization 0.0439, perplexity 1643.3745, d_loss 0.0000, logits_real 0.0333, logits_fake 0.0344,
+Train Epoch: [1/5] Iters:[1120/20018] gen_loss 0.3660, rec_loss 0.0377, lpips_loss 0.3283, g_loss -0.0311, disc_weight 0.0000, disc_adaptive_weight 3.9276, codebook_loss 0.3576, utilization 0.0440, perplexity 1650.3797, d_loss 0.0000, logits_real 0.0313, logits_fake 0.0322,
+Train Epoch: [1/5] Iters:[1130/20018] gen_loss 0.3657, rec_loss 0.0376, lpips_loss 0.3281, g_loss -0.0306, disc_weight 0.0000, disc_adaptive_weight 3.8563, codebook_loss 0.3604, utilization 0.0441, perplexity 1653.8086, d_loss 0.0000, logits_real 0.0312, logits_fake 0.0324,
+Train Epoch: [1/5] Iters:[1140/20018] gen_loss 0.3678, rec_loss 0.0383, lpips_loss 0.3295, g_loss -0.0330, disc_weight 0.0000, disc_adaptive_weight 3.8941, codebook_loss 0.3626, utilization 0.0441, perplexity 1651.6750, d_loss 0.0000, logits_real 0.0326, logits_fake 0.0344,
+Train Epoch: [1/5] Iters:[1150/20018] gen_loss 0.3674, rec_loss 0.0383, lpips_loss 0.3291, g_loss -0.0332, disc_weight 0.0000, disc_adaptive_weight 4.0868, codebook_loss 0.3617, utilization 0.0441, perplexity 1648.1234, d_loss 0.0000, logits_real 0.0324, logits_fake 0.0343,
+Train Epoch: [1/5] Iters:[1160/20018] gen_loss 0.3702, rec_loss 0.0394, lpips_loss 0.3308, g_loss -0.0348, disc_weight 0.0000, disc_adaptive_weight 4.4050, codebook_loss 0.3606, utilization 0.0441, perplexity 1652.8824, d_loss 0.0000, logits_real 0.0348, logits_fake 0.0349,
+Train Epoch: [1/5] Iters:[1170/20018] gen_loss 0.3680, rec_loss 0.0384, lpips_loss 0.3296, g_loss -0.0358, disc_weight 0.0000, disc_adaptive_weight 4.3648, codebook_loss 0.3586, utilization 0.0441, perplexity 1645.8089, d_loss 0.0000, logits_real 0.0355, logits_fake 0.0348,
+Train Epoch: [1/5] Iters:[1180/20018] gen_loss 0.3656, rec_loss 0.0380, lpips_loss 0.3276, g_loss -0.0347, disc_weight 0.0000, disc_adaptive_weight 4.3666, codebook_loss 0.3554, utilization 0.0440, perplexity 1644.6594, d_loss 0.0000, logits_real 0.0342, logits_fake 0.0337,
+Train Epoch: [1/5] Iters:[1190/20018] gen_loss 0.3647, rec_loss 0.0379, lpips_loss 0.3268, g_loss -0.0311, disc_weight 0.0000, disc_adaptive_weight 4.1991, codebook_loss 0.3537, utilization 0.0441, perplexity 1644.3114, d_loss 0.0000, logits_real 0.0315, logits_fake 0.0300,
+Train Epoch: [1/5] Iters:[1200/20018] gen_loss 0.3652, rec_loss 0.0381, lpips_loss 0.3271, g_loss -0.0312, disc_weight 0.0000, disc_adaptive_weight 3.9889, codebook_loss 0.3538, utilization 0.0441, perplexity 1650.9371, d_loss 0.0000, logits_real 0.0321, logits_fake 0.0300,
+Train Epoch: [1/5] Iters:[1210/20018] gen_loss 0.3634, rec_loss 0.0373, lpips_loss 0.3261, g_loss -0.0289, disc_weight 0.0000, disc_adaptive_weight 3.7217, codebook_loss 0.3548, utilization 0.0442, perplexity 1651.7103, d_loss 0.0000, logits_real 0.0292, logits_fake 0.0285,
+Train Epoch: [1/5] Iters:[1220/20018] gen_loss 0.3628, rec_loss 0.0377, lpips_loss 0.3251, g_loss -0.0303, disc_weight 0.0000, disc_adaptive_weight 3.5931, codebook_loss 0.3557, utilization 0.0444, perplexity 1664.5212, d_loss 0.0000, logits_real 0.0302, logits_fake 0.0304,
+Train Epoch: [1/5] Iters:[1230/20018] gen_loss 0.3654, rec_loss 0.0387, lpips_loss 0.3267, g_loss -0.0322, disc_weight 0.0000, disc_adaptive_weight 3.4672, codebook_loss 0.3576, utilization 0.0444, perplexity 1667.5309, d_loss 0.0000, logits_real 0.0332, logits_fake 0.0325,
+Train Epoch: [1/5] Iters:[1240/20018] gen_loss 0.3660, rec_loss 0.0387, lpips_loss 0.3273, g_loss -0.0327, disc_weight 0.0000, disc_adaptive_weight 3.4080, codebook_loss 0.3592, utilization 0.0443, perplexity 1668.8534, d_loss 0.0000, logits_real 0.0336, logits_fake 0.0326,
+Train Epoch: [1/5] Iters:[1250/20018] gen_loss 0.3649, rec_loss 0.0385, lpips_loss 0.3264, g_loss -0.0340, disc_weight 0.0000, disc_adaptive_weight 3.4435, codebook_loss 0.3593, utilization 0.0443, perplexity 1667.0434, d_loss 0.0000, logits_real 0.0340, logits_fake 0.0335,
+Train Epoch: [1/5] Iters:[1260/20018] gen_loss 0.3668, rec_loss 0.0392, lpips_loss 0.3276, g_loss -0.0331, disc_weight 0.0000, disc_adaptive_weight 3.2999, codebook_loss 0.3585, utilization 0.0443, perplexity 1664.7768, d_loss 0.0000, logits_real 0.0343, logits_fake 0.0326,
+Train Epoch: [1/5] Iters:[1270/20018] gen_loss 0.3671, rec_loss 0.0392, lpips_loss 0.3279, g_loss -0.0323, disc_weight 0.0000, disc_adaptive_weight 3.5201, codebook_loss 0.3583, utilization 0.0442, perplexity 1661.8404, d_loss 0.0000, logits_real 0.0347, logits_fake 0.0313,
+Train Epoch: [1/5] Iters:[1280/20018] gen_loss 0.3662, rec_loss 0.0386, lpips_loss 0.3277, g_loss -0.0303, disc_weight 0.0000, disc_adaptive_weight 3.9767, codebook_loss 0.3574, utilization 0.0443, perplexity 1663.4096, d_loss 0.0000, logits_real 0.0316, logits_fake 0.0288,
+Train Epoch: [1/5] Iters:[1290/20018] gen_loss 0.3663, rec_loss 0.0385, lpips_loss 0.3278, g_loss -0.0308, disc_weight 0.0000, disc_adaptive_weight 4.2405, codebook_loss 0.3539, utilization 0.0443, perplexity 1661.6623, d_loss 0.0000, logits_real 0.0313, logits_fake 0.0296,
+Train Epoch: [1/5] Iters:[1300/20018] gen_loss 0.3665, rec_loss 0.0387, lpips_loss 0.3278, g_loss -0.0318, disc_weight 0.0000, disc_adaptive_weight 4.1633, codebook_loss 0.3559, utilization 0.0443, perplexity 1664.7043, d_loss 0.0000, logits_real 0.0321, logits_fake 0.0312,
+Train Epoch: [1/5] Iters:[1310/20018] gen_loss 0.3662, rec_loss 0.0384, lpips_loss 0.3277, g_loss -0.0344, disc_weight 0.0000, disc_adaptive_weight 4.2361, codebook_loss 0.3549, utilization 0.0444, perplexity 1666.9121, d_loss 0.0000, logits_real 0.0337, logits_fake 0.0341,
+Train Epoch: [1/5] Iters:[1320/20018] gen_loss 0.3685, rec_loss 0.0389, lpips_loss 0.3296, g_loss -0.0341, disc_weight 0.0000, disc_adaptive_weight 4.1822, codebook_loss 0.3578, utilization 0.0444, perplexity 1665.8403, d_loss 0.0000, logits_real 0.0319, logits_fake 0.0339,
+Train Epoch: [1/5] Iters:[1330/20018] gen_loss 0.3667, rec_loss 0.0384, lpips_loss 0.3283, g_loss -0.0345, disc_weight 0.0000, disc_adaptive_weight 3.8631, codebook_loss 0.3568, utilization 0.0443, perplexity 1667.0772, d_loss 0.0000, logits_real 0.0328, logits_fake 0.0347,
+Train Epoch: [1/5] Iters:[1340/20018] gen_loss 0.3637, rec_loss 0.0378, lpips_loss 0.3260, g_loss -0.0342, disc_weight 0.0000, disc_adaptive_weight 3.9548, codebook_loss 0.3576, utilization 0.0444, perplexity 1671.3684, d_loss 0.0000, logits_real 0.0337, logits_fake 0.0349,
+Train Epoch: [1/5] Iters:[1350/20018] gen_loss 0.3637, rec_loss 0.0378, lpips_loss 0.3259, g_loss -0.0313, disc_weight 0.0000, disc_adaptive_weight 3.9364, codebook_loss 0.3559, utilization 0.0445, perplexity 1677.3007, d_loss 0.0000, logits_real 0.0321, logits_fake 0.0314,
+Train Epoch: [1/5] Iters:[1360/20018] gen_loss 0.3610, rec_loss 0.0371, lpips_loss 0.3239, g_loss -0.0305, disc_weight 0.0000, disc_adaptive_weight 4.1183, codebook_loss 0.3551, utilization 0.0445, perplexity 1676.7954, d_loss 0.0000, logits_real 0.0316, logits_fake 0.0308,
+Train Epoch: [1/5] Iters:[1370/20018] gen_loss 0.3596, rec_loss 0.0371, lpips_loss 0.3225, g_loss -0.0298, disc_weight 0.0000, disc_adaptive_weight 4.0177, codebook_loss 0.3537, utilization 0.0445, perplexity 1679.7482, d_loss 0.0000, logits_real 0.0307, logits_fake 0.0314,
+Train Epoch: [1/5] Iters:[1380/20018] gen_loss 0.3613, rec_loss 0.0372, lpips_loss 0.3241, g_loss -0.0279, disc_weight 0.0000, disc_adaptive_weight 4.1996, codebook_loss 0.3557, utilization 0.0446, perplexity 1681.3953, d_loss 0.0000, logits_real 0.0289, logits_fake 0.0294,
+Train Epoch: [1/5] Iters:[1390/20018] gen_loss 0.3619, rec_loss 0.0373, lpips_loss 0.3246, g_loss -0.0264, disc_weight 0.0000, disc_adaptive_weight 3.7139, codebook_loss 0.3572, utilization 0.0446, perplexity 1682.4284, d_loss 0.0000, logits_real 0.0275, logits_fake 0.0277,
+Train Epoch: [1/5] Iters:[1400/20018] gen_loss 0.3631, rec_loss 0.0377, lpips_loss 0.3254, g_loss -0.0272, disc_weight 0.0000, disc_adaptive_weight 3.8141, codebook_loss 0.3566, utilization 0.0446, perplexity 1677.5389, d_loss 0.0000, logits_real 0.0286, logits_fake 0.0292,
+Train Epoch: [1/5] Iters:[1410/20018] gen_loss 0.3653, rec_loss 0.0384, lpips_loss 0.3269, g_loss -0.0265, disc_weight 0.0000, disc_adaptive_weight 3.6769, codebook_loss 0.3580, utilization 0.0446, perplexity 1679.5697, d_loss 0.0000, logits_real 0.0288, logits_fake 0.0281,
+Train Epoch: [1/5] Iters:[1420/20018] gen_loss 0.3649, rec_loss 0.0378, lpips_loss 0.3271, g_loss -0.0288, disc_weight 0.0000, disc_adaptive_weight 3.6494, codebook_loss 0.3539, utilization 0.0446, perplexity 1676.2072, d_loss 0.0000, logits_real 0.0319, logits_fake 0.0289,
+Train Epoch: [1/5] Iters:[1430/20018] gen_loss 0.3642, rec_loss 0.0379, lpips_loss 0.3263, g_loss -0.0309, disc_weight 0.0000, disc_adaptive_weight 3.6222, codebook_loss 0.3508, utilization 0.0444, perplexity 1668.2722, d_loss 0.0000, logits_real 0.0338, logits_fake 0.0297,

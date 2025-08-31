@@ -81,7 +81,7 @@ def main_worker(args):
         code_para = list(vq_model.quantizer.embedding.parameters()) 
         model_para = list(vq_model.encoder.parameters()) + list(vq_model.quant_conv.parameters()) + list(vq_model.post_quant_conv.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.decoder.parameters())
         all_para = code_para + model_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.005}], lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
         model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.encoder.parameters()) + list(vq_model.quant_conv.parameters()) + list(vq_model.post_quant_conv.parameters()) + list(vq_model.projector_in.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.decoder.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
@@ -164,10 +164,7 @@ def main_worker(args):
             with torch.no_grad():
                 if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "ema_vq" or args.VQ == "online_vq" or args.VQ == "mmd_vq":
                     if args.pq == 1:
-                        if args.use_multiscale == False:
-                            results_pack = eval_one_epoch_vq(args, vq_model, epoch, val_dataloader, len_val_set)
-                        else:
-                            results_pack = eval_one_epoch_var(args, vq_model, epoch, val_dataloader, len_val_set)
+                        results_pack = eval_one_epoch_vq(args, vq_model, epoch, val_dataloader, len_val_set)
                     else:
                         results_pack = eval_one_epoch_pq(args, vq_model, epoch, val_dataloader, len_val_set)
                 else:
@@ -179,6 +176,8 @@ def main_worker(args):
                 results_eval['ssim'].append(results_pack.ssim)
                 results_eval['lpips'].append(results_pack.lpips)
                 results_eval['rec_loss'].append(results_pack.rec_loss)
+                results_eval['utilization'].append(results_pack.utilization)
+                results_eval['perplexity'].append(results_pack.perplexity)
                 
                 results_val_len = len(results_eval['epoch'])
                 data_frame = pd.DataFrame(data=results_eval, index=range(1, results_val_len+1))
