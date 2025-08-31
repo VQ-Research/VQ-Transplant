@@ -46,11 +46,23 @@ class VQModel(nn.Module):
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 Normalize(1024),
                 nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                Normalize(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                Normalize(1024),
+                nn.SiLU(),
                 nn.Conv2d(1024, 16, kernel_size=3, padding=1),
             )
 
         self.projector_out = nn.Sequential(
                 nn.Conv2d(16, 1024, kernel_size=3, padding=1),
+                Normalize(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+                Normalize(1024),
+                nn.SiLU(),
+                nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
                 Normalize(1024),
                 nn.SiLU(),
                 nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
@@ -93,6 +105,7 @@ class VQModel(nn.Module):
                 param.requires_grad = True
             for param in self.decoder.parameters():
                 param.requires_grad = False
+            
             self.encoder.eval()
             self.decoder.eval()
             self.quant_conv.eval()
@@ -155,7 +168,7 @@ class VQModel(nn.Module):
             zt = self.quant_conv(ze)
             zm, _ = torch.chunk(zt, 2, dim=1)
             z_obj = self.post_quant_conv(zm)
-
+        
         z_p = z_obj + self.projector_in(z_obj)
         z_q, vq_loss, utilization, perplexity = self.quantizer(z_p)
         z_q = z_q + self.projector_out(z_q)
