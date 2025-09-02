@@ -56,7 +56,6 @@ def parse_arg():
     parser.add_argument('--seed', help='random seed', type=int, default=3407)
     parser.add_argument('--weight_decay', help='weight decay for optimizer', type=float, default=0.0001)
     parser.add_argument('--stage', default='transplant', help='there are two stages: transplant and refinement.', choices=['transplant', 'refinement'])
-    parser.add_argument('--path', default='bc', help='there are two servers, path for different servers: bc server and vector server.', choices=['bc', 'vector'])
 
     ##vector:/project/6105494/sunset/VQ-Projects/VQ-Transplant
     parser.add_argument('--checkpoint_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/checkpoint/", type=str, help='the directory of checkpoint.')
@@ -64,7 +63,7 @@ def parse_arg():
     parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/saver/", type=str, help='the directory of saver.')
     parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/reconstruction2/", type=str, help='the directory of saver.')
     parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/yaml/", type=str, help='the directory of saver.')
-    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/pretrained_tokenizer/vae_ch160v4096z32.pth", type=str, help='the directory of ldm checkpoint.')
+    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/pretrained_tokenizer/vae_ch160v4096z32.pth", type=str, help='the directory of var checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
@@ -73,28 +72,17 @@ def parse_arg():
     parser.add_argument('--dist-backend', default='nccl', type=str, help='distributed backend.')
     args = parser.parse_args()
 
-    if args.path == 'bc':
-        args.checkpoint_dir = "/projects/yuanai/projects/VQ-Transplant2/checkpoint/"
-        args.results_dir = "/projects/yuanai/projects/VQ-Transplant2/results/"
-        args.saver_dir = "/projects/yuanai/projects/VQ-Transplant2/saver/"
-        args.reconstruction_dir = "/projects/yuanai/projects/VQ-Transplant2/reconstruction/"
-        args.yaml_dir = "/projects/yuanai/projects/VQ-Transplant2/yaml/"
-        args.pretrained_tokenizer = "/projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/vae_ch160v4096z32.pth"
-
     args.world_size = int(os.environ["WORLD_SIZE"])
     args.batch_size = round(args.global_batch_size/args.world_size)
     args.workers = min(max(0, args.workers), args.batch_size)
     args.ms_token_size = tuple(map(int, args.ms_patch_size.replace('-', '_').split('_')))
     args.importance = tuple(map(int, args.importance.replace('-', '_').split('_')))
     args.init_checkpoint_dir = args.checkpoint_dir
-    
-    if args.path == 'vector':
-        if args.dataset_name == "ImageNet":
-            args.dataset_dir = "/datasets/"
-        else:
-            args.dataset_dir = "/project/6105494/shared/data/"
+
+    if args.dataset_name == "ImageNet":
+        args.dataset_dir = "/datasets/"
     else:
-        args.dataset_dir = "/projects/yuanai/data/"
+        args.dataset_dir = "/project/6105494/shared/data/"
 
     if args.stage == "transplant":
         args.checkpoint_dir = os.path.join(os.path.join(args.checkpoint_dir, "Transplant"), args.dataset_name)

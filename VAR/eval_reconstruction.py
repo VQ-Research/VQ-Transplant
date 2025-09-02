@@ -22,16 +22,8 @@ from data.lsun_church import LSUNChurchesDataset
 from data.lsun_bedroom import LSUNBedroomsDataset
 from metric.metric import PSNR, LPIPS, SSIM
 
-paths_vector = {
+paths = {
     "ImageNet": "imagenet",
-    "FFHQ": "FFHQ",
-    "CelebAHQ":"CelebAHQ",
-    "Bedrooms":"LSUN-Bedrooms",
-    "Churches": "LSUN-Churches",
-}
-
-paths_bc = {
-    "ImageNet": "ImageNet",
     "FFHQ": "FFHQ",
     "CelebAHQ":"CelebAHQ",
     "Bedrooms":"LSUN-Bedrooms",
@@ -60,11 +52,6 @@ def load_dataset(args, batch_size=16):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
     ])
-
-    if args.path == "bc":
-        paths = paths_bc
-    else:
-        paths = paths_vector
     data_path = os.path.join(args.dataset_dir, paths[args.dataset_name])
     
     if args.dataset_name == "ImageNet":

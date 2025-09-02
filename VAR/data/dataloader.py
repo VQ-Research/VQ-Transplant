@@ -42,12 +42,7 @@ def build_eval_transform(args):
     return transform
 
 def build_dataloader(args):
-    if args.path == "bc":
-        paths = paths_bc
-    else:
-        paths = paths_vector
     data_path = os.path.join(args.dataset_dir, paths[args.dataset_name])
-    
     train_transform = build_train_transform(args)
     eval_transform = build_eval_transform(args)
 

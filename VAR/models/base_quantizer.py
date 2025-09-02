@@ -95,65 +95,6 @@ class Queue(nn.Module):
             part2 = self.queue[(self.queue_size-(self.codebook_size-ptr)):self.queue_size,:].detach().clone()
             return torch.cat((part1, part2), 0)
 
-class VectorQuantizer(nn.Module):
-    def __init__(self, args):
-        super(VectorQuantizer, self).__init__()
-        self.args = args
-        self.codebook_size = args.codebook_size
-        self.codebook_dim = args.codebook_dim
-        self.alpha = args.alpha
-        self.beta = args.beta
-        self.decay = 0.8
-        if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "mmd_vq":
-            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-            self.embedding.weight.requires_grad = True
-        elif args.VQ == "online_vq":
-            self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-            self.embedding.weight.requires_grad = True
-            self.register_buffer("embed_prob", torch.zeros(self.codebook_size))
-        elif args.VQ == "ema_vq":
-            self.embedding = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-            
-        if args.VQ == "wasserstein_vq":
-            self.queue = Queue(args)
-
-class ProductQuantizer(nn.Module):
-    def __init__(self, args):
-        super(ProductQuantizer, self).__init__()
-        self.args = args
-        self.codebook_size = args.codebook_size
-        self.codebook_dim = args.codebook_dim
-        self.alpha = args.alpha
-        self.beta = args.beta
-        self.decay = 0.8
-        if args.VQ == "wasserstein_vq" or args.VQ == "vanilla_vq" or args.VQ == "mmd_vq":
-            self.embedding_1 = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding_1.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-            self.embedding_1.weight.requires_grad = True
-
-            self.embedding_2 = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding_2.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-            self.embedding_2.weight.requires_grad = True
-        elif args.VQ == "online_vq":
-            self.embedding_1 = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding_1.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-            self.embedding_1.weight.requires_grad = True
-            self.register_buffer("embed_prob1", torch.zeros(self.codebook_size))
-
-            self.embedding_2 = nn.Embedding(self.codebook_size, self.codebook_dim)
-            self.embedding_2.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
-            self.embedding_2.weight.requires_grad = True
-            self.register_buffer("embed_prob2", torch.zeros(self.codebook_size))
-        elif args.VQ == "ema_vq":
-            self.embedding_1 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-            self.embedding_2 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
-            
-        if args.VQ == "wasserstein_vq":
-            self.queue_1 = Queue(args)
-            self.queue_2 = Queue(args)
-
 class MultiscaleVectorQuantizer(nn.Module):
     def __init__(self, args):
         super(MultiscaleVectorQuantizer, self).__init__()
