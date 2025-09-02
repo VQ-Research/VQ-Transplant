@@ -155,7 +155,6 @@ class VQModel(nn.Module):
                 param.requires_grad = False
             for param in self.decoder.parameters():
                 param.requires_grad = True
-
             self.encoder.eval()
             self.quant_conv.eval()
             self.post_quant_conv.eval()
@@ -258,7 +257,7 @@ class VQModel(nn.Module):
         z_q_2 = self.quantizer2.collect_reconstruction(z_p_2)
         z_q = torch.cat((z_q_1, z_q_2), dim=1)
         z_q = z_q + self.projector_out(z_q)
-        
+
         x_rec = self.decoder(z_q).clamp_(-1, 1)
         return x_rec
 

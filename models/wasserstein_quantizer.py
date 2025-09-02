@@ -7,7 +7,7 @@ import math
 from torch import einsum
 from einops import rearrange
 from torch import distributed as tdist
-from models.base_quantizer import VectorQuantizer, ProductQuantizer, MultiscaleVectorQuantizer
+from models.base_quantizer import VectorQuantizer, ProductQuantizer
 
 #### vector quantizer
 class WassersteinVectorQuantizer(VectorQuantizer):

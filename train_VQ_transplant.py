@@ -67,12 +67,12 @@ def main_worker(args):
     vq_model = nn.SyncBatchNorm.convert_sync_batchnorm(vq_model)
 
     if args.VQ == "wasserstein_vq" or args.VQ == "mmd_vq":
-        code_para = list(vq_model.quantizer.embedding.parameters()) 
+        code_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) 
         model_para = list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters()) 
         all_para = code_para + model_para
         optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
-        model_para = list(vq_model.quantizer.embedding.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters())
+        model_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters())  + list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "ema_vq":
         model_para = list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters()) 
