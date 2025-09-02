@@ -32,7 +32,7 @@ def parse_arg():
     parser.add_argument('--codebook_size', default=4096, type=int, help='the size of codebook.')
     parser.add_argument('--codebook_dim', default=16, type=int, help='the dimension of codebook vectors for pq and vq.')
     parser.add_argument('--project_dim', default=16, type=int, help='the dimension of after projector in fsq, bsq, and lfq.')
-    parser.add_argument('--pq', default=1, type=int, help='the modules of product quantizer.', choices=[1, 2, 4])
+    parser.add_argument('--pq', default=1, type=int, help='the modules of product quantizer.', choices=[1, 2])
     parser.add_argument('--L', default=4, type=int, help='finite discrete values for each dimension.', choices=[2, 3, 4, 5, 6, 8])
 
     ### Loss Configuration
@@ -62,7 +62,7 @@ def parse_arg():
     parser.add_argument('--checkpoint_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/checkpoint/", type=str, help='the directory of checkpoint.')
     parser.add_argument('--results_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/results/", type=str, help='the directory of results.')
     parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/saver/", type=str, help='the directory of saver.')
-    parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/reconstruction2/", type=str, help='the directory of saver.')
+    parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/yaml/", type=str, help='the directory of saver.')
     parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
@@ -79,7 +79,7 @@ def parse_arg():
         args.saver_dir = "/projects/yuanai/projects/VQ-Transplant2/saver/"
         args.reconstruction_dir = "/projects/yuanai/projects/VQ-Transplant2/reconstruction/"
         args.yaml_dir = "/projects/yuanai/projects/VQ-Transplant2/yaml/"
-        args.pretrained_tokenizer = "/projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/vae_ch160v4096z32.pth"
+        args.pretrained_tokenizer = "/projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt"
 
     args.world_size = int(os.environ["WORLD_SIZE"])
     args.batch_size = round(args.global_batch_size/args.world_size)

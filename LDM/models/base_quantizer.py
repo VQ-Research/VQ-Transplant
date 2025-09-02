@@ -8,25 +8,6 @@ from torch import einsum
 from einops import rearrange
 from torch import distributed as tdist
 
-class Phi(nn.Conv2d):
-    def __init__(self, embed_dim, quant_resi):
-        ks = 3
-        super().__init__(in_channels=embed_dim, out_channels=embed_dim, kernel_size=ks, stride=1, padding=ks//2)
-        self.resi_ratio = abs(quant_resi)
-    
-    def forward(self, h_BChw):
-        return h_BChw.mul(1-self.resi_ratio) + super().forward(h_BChw).mul_(self.resi_ratio)
-
-class PhiPartiallyShared(nn.Module):
-    def __init__(self, qresi_ls: nn.ModuleList):
-        super().__init__()
-        self.qresi_ls = qresi_ls
-        K = len(qresi_ls)
-        self.ticks = np.linspace(1/3/K, 1-1/3/K, K) if K == 4 else np.linspace(1/2/K, 1-1/2/K, K)
-    
-    def __getitem__(self, at_from_0_to_1: float) -> Phi:
-        return self.qresi_ls[np.argmin(np.abs(self.ticks - at_from_0_to_1)).item()]
-
 class EmbeddingEMA(nn.Module):
     def __init__(self, codebook_size, codebook_dim, decay=0.99, eps=1e-5):
         super().__init__()

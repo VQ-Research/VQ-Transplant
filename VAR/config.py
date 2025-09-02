@@ -61,7 +61,7 @@ def parse_arg():
     parser.add_argument('--checkpoint_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/checkpoint/", type=str, help='the directory of checkpoint.')
     parser.add_argument('--results_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/results/", type=str, help='the directory of results.')
     parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/saver/", type=str, help='the directory of saver.')
-    parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/reconstruction2/", type=str, help='the directory of saver.')
+    parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/yaml/", type=str, help='the directory of saver.')
     parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant3/pretrained_tokenizer/vae_ch160v4096z32.pth", type=str, help='the directory of var checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')

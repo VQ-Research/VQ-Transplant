@@ -155,6 +155,7 @@ class VQModel(nn.Module):
                 param.requires_grad = False
             for param in self.decoder.parameters():
                 param.requires_grad = True
+                
             self.encoder.eval()
             self.quant_conv.eval()
             self.post_quant_conv.eval()
