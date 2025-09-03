@@ -12,5 +12,5 @@
 
 source ~/.bashrc
 conda activate /projects/yuanai/fangxian/packages/anaconda/envs/VQ-Tokenizer
-CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12256 train_VQ_transplant.py --VQ=wasserstein_vq --dataset_name=CelebAHQ --path=bc --global_batch_size=64 --codebook_size 16384  --codebook_dim=8 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
-CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12256 train_VQ_transplant.py --VQ=wasserstein_vq --dataset_name=Churches --path=bc --global_batch_size=64 --codebook_size 16384  --codebook_dim=8 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
+CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12256 train_VQ_transplant.py --VQ=wasserstein_vq --dataset_name=CelebAHQ --path=bc --global_batch_size=64 --codebook_size 16384  --codebook_dim=8 --stage=transplant --alpha=1.0 --beta=0.2 --gamma=1.0
+CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12256 train_VQ_transplant.py --VQ=wasserstein_vq --dataset_name=Churches --path=bc --global_batch_size=64 --codebook_size 16384  --codebook_dim=8 --stage=transplant --alpha=1.0 --beta=0.2 --gamma=1.0
