@@ -4076,3 +4076,5 @@ Train Epoch: [2/2] Iters:[20010/20018] transplant_loss 2.8966, rec_loss 0.0403, 
 Loading pretrained model LPIPS from /home/fangxian/.cache/torch/hub/pyiqa/LPIPS_v0.1_alex-df73285e.pth
 ######### saving checkpoint #########
 Loading pretrained model LPIPS from /home/fangxian/.cache/torch/hub/pyiqa/LPIPS_v0.1_alex-df73285e.pth
+PSNR:22.343366048583984  SSIM:0.5290339006471634  LPIPS:0.2103634169626236
+Saved .npz file to /projects/yuanai/projects/VQ-Transplant2/reconstruction/Transplant/ImageNet/vanilla_vq_transplant_16384_False.npz [shape=(50000, 256, 256, 3)].

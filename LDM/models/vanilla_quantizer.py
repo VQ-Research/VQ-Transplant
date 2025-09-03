@@ -97,7 +97,6 @@ class VanillaProductQuantizer(ProductQuantizer):
         return z_dec, token
 
     def forward(self, z_enc):
-        ### chunk z_enc to z_enc_p1, z_enc_p2
         z_enc_1, z_enc_2 = torch.chunk(z_enc, 2, dim=1)
         z_dec_1, token_1 = self.sub_quantizer(z_enc_1, self.embedding_1)
         z_dec_2, token_2 = self.sub_quantizer(z_enc_2, self.embedding_2)
@@ -121,29 +120,21 @@ class VanillaProductQuantizer(ProductQuantizer):
         return z_dec, loss, utilization, perplexity
 
     def collect_eval_info(self, z_enc):
-        B, C, H, W = z_enc.shape
-        z = rearrange(z_enc, 'b c h w -> b h w c') 
-        z_flat = z.reshape(-1, C).contiguous()  
+        z_enc_1, z_enc_2 = torch.chunk(z_enc, 2, dim=1)
+        z_dec_1, token_1 = self.sub_quantizer(z_enc_1, self.embedding_1)
+        z_dec_2, token_2 = self.sub_quantizer(z_enc_2, self.embedding_2)
 
-        # distances from z to embeddings
-        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
-            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
-            torch.matmul(z_flat, self.embedding.weight.data.t())
+        token = token_1 + token_2 * self.args.codebook_size
+        z_dec = torch.cat((z_dec_1, z_dec_2), dim=1)
 
-        token = torch.argmin(d, dim=1)
-        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
-        return z_dec, token
+        histogram = token.bincount(minlength=self.total_codebook_size).float()
+        handler = tdist.all_reduce(histogram, async_op=True)
+        handler.wait()
+        return z_dec, histogram
 
     def collect_reconstruction(self, z_enc):
-        B, C, H, W = z_enc.shape
-        z = rearrange(z_enc, 'b c h w -> b h w c') 
-        z_flat = z.reshape(-1, C).contiguous()  
-
-        # distances from z to embeddings
-        d = torch.sum(z_flat ** 2, dim=1, keepdim=True) + \
-            torch.sum(self.embedding.weight.data**2, dim=1) - 2 * \
-            torch.matmul(z_flat, self.embedding.weight.data.t())
-
-        token = torch.argmin(d, dim=1)
-        z_dec = self.embedding(token).view(z.shape).permute(0, 3, 1, 2).contiguous()
+        z_enc_1, z_enc_2 = torch.chunk(z_enc, 2, dim=1)
+        z_dec_1, _ = self.sub_quantizer(z_enc_1, self.embedding_1)
+        z_dec_2, _ = self.sub_quantizer(z_enc_2, self.embedding_2)
+        z_dec = torch.cat((z_dec_1, z_dec_2), dim=1)
         return z_dec
