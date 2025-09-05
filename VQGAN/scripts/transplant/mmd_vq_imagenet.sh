@@ -7,11 +7,11 @@
 #SBATCH --nodelist=gb001
 #SBATCH --gpus-per-node=2
 #SBATCH --time=1-00:00:00
-#SBATCH --output /projects/yuanai/projects/VQ-Transplant2/slurm/Transplant/ImageNet/mmd_vq_imagenet.out
-#SBATCH --error /projects/yuanai/projects/VQ-Transplant2/slurm/Transplant/ImageNet/mmd_vq_imagenet.err
+#SBATCH --output /projects/yuanai/projects/VQ-Transplant3/slurm/Transplant/ImageNet/mmd_vq_imagenet.out
+#SBATCH --error /projects/yuanai/projects/VQ-Transplant3/slurm/Transplant/ImageNet/mmd_vq_imagenet.err
 
 source ~/.bashrc
 conda activate /projects/yuanai/fangxian/packages/anaconda/envs/VQ-Tokenizer
-CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12255 train_VQ_transplant.py --VQ=mmd_vq --dataset_name=ImageNet --path=bc --global_batch_size=64 --codebook_size 65536  --codebook_dim=8 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
-CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12255 train_VQ_transplant.py --VQ=mmd_vq --dataset_name=ImageNet --path=bc --global_batch_size=64 --codebook_size 32768  --codebook_dim=8 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
-CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12255 train_VQ_transplant.py --VQ=mmd_vq --dataset_name=ImageNet --path=bc --global_batch_size=64 --codebook_size 16384  --codebook_dim=8 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
+CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12255 train_VQ_transplant.py --VQ=mmd_vq --dataset_name=ImageNet --path=bc --global_batch_size=16 --codebook_size 65536  --codebook_dim=16 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
+CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12255 train_VQ_transplant.py --VQ=mmd_vq --dataset_name=ImageNet --path=bc --global_batch_size=64 --codebook_size 32768  --codebook_dim=16 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0
+CUDA_VISIBLE_DEVICES="0,1" python -m torch.distributed.launch --nproc_per_node=2 --master_port=12255 train_VQ_transplant.py --VQ=mmd_vq --dataset_name=ImageNet --path=bc --global_batch_size=64 --codebook_size 16384  --codebook_dim=16 --stage=transplant --alpha=1.0 --beta=1.0 --gamma=1.0

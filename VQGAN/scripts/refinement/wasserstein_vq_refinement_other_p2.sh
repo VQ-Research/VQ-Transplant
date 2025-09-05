@@ -7,8 +7,8 @@
 #SBATCH --nodelist=g[007-009]
 #SBATCH --gpus-per-node=2
 #SBATCH --time=4-00:00:00
-#SBATCH --output /projects/yuanai/projects/VQ-Transplant2/slurm/Refinement/ImageNet/wasserstein_vq_refinement_other_p2.out
-#SBATCH --error /projects/yuanai/projects/VQ-Transplant2/slurm/Refinement/ImageNet/wasserstein_vq_refinement_other_p2.err
+#SBATCH --output /projects/yuanai/projects/VQ-Transplant3/slurm/Refinement/ImageNet/wasserstein_vq_refinement_other_p2.out
+#SBATCH --error /projects/yuanai/projects/VQ-Transplant3/slurm/Refinement/ImageNet/wasserstein_vq_refinement_other_p2.err
 
 source ~/.bashrc
 conda activate /projects/yuanai/fangxian/packages/anaconda/envs/VQ-Tokenizer

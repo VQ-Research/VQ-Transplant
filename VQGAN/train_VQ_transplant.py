@@ -68,14 +68,14 @@ def main_worker(args):
 
     if args.VQ == "wasserstein_vq" or args.VQ == "mmd_vq":
         code_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) 
-        model_para = list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters()) 
+        model_para = list(vq_model.projector_out.parameters()) 
         all_para = code_para + model_para
         optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
-        model_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters())  + list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters())
+        model_para = list(vq_model.quantizer1.embedding.parameters()) + list(vq_model.quantizer2.embedding.parameters()) + list(vq_model.projector_out.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "ema_vq":
-        model_para = list(vq_model.projector_out.parameters()) + list(vq_model.projector_in.parameters()) 
+        model_para = list(vq_model.projector_out.parameters())
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
 
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
@@ -91,14 +91,14 @@ def main_worker(args):
     train_loss = LossManager()
     print("Start training...")
     start_epoch = 1 
-    total_steps = len(train_dataloader)*args.transplant_epochs
+    total_steps = len(train_dataloader) * args.transplant_epochs
     for epoch in range(start_epoch, args.transplant_epochs+1):
         train_sampler.set_epoch(epoch)
         print("epoch:%d, cur_lr:%4f"%(epoch, optimizer.param_groups[0]["lr"]))
         start_time = time.time()
         for step, (x, _) in enumerate(train_dataloader):
             cur_iter = len(train_dataloader) * (epoch-1) + step
-            #lr = adjust_learning_rate(optimizer, cur_iter, total_steps, args.lr_transplant)
+            lr = adjust_learning_rate(optimizer, cur_iter, total_steps, args.lr_transplant)
             with torch.autocast(device_type='cuda', dtype=torch.float32):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()

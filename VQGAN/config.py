@@ -15,11 +15,11 @@ from utils.misc import str2bool
 import ruamel.yaml as yaml
 
 def parse_arg():
-    parser = argparse.ArgumentParser(description='VQ-Transplant (double VQ/PQ/SQ system) based on LDM Continuous Tokenizer.') 
+    parser = argparse.ArgumentParser(description='VQ-Transplant (double VQ/PQ/SQ system) based on VAR Discrete Tokenizer.') 
 
     ### Dataset and Dataloader Configuration
     parser.add_argument('--dataset_dir', default="/projects/yuanai/data/", type=str, help='the directory of dataset') 
-    parser.add_argument('--dataset_name', default='ImageNet', help='the name of dataset', choices=['ImageNet', 'FFHQ', 'CelebAHQ', 'Churches', 'Bedrooms'])
+    parser.add_argument('--dataset_name', default='ImageNet', help='the name of dataset', choices=['ImageNet', 'FFHQ', 'CelebAHQ', 'Churches'])
     parser.add_argument('--global_batch_size', type=int, default=128, help="the size of batch samples")
     parser.add_argument('--workers', default=6, type=int, metavar='N', help='number of data loader workers')
     parser.add_argument('--resolution', type=int, choices=[256], default=256, help='resolution of train and test')
@@ -39,7 +39,7 @@ def parse_arg():
     parser.add_argument('--alpha', type=float, default=1.0, help="transplant stage: the hyperparameter of code commit loss.")
     parser.add_argument('--beta', type=float, default=1.0, help="transplant stage: the hyperparameter of feature commit loss.")
     parser.add_argument('--gamma', type=float, default=0.5, help="transplant stage: wasserstein loss or mmd loss.")
-    parser.add_argument('--disc_weight', type=float, default=0.4, help="refinement stage: discriminator loss weight for gan training")
+    parser.add_argument('--disc_weight', type=float, default=0.3, help="refinement stage: discriminator loss weight for gan training")
     parser.add_argument('--lecam_loss_weight', type=float, default=0.001, help='refinement stage: lecam_loss_weight')
     parser.add_argument('--disc_cr_loss_weight', type=float, default=4.0, help='refinement stage: disc_cr_loss_weight')
 
@@ -64,7 +64,7 @@ def parse_arg():
     parser.add_argument('--saver_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/saver/", type=str, help='the directory of saver.')
     parser.add_argument('--reconstruction_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/reconstruction/", type=str, help='the directory of saver.')
     parser.add_argument('--yaml_dir', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/yaml/", type=str, help='the directory of saver.')
-    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt", type=str, help='the directory of ldm checkpoint.')
+    parser.add_argument('--pretrained_tokenizer', default="/project/6105494/sunset/VQ-Projects/VQ-Transplant2/pretrained_tokenizer/vae_ch160v4096z32.pth", type=str, help='the directory of var checkpoint.')
     parser.add_argument('--checkpoint_name', default="", type=str, help='the directory of saved checkpoint name for the refinement stage.')
     parser.add_argument('--nnodes', default=-1, type=int, help='node rank for distributed training.')
     parser.add_argument('--node_rank', default=-1, type=int, help='node rank for distributed training.')
@@ -74,12 +74,12 @@ def parse_arg():
     args = parser.parse_args()
 
     if args.path == 'bc':
-        args.checkpoint_dir = "/projects/yuanai/projects/VQ-Transplant2/checkpoint/"
-        args.results_dir = "/projects/yuanai/projects/VQ-Transplant2/results/"
-        args.saver_dir = "/projects/yuanai/projects/VQ-Transplant2/saver/"
-        args.reconstruction_dir = "/projects/yuanai/projects/VQ-Transplant2/reconstruction/"
-        args.yaml_dir = "/projects/yuanai/projects/VQ-Transplant2/yaml/"
-        args.pretrained_tokenizer = "/projects/yuanai/projects/VQ-Transplant2/pretrained_tokenizer/model.ckpt"
+        args.checkpoint_dir = "/projects/yuanai/projects/VQ-Transplant3/checkpoint/"
+        args.results_dir = "/projects/yuanai/projects/VQ-Transplant3/results/"
+        args.saver_dir = "/projects/yuanai/projects/VQ-Transplant3/saver/"
+        args.reconstruction_dir = "/projects/yuanai/projects/VQ-Transplant3/reconstruction/"
+        args.yaml_dir = "/projects/yuanai/projects/VQ-Transplant3/yaml/"
+        args.pretrained_tokenizer = "/projects/yuanai/projects/VQ-Transplant3/pretrained_tokenizer/vae_ch160v4096z32.pth"
 
     args.world_size = int(os.environ["WORLD_SIZE"])
     args.batch_size = round(args.global_batch_size/args.world_size)

@@ -77,7 +77,7 @@ def main_worker(args):
     vq_model = nn.SyncBatchNorm.convert_sync_batchnorm(vq_model)
     vq_loss = VQLoss(args).to(device)
 
-    model_para = list(vq_model.decoder.parameters())
+    model_para = list(vq_model.decoder.parameters()) + list(vq_model.projector_out.parameters()) + list(vq_model.post_quant_conv.parameters())
     disc_para = vq_loss.discriminator.parameters()
     optimizer = torch.optim.AdamW(model_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
     optimizer_disc = torch.optim.AdamW(disc_para, lr=args.lr_refinement, betas=(0.9, 0.95), weight_decay=args.weight_decay)
@@ -87,11 +87,8 @@ def main_worker(args):
     vq_model.train()
     vq_model.module.encoder.eval()
     vq_model.module.quant_conv.eval()
-    vq_model.module.post_quant_conv.eval()
     vq_model.module.quantizer1.eval()
     vq_model.module.quantizer2.eval()
-    vq_model.module.projector_in.eval()
-    vq_model.module.projector_out.eval()
 
     vq_loss = DDP(vq_loss.to(device), device_ids=[args.gpu])
     vq_loss.train()
