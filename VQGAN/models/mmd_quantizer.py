@@ -21,12 +21,12 @@ class MMDVectorQuantizer(VectorQuantizer):
         c = self.embedding.weight
         N = z.size(0) + c.size(0)
 
-        dxx = (torch.sum(z**2, dim=1, keepdim=True) + torch.sum(z**2, dim=1) - 2*torch.matmul(z, z.t())).div(self.sqrt_d)
-        dxy = (torch.sum(z**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(z, c.t())).div(self.sqrt_d)
+        dxx = (torch.sum(z.detach()**2, dim=1, keepdim=True) + torch.sum(z.detach()**2, dim=1) - 2*torch.matmul(z.detach(), z.detach().t())).div(self.sqrt_d)
+        dxy = (torch.sum(z.detach()**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(z.detach(), c.t())).div(self.sqrt_d)
         dyy = (torch.sum(c**2, dim=1, keepdim=True) + torch.sum(c**2, dim=1) - 2*torch.matmul(c, c.t())).div(self.sqrt_d)
         bandwidth = (dxx.sum() + 2*dxy.sum() + dyy.sum()).detach() / (N**2 -N)
 
-        pxx = -dxx / bandwidth
+        pxx = (-dxx / bandwidth).detach()
         pxy = -dxy / bandwidth
         pyy = -dyy / bandwidth
 
@@ -34,7 +34,7 @@ class MMDVectorQuantizer(VectorQuantizer):
         XY = torch.exp(pxy).mean() + torch.exp(pxy/2).mean()
         YY = torch.exp(pyy).mean() + torch.exp(pyy/2).mean()
 
-        mmd_loss = XX - 2 * XY + YY
+        mmd_loss = XX.detach() - 2 * XY + YY
         return mmd_loss
 
     def forward(self, z_enc):
