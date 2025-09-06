@@ -133,8 +133,8 @@ class OnlineProductQuantizer(ProductQuantizer):
 
     def forward(self, z_enc):
         z_enc_1, z_enc_2 = torch.chunk(z_enc, 2, dim=1)
-        z_dec_1, token_1 = self.sub_quantizer(z_enc_1, self.embedding_1, self.embed_prob_1)
-        z_dec_2, token_2 = self.sub_quantizer(z_enc_2, self.embedding_2, self.embed_prob_2)
+        z_dec_1, token_1 = self.train_sub_quantizer(z_enc_1, self.embedding_1, self.embed_prob_1)
+        z_dec_2, token_2 = self.train_sub_quantizer(z_enc_2, self.embedding_2, self.embed_prob_2)
 
         token = token_1 + token_2 * self.args.codebook_size
         z_dec = torch.cat((z_dec_1, z_dec_2), dim=1)

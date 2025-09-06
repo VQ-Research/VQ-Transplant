@@ -9,10 +9,10 @@ from models.ema_quantizer import EMAProductQuantizer
 from models.online_quantizer import OnlineProductQuantizer
 from models.wasserstein_quantizer import WassersteinProductQuantizer
 from models.mmd_quantizer import MMDProductQuantizer
-from models.encoder_decoder import Encoder, Decoder
+from models.encoder_decoder import Encoder, Decoder, Normalize
 from utils.util import Pack
 from safetensors.torch import load_file
-from torch import distributed as tdist
+from models.lpips import LPIPS
 
 class PQModel(nn.Module):
     def __init__(self, args):
