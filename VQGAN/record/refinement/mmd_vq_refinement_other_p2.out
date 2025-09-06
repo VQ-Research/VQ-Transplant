@@ -1,0 +1,68 @@
+dataset_dir: /projects/yuanai/data/
+dataset_name: CelebAHQ
+global_batch_size: 64
+workers: 6
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+importance: (1, 1, 1, 2, 2, 2, 3, 3, 5, 5)
+max_patch_size: 16
+codebook_size: 16384
+codebook_dim: 16
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 1.0
+disc_weight: 0.4
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: mmd_vq
+use_multiscale: False
+transplant_epochs: 30
+refinement_epochs: 30
+eval_epochs: 5
+disc_epoch: 1
+lr_transplant: 0.0001
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 1e-05
+stage: refinement
+path: bc
+checkpoint_dir: /projects/yuanai/projects/VQ-Transplant3/checkpoint/Refinement/CelebAHQ
+results_dir: /projects/yuanai/projects/VQ-Transplant3/results/Refinement/CelebAHQ
+saver_dir: /projects/yuanai/projects/VQ-Transplant3/saver/Refinement/CelebAHQ
+reconstruction_dir: /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/CelebAHQ
+yaml_dir: /projects/yuanai/projects/VQ-Transplant3/yaml/Refinement/CelebAHQ
+pretrained_tokenizer: /projects/yuanai/projects/VQ-Transplant3/pretrained_tokenizer/vae_ch160v4096z32.pth
+checkpoint_name: checkpoint-mmd_vq_transplant_False_CelebAHQ_model_16384_16_1_loss_1.0_1.0_1.0_0.3.pth.tar
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 2
+batch_size: 32
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+init_checkpoint_dir: /projects/yuanai/projects/VQ-Transplant3/checkpoint/
+data_pre: CelebAHQ
+model_pre: model_16384_16_1
+loss_pre: loss_1.0_1.0_1.0_0.4
+training_pre: mmd_vq_refinement_False
+saver_name_pre: mmd_vq_refinement_False_CelebAHQ_model_16384_16_1_loss_1.0_1.0_1.0_0.4
+| distributed init (rank 0): env://
+| distributed init (rank 1): env://
+VQ Model Parameters: 108761795
+loaded pretrained LPIPS loss from /projects/yuanai/projects/VQ-Transplant3/code/models/cache/vgg.pth
+dataset name: CelebAHQ
+len train_set: 30000
+len val_set: 30000
+Start training...
+epoch:1, cur_lr:0.000010
+Train Epoch: [1/30] Iters:[10/468] gen_loss 0.1867, rec_loss 0.0127, lpips_loss 0.1698, g_loss -0.0249, disc_weight 0.4000, disc_adaptive_weight 12.5118, d_loss 2.3754, logits_real 0.1683, logits_fake 0.0206,
+Train Epoch: [1/30] Iters:[20/468] gen_loss 0.7479, rec_loss 0.0157, lpips_loss 0.1961, g_loss 0.0079, disc_weight 0.4000, disc_adaptive_weight 19.8193, d_loss 2.0766, logits_real 0.1668, logits_fake -0.0132,
+Train Epoch: [1/30] Iters:[30/468] gen_loss 0.6263, rec_loss 0.0167, lpips_loss 0.2023, g_loss 0.0057, disc_weight 0.4000, disc_adaptive_weight 21.4001, d_loss 1.8839, logits_real 0.1656, logits_fake -0.0102,
+Train Epoch: [1/30] Iters:[40/468] gen_loss 0.2001, rec_loss 0.0167, lpips_loss 0.1990, g_loss -0.0109, disc_weight 0.4000, disc_adaptive_weight 21.4379, d_loss 1.7428, logits_real 0.1657, logits_fake 0.0073,
+Train Epoch: [1/30] Iters:[50/468] gen_loss -0.0937, rec_loss 0.0168, lpips_loss 0.1962, g_loss -0.0271, disc_weight 0.4000, disc_adaptive_weight 20.3667, d_loss 1.6319, logits_real 0.1647, logits_fake 0.0241,
