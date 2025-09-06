@@ -113,6 +113,7 @@ def eval_one_epoch_vq(args, model, epoch, val_dataloader, len_val_set):
         model.module.quant_conv.eval()
         model.module.quantizer1.eval()
         model.module.quantizer2.eval()
+        model.module.projector_in.eval()
         
     if args.stage == "transplant":
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)
@@ -199,6 +200,7 @@ def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
         model.module.quant_conv.eval()
         model.module.quantizer1.eval()
         model.module.quantizer2.eval()
+        model.module.projector_in.eval()
         
     if args.stage == "transplant":
         return Pack(psnr=eval_psnr, ssim=eval_ssim, lpips=eval_lpips, rec_loss=eval_rec_loss, quant_error=eval_quant_error, utilization=eval_utilization, perplexity=eval_perplexity)

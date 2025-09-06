@@ -89,6 +89,7 @@ def main_worker(args):
     vq_model.module.quant_conv.eval()
     vq_model.module.quantizer1.eval()
     vq_model.module.quantizer2.eval()
+    vq_model.module.projector_in.eval()
 
     vq_loss = DDP(vq_loss.to(device), device_ids=[args.gpu])
     vq_loss.train()

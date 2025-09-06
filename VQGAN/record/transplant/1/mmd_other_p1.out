@@ -1,0 +1,298 @@
+dataset_dir: /projects/yuanai/data/
+dataset_name: CelebAHQ
+global_batch_size: 64
+workers: 6
+resolution: 256
+channels: 3
+ms_patch_size: 1_2_3_4_5_6_8_10_13_16
+importance: (1, 1, 1, 2, 2, 2, 3, 3, 5, 5)
+max_patch_size: 16
+codebook_size: 16384
+codebook_dim: 16
+project_dim: 16
+pq: 1
+L: 4
+alpha: 1.0
+beta: 1.0
+gamma: 1.0
+disc_weight: 0.3
+lecam_loss_weight: 0.001
+disc_cr_loss_weight: 4.0
+VQ: mmd_vq
+use_multiscale: False
+transplant_epochs: 30
+refinement_epochs: 30
+eval_epochs: 5
+disc_epoch: 1
+lr_transplant: 0.0001
+lr_refinement: 1e-05
+dropout: 0.0
+seed: 3407
+weight_decay: 1e-05
+stage: transplant
+path: bc
+checkpoint_dir: /projects/yuanai/projects/VQ-Transplant3/checkpoint/Transplant/CelebAHQ
+results_dir: /projects/yuanai/projects/VQ-Transplant3/results/Transplant/CelebAHQ
+saver_dir: /projects/yuanai/projects/VQ-Transplant3/saver/Transplant/CelebAHQ
+reconstruction_dir: /projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/CelebAHQ
+yaml_dir: /projects/yuanai/projects/VQ-Transplant3/yaml/Transplant/CelebAHQ
+pretrained_tokenizer: /projects/yuanai/projects/VQ-Transplant3/pretrained_tokenizer/vae_ch160v4096z32.pth
+checkpoint_name: 
+nnodes: -1
+node_rank: -1
+local_rank: 0
+dist_url: tcp://224.66.41.62:23456
+dist_backend: nccl
+world_size: 2
+batch_size: 32
+ms_token_size: (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+init_checkpoint_dir: /projects/yuanai/projects/VQ-Transplant3/checkpoint/
+data_pre: CelebAHQ
+model_pre: model_16384_16_1
+loss_pre: loss_1.0_1.0_1.0_0.3
+training_pre: mmd_vq_transplant_False
+saver_name_pre: mmd_vq_transplant_False_CelebAHQ_model_16384_16_1_loss_1.0_1.0_1.0_0.3
+| distributed init (rank 0): env://
+| distributed init (rank 1): env://
+loaded pretrained LPIPS loss from /projects/yuanai/projects/VQ-Transplant3/code/models/cache/vgg.pth
+VQ Model Parameters: 108761795
+dataset name: CelebAHQ
+len train_set: 30000
+len val_set: 30000
+Start training...
+epoch:1, cur_lr:0.000100
+Train Epoch: [1/30] Iters:[10/468] transplant_loss 8.6242, rec_loss 0.3649, p_loss 0.7510, quant_error 1.0203, utilization 0.0405, perplexity 257.2412,
+Train Epoch: [1/30] Iters:[20/468] transplant_loss 8.5674, rec_loss 0.2703, p_loss 0.7101, quant_error 0.7900, utilization 0.0266, perplexity 152.1997,
+Train Epoch: [1/30] Iters:[30/468] transplant_loss 7.1538, rec_loss 0.2152, p_loss 0.6805, quant_error 0.6519, utilization 0.0226, perplexity 122.3672,
+Train Epoch: [1/30] Iters:[40/468] transplant_loss 6.1737, rec_loss 0.1780, p_loss 0.6268, quant_error 0.5679, utilization 0.0216, perplexity 120.7147,
+Train Epoch: [1/30] Iters:[50/468] transplant_loss 5.5026, rec_loss 0.1526, p_loss 0.5779, quant_error 0.5119, utilization 0.0219, perplexity 126.8445,
+Train Epoch: [1/30] Iters:[60/468] transplant_loss 4.2670, rec_loss 0.0874, p_loss 0.4916, quant_error 0.3606, utilization 0.0222, perplexity 124.2893,
+Train Epoch: [1/30] Iters:[70/468] transplant_loss 3.0136, rec_loss 0.0584, p_loss 0.4127, quant_error 0.2981, utilization 0.0360, perplexity 202.2975,
+Train Epoch: [1/30] Iters:[80/468] transplant_loss 2.5526, rec_loss 0.0421, p_loss 0.3345, quant_error 0.2671, utilization 0.0605, perplexity 367.4787,
+Train Epoch: [1/30] Iters:[90/468] transplant_loss 2.2948, rec_loss 0.0330, p_loss 0.2830, quant_error 0.2467, utilization 0.0926, perplexity 649.2040,
+Train Epoch: [1/30] Iters:[100/468] transplant_loss 2.1020, rec_loss 0.0268, p_loss 0.2448, quant_error 0.2307, utilization 0.1282, perplexity 1038.0829,
+Train Epoch: [1/30] Iters:[110/468] transplant_loss 1.9624, rec_loss 0.0227, p_loss 0.2172, quant_error 0.2192, utilization 0.1619, perplexity 1483.0240,
+Train Epoch: [1/30] Iters:[120/468] transplant_loss 1.8460, rec_loss 0.0203, p_loss 0.1995, quant_error 0.2128, utilization 0.1896, perplexity 1931.7600,
+Train Epoch: [1/30] Iters:[130/468] transplant_loss 1.7486, rec_loss 0.0193, p_loss 0.1906, quant_error 0.2119, utilization 0.2127, perplexity 2354.3818,
+Train Epoch: [1/30] Iters:[140/468] transplant_loss 1.6328, rec_loss 0.0186, p_loss 0.1845, quant_error 0.2102, utilization 0.2423, perplexity 2794.9160,
+Train Epoch: [1/30] Iters:[150/468] transplant_loss 1.5051, rec_loss 0.0179, p_loss 0.1811, quant_error 0.2066, utilization 0.2873, perplexity 3373.0734,
+Train Epoch: [1/30] Iters:[160/468] transplant_loss 1.3764, rec_loss 0.0173, p_loss 0.1787, quant_error 0.2013, utilization 0.3456, perplexity 4126.9468,
+Train Epoch: [1/30] Iters:[170/468] transplant_loss 1.2459, rec_loss 0.0165, p_loss 0.1745, quant_error 0.1925, utilization 0.4101, perplexity 5000.5426,
+Train Epoch: [1/30] Iters:[180/468] transplant_loss 1.1268, rec_loss 0.0157, p_loss 0.1692, quant_error 0.1824, utilization 0.4714, perplexity 5874.9432,
+Train Epoch: [1/30] Iters:[190/468] transplant_loss 1.0417, rec_loss 0.0151, p_loss 0.1660, quant_error 0.1753, utilization 0.5183, perplexity 6623.7496,
+Train Epoch: [1/30] Iters:[200/468] transplant_loss 0.9768, rec_loss 0.0146, p_loss 0.1628, quant_error 0.1698, utilization 0.5443, perplexity 7098.3774,
+Train Epoch: [1/30] Iters:[210/468] transplant_loss 0.9333, rec_loss 0.0144, p_loss 0.1604, quant_error 0.1664, utilization 0.5544, perplexity 7311.3983,
+Train Epoch: [1/30] Iters:[220/468] transplant_loss 0.9029, rec_loss 0.0143, p_loss 0.1585, quant_error 0.1636, utilization 0.5556, perplexity 7349.1674,
+Train Epoch: [1/30] Iters:[230/468] transplant_loss 0.8825, rec_loss 0.0140, p_loss 0.1574, quant_error 0.1610, utilization 0.5531, perplexity 7321.2121,
+Train Epoch: [1/30] Iters:[240/468] transplant_loss 0.8675, rec_loss 0.0138, p_loss 0.1566, quant_error 0.1587, utilization 0.5512, perplexity 7303.7787,
+Train Epoch: [1/30] Iters:[250/468] transplant_loss 0.8631, rec_loss 0.0138, p_loss 0.1565, quant_error 0.1575, utilization 0.5505, perplexity 7320.5307,
+Train Epoch: [1/30] Iters:[260/468] transplant_loss 0.8581, rec_loss 0.0136, p_loss 0.1561, quant_error 0.1560, utilization 0.5512, perplexity 7369.3150,
+Train Epoch: [1/30] Iters:[270/468] transplant_loss 0.8567, rec_loss 0.0134, p_loss 0.1557, quant_error 0.1549, utilization 0.5524, perplexity 7428.0752,
+Train Epoch: [1/30] Iters:[280/468] transplant_loss 0.8597, rec_loss 0.0135, p_loss 0.1557, quant_error 0.1547, utilization 0.5543, perplexity 7497.5341,
+Train Epoch: [1/30] Iters:[290/468] transplant_loss 0.8553, rec_loss 0.0134, p_loss 0.1548, quant_error 0.1530, utilization 0.5555, perplexity 7543.0634,
+Train Epoch: [1/30] Iters:[300/468] transplant_loss 0.8491, rec_loss 0.0131, p_loss 0.1535, quant_error 0.1514, utilization 0.5566, perplexity 7583.5229,
+Train Epoch: [1/30] Iters:[310/468] transplant_loss 0.8448, rec_loss 0.0129, p_loss 0.1528, quant_error 0.1500, utilization 0.5577, perplexity 7620.3780,
+Train Epoch: [1/30] Iters:[320/468] transplant_loss 0.8443, rec_loss 0.0129, p_loss 0.1524, quant_error 0.1495, utilization 0.5586, perplexity 7651.0945,
+Train Epoch: [1/30] Iters:[330/468] transplant_loss 0.8402, rec_loss 0.0127, p_loss 0.1519, quant_error 0.1483, utilization 0.5594, perplexity 7681.5566,
+Train Epoch: [1/30] Iters:[340/468] transplant_loss 0.8417, rec_loss 0.0126, p_loss 0.1518, quant_error 0.1482, utilization 0.5603, perplexity 7710.8230,
+Train Epoch: [1/30] Iters:[350/468] transplant_loss 0.8442, rec_loss 0.0127, p_loss 0.1522, quant_error 0.1482, utilization 0.5608, perplexity 7725.7422,
+Train Epoch: [1/30] Iters:[360/468] transplant_loss 0.8401, rec_loss 0.0126, p_loss 0.1515, quant_error 0.1471, utilization 0.5610, perplexity 7738.5807,
+Train Epoch: [1/30] Iters:[370/468] transplant_loss 0.8374, rec_loss 0.0125, p_loss 0.1512, quant_error 0.1462, utilization 0.5615, perplexity 7757.0307,
+Train Epoch: [1/30] Iters:[380/468] transplant_loss 0.8379, rec_loss 0.0124, p_loss 0.1510, quant_error 0.1463, utilization 0.5624, perplexity 7782.1983,
+Train Epoch: [1/30] Iters:[390/468] transplant_loss 0.8319, rec_loss 0.0123, p_loss 0.1497, quant_error 0.1449, utilization 0.5631, perplexity 7802.9712,
+Train Epoch: [1/30] Iters:[400/468] transplant_loss 0.8271, rec_loss 0.0121, p_loss 0.1489, quant_error 0.1437, utilization 0.5642, perplexity 7837.2332,
+Train Epoch: [1/30] Iters:[410/468] transplant_loss 0.8269, rec_loss 0.0121, p_loss 0.1489, quant_error 0.1435, utilization 0.5652, perplexity 7857.1964,
+Train Epoch: [1/30] Iters:[420/468] transplant_loss 0.8301, rec_loss 0.0121, p_loss 0.1490, quant_error 0.1440, utilization 0.5669, perplexity 7900.4013,
+Train Epoch: [1/30] Iters:[430/468] transplant_loss 0.8280, rec_loss 0.0121, p_loss 0.1486, quant_error 0.1431, utilization 0.5674, perplexity 7909.7076,
+Train Epoch: [1/30] Iters:[440/468] transplant_loss 0.8284, rec_loss 0.0122, p_loss 0.1490, quant_error 0.1427, utilization 0.5683, perplexity 7927.9315,
+Train Epoch: [1/30] Iters:[450/468] transplant_loss 0.8277, rec_loss 0.0123, p_loss 0.1488, quant_error 0.1424, utilization 0.5689, perplexity 7943.0954,
+Train Epoch: [1/30] Iters:[460/468] transplant_loss 0.8278, rec_loss 0.0123, p_loss 0.1485, quant_error 0.1422, utilization 0.5694, perplexity 7958.7899,
+epoch:2, cur_lr:0.000097
+Train Epoch: [2/30] Iters:[10/468] transplant_loss 0.8323, rec_loss 0.0126, p_loss 0.1488, quant_error 0.1427, utilization 0.5723, perplexity 8040.8453,
+Train Epoch: [2/30] Iters:[20/468] transplant_loss 0.8360, rec_loss 0.0125, p_loss 0.1483, quant_error 0.1435, utilization 0.5741, perplexity 8077.1848,
+Train Epoch: [2/30] Iters:[30/468] transplant_loss 0.8335, rec_loss 0.0123, p_loss 0.1480, quant_error 0.1432, utilization 0.5733, perplexity 8058.5109,
+Train Epoch: [2/30] Iters:[40/468] transplant_loss 0.8304, rec_loss 0.0122, p_loss 0.1479, quant_error 0.1427, utilization 0.5737, perplexity 8065.0498,
+Train Epoch: [2/30] Iters:[50/468] transplant_loss 0.8278, rec_loss 0.0122, p_loss 0.1474, quant_error 0.1423, utilization 0.5731, perplexity 8050.7670,
+Train Epoch: [2/30] Iters:[60/468] transplant_loss 0.8237, rec_loss 0.0120, p_loss 0.1470, quant_error 0.1416, utilization 0.5736, perplexity 8062.1781,
+Train Epoch: [2/30] Iters:[70/468] transplant_loss 0.8187, rec_loss 0.0118, p_loss 0.1468, quant_error 0.1408, utilization 0.5733, perplexity 8054.7969,
+Train Epoch: [2/30] Iters:[80/468] transplant_loss 0.8157, rec_loss 0.0117, p_loss 0.1468, quant_error 0.1400, utilization 0.5738, perplexity 8066.4665,
+Train Epoch: [2/30] Iters:[90/468] transplant_loss 0.8150, rec_loss 0.0116, p_loss 0.1464, quant_error 0.1399, utilization 0.5748, perplexity 8088.9866,
+Train Epoch: [2/30] Iters:[100/468] transplant_loss 0.8121, rec_loss 0.0116, p_loss 0.1463, quant_error 0.1390, utilization 0.5760, perplexity 8115.2771,
+Train Epoch: [2/30] Iters:[110/468] transplant_loss 0.8131, rec_loss 0.0117, p_loss 0.1461, quant_error 0.1390, utilization 0.5766, perplexity 8128.6489,
+Train Epoch: [2/30] Iters:[120/468] transplant_loss 0.8128, rec_loss 0.0117, p_loss 0.1458, quant_error 0.1388, utilization 0.5778, perplexity 8151.3740,
+Train Epoch: [2/30] Iters:[130/468] transplant_loss 0.8143, rec_loss 0.0117, p_loss 0.1454, quant_error 0.1390, utilization 0.5791, perplexity 8176.6409,
+Train Epoch: [2/30] Iters:[140/468] transplant_loss 0.8140, rec_loss 0.0117, p_loss 0.1455, quant_error 0.1387, utilization 0.5792, perplexity 8181.0101,
+Train Epoch: [2/30] Iters:[150/468] transplant_loss 0.8140, rec_loss 0.0116, p_loss 0.1458, quant_error 0.1389, utilization 0.5797, perplexity 8190.9694,
+Train Epoch: [2/30] Iters:[160/468] transplant_loss 0.8135, rec_loss 0.0116, p_loss 0.1458, quant_error 0.1387, utilization 0.5802, perplexity 8193.4504,
+Train Epoch: [2/30] Iters:[170/468] transplant_loss 0.8130, rec_loss 0.0117, p_loss 0.1458, quant_error 0.1385, utilization 0.5798, perplexity 8182.5745,
+Train Epoch: [2/30] Iters:[180/468] transplant_loss 0.8099, rec_loss 0.0117, p_loss 0.1457, quant_error 0.1377, utilization 0.5795, perplexity 8178.9459,
+Train Epoch: [2/30] Iters:[190/468] transplant_loss 0.8104, rec_loss 0.0118, p_loss 0.1458, quant_error 0.1377, utilization 0.5796, perplexity 8175.7706,
+Train Epoch: [2/30] Iters:[200/468] transplant_loss 0.8136, rec_loss 0.0118, p_loss 0.1457, quant_error 0.1383, utilization 0.5804, perplexity 8193.5686,
+Train Epoch: [2/30] Iters:[210/468] transplant_loss 0.8116, rec_loss 0.0118, p_loss 0.1452, quant_error 0.1380, utilization 0.5810, perplexity 8210.2503,
+Train Epoch: [2/30] Iters:[220/468] transplant_loss 0.8105, rec_loss 0.0117, p_loss 0.1453, quant_error 0.1379, utilization 0.5823, perplexity 8238.9466,
+Train Epoch: [2/30] Iters:[230/468] transplant_loss 0.8130, rec_loss 0.0117, p_loss 0.1461, quant_error 0.1383, utilization 0.5833, perplexity 8257.1806,
+Train Epoch: [2/30] Iters:[240/468] transplant_loss 0.8093, rec_loss 0.0115, p_loss 0.1456, quant_error 0.1377, utilization 0.5828, perplexity 8250.9345,
+Train Epoch: [2/30] Iters:[250/468] transplant_loss 0.8112, rec_loss 0.0115, p_loss 0.1457, quant_error 0.1384, utilization 0.5832, perplexity 8254.4709,
+Train Epoch: [2/30] Iters:[260/468] transplant_loss 0.8124, rec_loss 0.0115, p_loss 0.1462, quant_error 0.1386, utilization 0.5835, perplexity 8256.6258,
+Train Epoch: [2/30] Iters:[270/468] transplant_loss 0.8129, rec_loss 0.0115, p_loss 0.1458, quant_error 0.1388, utilization 0.5833, perplexity 8257.5434,
+Train Epoch: [2/30] Iters:[280/468] transplant_loss 0.8073, rec_loss 0.0113, p_loss 0.1444, quant_error 0.1378, utilization 0.5829, perplexity 8249.9566,
+Train Epoch: [2/30] Iters:[290/468] transplant_loss 0.8073, rec_loss 0.0113, p_loss 0.1442, quant_error 0.1377, utilization 0.5840, perplexity 8273.6446,
+Train Epoch: [2/30] Iters:[300/468] transplant_loss 0.8029, rec_loss 0.0113, p_loss 0.1438, quant_error 0.1366, utilization 0.5842, perplexity 8286.0895,
+Train Epoch: [2/30] Iters:[310/468] transplant_loss 0.8049, rec_loss 0.0113, p_loss 0.1436, quant_error 0.1370, utilization 0.5848, perplexity 8295.5414,
+Train Epoch: [2/30] Iters:[320/468] transplant_loss 0.8045, rec_loss 0.0112, p_loss 0.1436, quant_error 0.1368, utilization 0.5853, perplexity 8302.8940,
+Train Epoch: [2/30] Iters:[330/468] transplant_loss 0.8091, rec_loss 0.0113, p_loss 0.1439, quant_error 0.1377, utilization 0.5865, perplexity 8323.2072,
+Train Epoch: [2/30] Iters:[340/468] transplant_loss 0.8110, rec_loss 0.0114, p_loss 0.1437, quant_error 0.1381, utilization 0.5870, perplexity 8333.2874,
+Train Epoch: [2/30] Iters:[350/468] transplant_loss 0.8116, rec_loss 0.0114, p_loss 0.1437, quant_error 0.1382, utilization 0.5868, perplexity 8326.8597,
+Train Epoch: [2/30] Iters:[360/468] transplant_loss 0.8086, rec_loss 0.0114, p_loss 0.1436, quant_error 0.1376, utilization 0.5868, perplexity 8330.3392,
+Train Epoch: [2/30] Iters:[370/468] transplant_loss 0.8053, rec_loss 0.0113, p_loss 0.1432, quant_error 0.1371, utilization 0.5863, perplexity 8322.7327,
+Train Epoch: [2/30] Iters:[380/468] transplant_loss 0.8054, rec_loss 0.0113, p_loss 0.1434, quant_error 0.1371, utilization 0.5865, perplexity 8331.1125,
+Train Epoch: [2/30] Iters:[390/468] transplant_loss 0.8045, rec_loss 0.0112, p_loss 0.1438, quant_error 0.1369, utilization 0.5869, perplexity 8339.0595,
+Train Epoch: [2/30] Iters:[400/468] transplant_loss 0.8042, rec_loss 0.0112, p_loss 0.1442, quant_error 0.1367, utilization 0.5877, perplexity 8354.2892,
+Train Epoch: [2/30] Iters:[410/468] transplant_loss 0.8019, rec_loss 0.0111, p_loss 0.1441, quant_error 0.1362, utilization 0.5878, perplexity 8355.2490,
+Train Epoch: [2/30] Iters:[420/468] transplant_loss 0.8057, rec_loss 0.0113, p_loss 0.1445, quant_error 0.1368, utilization 0.5883, perplexity 8363.2539,
+Train Epoch: [2/30] Iters:[430/468] transplant_loss 0.8020, rec_loss 0.0112, p_loss 0.1443, quant_error 0.1361, utilization 0.5882, perplexity 8360.5985,
+Train Epoch: [2/30] Iters:[440/468] transplant_loss 0.8024, rec_loss 0.0112, p_loss 0.1442, quant_error 0.1361, utilization 0.5881, perplexity 8357.4628,
+Train Epoch: [2/30] Iters:[450/468] transplant_loss 0.8053, rec_loss 0.0113, p_loss 0.1441, quant_error 0.1365, utilization 0.5882, perplexity 8360.6521,
+Train Epoch: [2/30] Iters:[460/468] transplant_loss 0.8066, rec_loss 0.0113, p_loss 0.1441, quant_error 0.1367, utilization 0.5889, perplexity 8373.2768,
+epoch:3, cur_lr:0.000094
+Train Epoch: [3/30] Iters:[10/468] transplant_loss 0.8074, rec_loss 0.0111, p_loss 0.1453, quant_error 0.1367, utilization 0.5911, perplexity 8415.6068,
+Train Epoch: [3/30] Iters:[20/468] transplant_loss 0.8118, rec_loss 0.0112, p_loss 0.1451, quant_error 0.1379, utilization 0.5913, perplexity 8420.4135,
+Train Epoch: [3/30] Iters:[30/468] transplant_loss 0.8102, rec_loss 0.0111, p_loss 0.1454, quant_error 0.1376, utilization 0.5912, perplexity 8425.8771,
+Train Epoch: [3/30] Iters:[40/468] transplant_loss 0.8088, rec_loss 0.0111, p_loss 0.1450, quant_error 0.1373, utilization 0.5911, perplexity 8422.8347,
+Train Epoch: [3/30] Iters:[50/468] transplant_loss 0.8055, rec_loss 0.0111, p_loss 0.1442, quant_error 0.1367, utilization 0.5906, perplexity 8415.1096,
+Train Epoch: [3/30] Iters:[60/468] transplant_loss 0.8062, rec_loss 0.0111, p_loss 0.1439, quant_error 0.1369, utilization 0.5904, perplexity 8412.6753,
+Train Epoch: [3/30] Iters:[70/468] transplant_loss 0.8029, rec_loss 0.0111, p_loss 0.1437, quant_error 0.1362, utilization 0.5900, perplexity 8405.6196,
+Train Epoch: [3/30] Iters:[80/468] transplant_loss 0.7998, rec_loss 0.0111, p_loss 0.1429, quant_error 0.1355, utilization 0.5901, perplexity 8400.7222,
+Train Epoch: [3/30] Iters:[90/468] transplant_loss 0.7975, rec_loss 0.0110, p_loss 0.1427, quant_error 0.1351, utilization 0.5900, perplexity 8398.5831,
+Train Epoch: [3/30] Iters:[100/468] transplant_loss 0.8009, rec_loss 0.0111, p_loss 0.1434, quant_error 0.1356, utilization 0.5904, perplexity 8400.2727,
+Train Epoch: [3/30] Iters:[110/468] transplant_loss 0.7998, rec_loss 0.0110, p_loss 0.1434, quant_error 0.1354, utilization 0.5906, perplexity 8406.0815,
+Train Epoch: [3/30] Iters:[120/468] transplant_loss 0.8014, rec_loss 0.0111, p_loss 0.1435, quant_error 0.1356, utilization 0.5916, perplexity 8423.9386,
+Train Epoch: [3/30] Iters:[130/468] transplant_loss 0.8048, rec_loss 0.0111, p_loss 0.1437, quant_error 0.1363, utilization 0.5917, perplexity 8429.4062,
+Train Epoch: [3/30] Iters:[140/468] transplant_loss 0.8083, rec_loss 0.0112, p_loss 0.1442, quant_error 0.1371, utilization 0.5922, perplexity 8438.5741,
+Train Epoch: [3/30] Iters:[150/468] transplant_loss 0.8069, rec_loss 0.0112, p_loss 0.1440, quant_error 0.1368, utilization 0.5927, perplexity 8454.2595,
+Train Epoch: [3/30] Iters:[160/468] transplant_loss 0.8094, rec_loss 0.0113, p_loss 0.1441, quant_error 0.1374, utilization 0.5931, perplexity 8461.1516,
+Train Epoch: [3/30] Iters:[170/468] transplant_loss 0.8063, rec_loss 0.0112, p_loss 0.1438, quant_error 0.1370, utilization 0.5929, perplexity 8457.4988,
+Train Epoch: [3/30] Iters:[180/468] transplant_loss 0.8016, rec_loss 0.0111, p_loss 0.1433, quant_error 0.1361, utilization 0.5925, perplexity 8451.9187,
+Train Epoch: [3/30] Iters:[190/468] transplant_loss 0.7994, rec_loss 0.0111, p_loss 0.1428, quant_error 0.1358, utilization 0.5923, perplexity 8448.1952,
+Train Epoch: [3/30] Iters:[200/468] transplant_loss 0.7960, rec_loss 0.0110, p_loss 0.1427, quant_error 0.1351, utilization 0.5921, perplexity 8443.3671,
+Train Epoch: [3/30] Iters:[210/468] transplant_loss 0.7916, rec_loss 0.0108, p_loss 0.1422, quant_error 0.1342, utilization 0.5921, perplexity 8442.2407,
+Train Epoch: [3/30] Iters:[220/468] transplant_loss 0.7913, rec_loss 0.0108, p_loss 0.1421, quant_error 0.1340, utilization 0.5926, perplexity 8450.2520,
+Train Epoch: [3/30] Iters:[230/468] transplant_loss 0.7929, rec_loss 0.0108, p_loss 0.1424, quant_error 0.1342, utilization 0.5932, perplexity 8459.1420,
+Train Epoch: [3/30] Iters:[240/468] transplant_loss 0.7930, rec_loss 0.0108, p_loss 0.1424, quant_error 0.1340, utilization 0.5934, perplexity 8465.2837,
+Train Epoch: [3/30] Iters:[250/468] transplant_loss 0.7934, rec_loss 0.0109, p_loss 0.1423, quant_error 0.1339, utilization 0.5935, perplexity 8467.4608,
+Train Epoch: [3/30] Iters:[260/468] transplant_loss 0.7920, rec_loss 0.0109, p_loss 0.1423, quant_error 0.1334, utilization 0.5935, perplexity 8469.5988,
+Train Epoch: [3/30] Iters:[270/468] transplant_loss 0.7912, rec_loss 0.0109, p_loss 0.1421, quant_error 0.1333, utilization 0.5933, perplexity 8461.7322,
+Train Epoch: [3/30] Iters:[280/468] transplant_loss 0.7934, rec_loss 0.0109, p_loss 0.1422, quant_error 0.1338, utilization 0.5932, perplexity 8459.3202,
+Train Epoch: [3/30] Iters:[290/468] transplant_loss 0.7931, rec_loss 0.0108, p_loss 0.1421, quant_error 0.1339, utilization 0.5931, perplexity 8456.6079,
+Train Epoch: [3/30] Iters:[300/468] transplant_loss 0.7949, rec_loss 0.0108, p_loss 0.1421, quant_error 0.1344, utilization 0.5933, perplexity 8459.8480,
+Train Epoch: [3/30] Iters:[310/468] transplant_loss 0.7958, rec_loss 0.0108, p_loss 0.1425, quant_error 0.1347, utilization 0.5935, perplexity 8460.7323,
+Train Epoch: [3/30] Iters:[320/468] transplant_loss 0.8029, rec_loss 0.0110, p_loss 0.1431, quant_error 0.1362, utilization 0.5938, perplexity 8469.2423,
+Train Epoch: [3/30] Iters:[330/468] transplant_loss 0.8030, rec_loss 0.0110, p_loss 0.1432, quant_error 0.1361, utilization 0.5940, perplexity 8474.2637,
+Train Epoch: [3/30] Iters:[340/468] transplant_loss 0.8043, rec_loss 0.0110, p_loss 0.1437, quant_error 0.1363, utilization 0.5946, perplexity 8486.7005,
+Train Epoch: [3/30] Iters:[350/468] transplant_loss 0.8023, rec_loss 0.0109, p_loss 0.1437, quant_error 0.1359, utilization 0.5947, perplexity 8485.0697,
+Train Epoch: [3/30] Iters:[360/468] transplant_loss 0.8043, rec_loss 0.0110, p_loss 0.1440, quant_error 0.1362, utilization 0.5946, perplexity 8483.7996,
+Train Epoch: [3/30] Iters:[370/468] transplant_loss 0.8001, rec_loss 0.0109, p_loss 0.1434, quant_error 0.1353, utilization 0.5944, perplexity 8482.4237,
+Train Epoch: [3/30] Iters:[380/468] transplant_loss 0.7982, rec_loss 0.0109, p_loss 0.1433, quant_error 0.1349, utilization 0.5942, perplexity 8480.3164,
+Train Epoch: [3/30] Iters:[390/468] transplant_loss 0.7973, rec_loss 0.0108, p_loss 0.1433, quant_error 0.1348, utilization 0.5944, perplexity 8483.1499,
+Train Epoch: [3/30] Iters:[400/468] transplant_loss 0.7990, rec_loss 0.0109, p_loss 0.1431, quant_error 0.1351, utilization 0.5948, perplexity 8493.5882,
+Train Epoch: [3/30] Iters:[410/468] transplant_loss 0.7971, rec_loss 0.0108, p_loss 0.1425, quant_error 0.1349, utilization 0.5952, perplexity 8499.2578,
+Train Epoch: [3/30] Iters:[420/468] transplant_loss 0.7999, rec_loss 0.0109, p_loss 0.1429, quant_error 0.1354, utilization 0.5951, perplexity 8497.4901,
+Train Epoch: [3/30] Iters:[430/468] transplant_loss 0.7986, rec_loss 0.0108, p_loss 0.1428, quant_error 0.1353, utilization 0.5954, perplexity 8502.4193,
+Train Epoch: [3/30] Iters:[440/468] transplant_loss 0.7993, rec_loss 0.0109, p_loss 0.1426, quant_error 0.1354, utilization 0.5952, perplexity 8495.2359,
+Train Epoch: [3/30] Iters:[450/468] transplant_loss 0.8001, rec_loss 0.0109, p_loss 0.1429, quant_error 0.1356, utilization 0.5948, perplexity 8487.6305,
+Train Epoch: [3/30] Iters:[460/468] transplant_loss 0.7990, rec_loss 0.0109, p_loss 0.1428, quant_error 0.1352, utilization 0.5949, perplexity 8492.8153,
+epoch:4, cur_lr:0.000091
+Train Epoch: [4/30] Iters:[10/468] transplant_loss 0.8011, rec_loss 0.0108, p_loss 0.1420, quant_error 0.1362, utilization 0.5956, perplexity 8514.9550,
+Train Epoch: [4/30] Iters:[20/468] transplant_loss 0.8008, rec_loss 0.0108, p_loss 0.1427, quant_error 0.1357, utilization 0.5956, perplexity 8512.2400,
+Train Epoch: [4/30] Iters:[30/468] transplant_loss 0.8037, rec_loss 0.0109, p_loss 0.1428, quant_error 0.1362, utilization 0.5960, perplexity 8520.5204,
+Train Epoch: [4/30] Iters:[40/468] transplant_loss 0.7999, rec_loss 0.0108, p_loss 0.1425, quant_error 0.1354, utilization 0.5957, perplexity 8514.9872,
+Train Epoch: [4/30] Iters:[50/468] transplant_loss 0.8005, rec_loss 0.0109, p_loss 0.1428, quant_error 0.1355, utilization 0.5961, perplexity 8521.4895,
+Train Epoch: [4/30] Iters:[60/468] transplant_loss 0.7989, rec_loss 0.0109, p_loss 0.1426, quant_error 0.1352, utilization 0.5961, perplexity 8521.6269,
+Train Epoch: [4/30] Iters:[70/468] transplant_loss 0.7990, rec_loss 0.0109, p_loss 0.1427, quant_error 0.1351, utilization 0.5962, perplexity 8524.2200,
+Train Epoch: [4/30] Iters:[80/468] transplant_loss 0.7949, rec_loss 0.0108, p_loss 0.1423, quant_error 0.1343, utilization 0.5963, perplexity 8526.3122,
+Train Epoch: [4/30] Iters:[90/468] transplant_loss 0.7940, rec_loss 0.0108, p_loss 0.1422, quant_error 0.1340, utilization 0.5961, perplexity 8525.3842,
+Train Epoch: [4/30] Iters:[100/468] transplant_loss 0.7914, rec_loss 0.0107, p_loss 0.1420, quant_error 0.1334, utilization 0.5958, perplexity 8522.1955,
+Train Epoch: [4/30] Iters:[110/468] transplant_loss 0.7904, rec_loss 0.0106, p_loss 0.1421, quant_error 0.1332, utilization 0.5955, perplexity 8512.2854,
+Train Epoch: [4/30] Iters:[120/468] transplant_loss 0.7907, rec_loss 0.0107, p_loss 0.1417, quant_error 0.1333, utilization 0.5955, perplexity 8510.1514,
+Train Epoch: [4/30] Iters:[130/468] transplant_loss 0.7975, rec_loss 0.0108, p_loss 0.1425, quant_error 0.1346, utilization 0.5955, perplexity 8505.3921,
+Train Epoch: [4/30] Iters:[140/468] transplant_loss 0.7965, rec_loss 0.0108, p_loss 0.1421, quant_error 0.1345, utilization 0.5959, perplexity 8510.2045,
+Train Epoch: [4/30] Iters:[150/468] transplant_loss 0.8000, rec_loss 0.0109, p_loss 0.1422, quant_error 0.1353, utilization 0.5960, perplexity 8511.9992,
+Train Epoch: [4/30] Iters:[160/468] transplant_loss 0.8029, rec_loss 0.0109, p_loss 0.1426, quant_error 0.1359, utilization 0.5964, perplexity 8524.0094,
+Train Epoch: [4/30] Iters:[170/468] transplant_loss 0.8045, rec_loss 0.0110, p_loss 0.1429, quant_error 0.1362, utilization 0.5972, perplexity 8543.2282,
+Train Epoch: [4/30] Iters:[180/468] transplant_loss 0.7981, rec_loss 0.0108, p_loss 0.1422, quant_error 0.1349, utilization 0.5971, perplexity 8543.5934,
+Train Epoch: [4/30] Iters:[190/468] transplant_loss 0.8003, rec_loss 0.0109, p_loss 0.1425, quant_error 0.1353, utilization 0.5973, perplexity 8547.2027,
+Train Epoch: [4/30] Iters:[200/468] transplant_loss 0.7998, rec_loss 0.0108, p_loss 0.1424, quant_error 0.1352, utilization 0.5973, perplexity 8548.5226,
+Train Epoch: [4/30] Iters:[210/468] transplant_loss 0.7999, rec_loss 0.0108, p_loss 0.1420, quant_error 0.1351, utilization 0.5975, perplexity 8548.2909,
+Train Epoch: [4/30] Iters:[220/468] transplant_loss 0.7960, rec_loss 0.0108, p_loss 0.1415, quant_error 0.1344, utilization 0.5967, perplexity 8528.0115,
+Train Epoch: [4/30] Iters:[230/468] transplant_loss 0.7965, rec_loss 0.0108, p_loss 0.1415, quant_error 0.1346, utilization 0.5964, perplexity 8520.1837,
+Train Epoch: [4/30] Iters:[240/468] transplant_loss 0.7983, rec_loss 0.0108, p_loss 0.1419, quant_error 0.1348, utilization 0.5963, perplexity 8518.7648,
+Train Epoch: [4/30] Iters:[250/468] transplant_loss 0.7941, rec_loss 0.0108, p_loss 0.1417, quant_error 0.1339, utilization 0.5965, perplexity 8521.7718,
+Train Epoch: [4/30] Iters:[260/468] transplant_loss 0.7933, rec_loss 0.0108, p_loss 0.1415, quant_error 0.1337, utilization 0.5963, perplexity 8520.3551,
+Train Epoch: [4/30] Iters:[270/468] transplant_loss 0.7938, rec_loss 0.0107, p_loss 0.1416, quant_error 0.1339, utilization 0.5964, perplexity 8523.7412,
+Train Epoch: [4/30] Iters:[280/468] transplant_loss 0.7921, rec_loss 0.0106, p_loss 0.1416, quant_error 0.1336, utilization 0.5970, perplexity 8535.5922,
+Train Epoch: [4/30] Iters:[290/468] transplant_loss 0.7885, rec_loss 0.0106, p_loss 0.1411, quant_error 0.1331, utilization 0.5973, perplexity 8541.9994,
+Train Epoch: [4/30] Iters:[300/468] transplant_loss 0.7919, rec_loss 0.0106, p_loss 0.1413, quant_error 0.1339, utilization 0.5974, perplexity 8539.7876,
+Train Epoch: [4/30] Iters:[310/468] transplant_loss 0.7893, rec_loss 0.0105, p_loss 0.1413, quant_error 0.1335, utilization 0.5977, perplexity 8546.3889,
+Train Epoch: [4/30] Iters:[320/468] transplant_loss 0.7900, rec_loss 0.0106, p_loss 0.1413, quant_error 0.1335, utilization 0.5976, perplexity 8544.0833,
+Train Epoch: [4/30] Iters:[330/468] transplant_loss 0.7948, rec_loss 0.0107, p_loss 0.1417, quant_error 0.1343, utilization 0.5979, perplexity 8551.7907,
+Train Epoch: [4/30] Iters:[340/468] transplant_loss 0.7954, rec_loss 0.0108, p_loss 0.1417, quant_error 0.1343, utilization 0.5974, perplexity 8542.9073,
+Train Epoch: [4/30] Iters:[350/468] transplant_loss 0.7935, rec_loss 0.0108, p_loss 0.1414, quant_error 0.1338, utilization 0.5973, perplexity 8543.3516,
+Train Epoch: [4/30] Iters:[360/468] transplant_loss 0.7926, rec_loss 0.0108, p_loss 0.1415, quant_error 0.1335, utilization 0.5969, perplexity 8535.3368,
+Train Epoch: [4/30] Iters:[370/468] transplant_loss 0.7910, rec_loss 0.0107, p_loss 0.1417, quant_error 0.1332, utilization 0.5973, perplexity 8544.5248,
+Train Epoch: [4/30] Iters:[380/468] transplant_loss 0.7882, rec_loss 0.0107, p_loss 0.1412, quant_error 0.1326, utilization 0.5972, perplexity 8543.3908,
+Train Epoch: [4/30] Iters:[390/468] transplant_loss 0.7911, rec_loss 0.0108, p_loss 0.1415, quant_error 0.1332, utilization 0.5977, perplexity 8556.4046,
+Train Epoch: [4/30] Iters:[400/468] transplant_loss 0.7886, rec_loss 0.0107, p_loss 0.1412, quant_error 0.1326, utilization 0.5975, perplexity 8548.6221,
+Train Epoch: [4/30] Iters:[410/468] transplant_loss 0.7893, rec_loss 0.0107, p_loss 0.1410, quant_error 0.1328, utilization 0.5980, perplexity 8557.0032,
+Train Epoch: [4/30] Iters:[420/468] transplant_loss 0.7907, rec_loss 0.0108, p_loss 0.1410, quant_error 0.1329, utilization 0.5984, perplexity 8562.4744,
+Train Epoch: [4/30] Iters:[430/468] transplant_loss 0.7884, rec_loss 0.0107, p_loss 0.1410, quant_error 0.1325, utilization 0.5982, perplexity 8553.9431,
+Train Epoch: [4/30] Iters:[440/468] transplant_loss 0.7835, rec_loss 0.0105, p_loss 0.1407, quant_error 0.1317, utilization 0.5982, perplexity 8551.1488,
+Train Epoch: [4/30] Iters:[450/468] transplant_loss 0.7875, rec_loss 0.0105, p_loss 0.1412, quant_error 0.1326, utilization 0.5985, perplexity 8561.9068,
+Train Epoch: [4/30] Iters:[460/468] transplant_loss 0.7898, rec_loss 0.0106, p_loss 0.1416, quant_error 0.1329, utilization 0.5984, perplexity 8557.6019,
+epoch:5, cur_lr:0.000088
+Train Epoch: [5/30] Iters:[10/468] transplant_loss 0.7932, rec_loss 0.0108, p_loss 0.1428, quant_error 0.1332, utilization 0.5980, perplexity 8559.8203,
+Train Epoch: [5/30] Iters:[20/468] transplant_loss 0.7913, rec_loss 0.0108, p_loss 0.1419, quant_error 0.1329, utilization 0.5977, perplexity 8557.7412,
+Train Epoch: [5/30] Iters:[30/468] transplant_loss 0.7971, rec_loss 0.0108, p_loss 0.1420, quant_error 0.1344, utilization 0.5980, perplexity 8560.6389,
+Train Epoch: [5/30] Iters:[40/468] transplant_loss 0.7952, rec_loss 0.0108, p_loss 0.1419, quant_error 0.1340, utilization 0.5978, perplexity 8553.4516,
+Train Epoch: [5/30] Iters:[50/468] transplant_loss 0.7937, rec_loss 0.0108, p_loss 0.1420, quant_error 0.1337, utilization 0.5976, perplexity 8550.8849,
+Train Epoch: [5/30] Iters:[60/468] transplant_loss 0.7949, rec_loss 0.0107, p_loss 0.1421, quant_error 0.1340, utilization 0.5977, perplexity 8551.7680,
+Train Epoch: [5/30] Iters:[70/468] transplant_loss 0.7947, rec_loss 0.0107, p_loss 0.1421, quant_error 0.1340, utilization 0.5979, perplexity 8554.2063,
+Train Epoch: [5/30] Iters:[80/468] transplant_loss 0.7924, rec_loss 0.0106, p_loss 0.1419, quant_error 0.1334, utilization 0.5978, perplexity 8551.4500,
+Train Epoch: [5/30] Iters:[90/468] transplant_loss 0.7920, rec_loss 0.0106, p_loss 0.1416, quant_error 0.1334, utilization 0.5980, perplexity 8559.4763,
+Train Epoch: [5/30] Iters:[100/468] transplant_loss 0.7930, rec_loss 0.0106, p_loss 0.1414, quant_error 0.1335, utilization 0.5985, perplexity 8574.1651,
+Train Epoch: [5/30] Iters:[110/468] transplant_loss 0.7932, rec_loss 0.0106, p_loss 0.1412, quant_error 0.1337, utilization 0.5986, perplexity 8575.7508,
+Train Epoch: [5/30] Iters:[120/468] transplant_loss 0.7943, rec_loss 0.0106, p_loss 0.1415, quant_error 0.1339, utilization 0.5986, perplexity 8574.7511,
+Train Epoch: [5/30] Iters:[130/468] transplant_loss 0.7923, rec_loss 0.0105, p_loss 0.1411, quant_error 0.1336, utilization 0.5990, perplexity 8583.8009,
+Train Epoch: [5/30] Iters:[140/468] transplant_loss 0.7936, rec_loss 0.0106, p_loss 0.1411, quant_error 0.1339, utilization 0.5992, perplexity 8587.2884,
+Train Epoch: [5/30] Iters:[150/468] transplant_loss 0.7920, rec_loss 0.0106, p_loss 0.1407, quant_error 0.1338, utilization 0.5986, perplexity 8567.3512,
+Train Epoch: [5/30] Iters:[160/468] transplant_loss 0.7885, rec_loss 0.0105, p_loss 0.1400, quant_error 0.1332, utilization 0.5984, perplexity 8561.6079,
+Train Epoch: [5/30] Iters:[170/468] transplant_loss 0.7907, rec_loss 0.0105, p_loss 0.1400, quant_error 0.1335, utilization 0.5983, perplexity 8561.5804,
+Train Epoch: [5/30] Iters:[180/468] transplant_loss 0.7942, rec_loss 0.0106, p_loss 0.1406, quant_error 0.1342, utilization 0.5979, perplexity 8548.7757,
+Train Epoch: [5/30] Iters:[190/468] transplant_loss 0.7906, rec_loss 0.0106, p_loss 0.1407, quant_error 0.1334, utilization 0.5974, perplexity 8537.8255,
+Train Epoch: [5/30] Iters:[200/468] transplant_loss 0.7897, rec_loss 0.0106, p_loss 0.1408, quant_error 0.1330, utilization 0.5977, perplexity 8547.1353,
+Train Epoch: [5/30] Iters:[210/468] transplant_loss 0.7941, rec_loss 0.0108, p_loss 0.1415, quant_error 0.1337, utilization 0.5979, perplexity 8550.6524,
+Train Epoch: [5/30] Iters:[220/468] transplant_loss 0.7916, rec_loss 0.0107, p_loss 0.1412, quant_error 0.1333, utilization 0.5980, perplexity 8553.3169,
+Train Epoch: [5/30] Iters:[230/468] transplant_loss 0.7920, rec_loss 0.0107, p_loss 0.1409, quant_error 0.1334, utilization 0.5982, perplexity 8561.6542,
+Train Epoch: [5/30] Iters:[240/468] transplant_loss 0.7955, rec_loss 0.0107, p_loss 0.1411, quant_error 0.1342, utilization 0.5987, perplexity 8569.2319,
+Train Epoch: [5/30] Iters:[250/468] transplant_loss 0.7952, rec_loss 0.0106, p_loss 0.1412, quant_error 0.1342, utilization 0.5988, perplexity 8572.7109,
+Train Epoch: [5/30] Iters:[260/468] transplant_loss 0.7902, rec_loss 0.0104, p_loss 0.1409, quant_error 0.1333, utilization 0.5986, perplexity 8569.5784,
+Train Epoch: [5/30] Iters:[270/468] transplant_loss 0.7881, rec_loss 0.0104, p_loss 0.1404, quant_error 0.1329, utilization 0.5987, perplexity 8568.9086,
+Train Epoch: [5/30] Iters:[280/468] transplant_loss 0.7870, rec_loss 0.0104, p_loss 0.1404, quant_error 0.1326, utilization 0.5987, perplexity 8566.8755,
+Train Epoch: [5/30] Iters:[290/468] transplant_loss 0.7862, rec_loss 0.0104, p_loss 0.1405, quant_error 0.1324, utilization 0.5987, perplexity 8569.1454,
+Train Epoch: [5/30] Iters:[300/468] transplant_loss 0.7881, rec_loss 0.0105, p_loss 0.1406, quant_error 0.1326, utilization 0.5988, perplexity 8569.6267,
+Train Epoch: [5/30] Iters:[310/468] transplant_loss 0.7925, rec_loss 0.0106, p_loss 0.1410, quant_error 0.1335, utilization 0.5993, perplexity 8580.6998,
+Train Epoch: [5/30] Iters:[320/468] transplant_loss 0.7929, rec_loss 0.0106, p_loss 0.1413, quant_error 0.1336, utilization 0.5992, perplexity 8581.3083,
+Train Epoch: [5/30] Iters:[330/468] transplant_loss 0.7876, rec_loss 0.0104, p_loss 0.1409, quant_error 0.1325, utilization 0.5991, perplexity 8577.5514,
+Train Epoch: [5/30] Iters:[340/468] transplant_loss 0.7877, rec_loss 0.0105, p_loss 0.1410, quant_error 0.1325, utilization 0.5990, perplexity 8578.4490,
+Train Epoch: [5/30] Iters:[350/468] transplant_loss 0.7863, rec_loss 0.0104, p_loss 0.1409, quant_error 0.1324, utilization 0.5985, perplexity 8570.8994,
+Train Epoch: [5/30] Iters:[360/468] transplant_loss 0.7823, rec_loss 0.0103, p_loss 0.1404, quant_error 0.1316, utilization 0.5983, perplexity 8566.6230,
+Train Epoch: [5/30] Iters:[370/468] transplant_loss 0.7842, rec_loss 0.0104, p_loss 0.1407, quant_error 0.1320, utilization 0.5984, perplexity 8564.6142,
+Train Epoch: [5/30] Iters:[380/468] transplant_loss 0.7868, rec_loss 0.0104, p_loss 0.1411, quant_error 0.1325, utilization 0.5991, perplexity 8580.9149,
+Train Epoch: [5/30] Iters:[390/468] transplant_loss 0.7872, rec_loss 0.0104, p_loss 0.1407, quant_error 0.1327, utilization 0.5995, perplexity 8583.8258,
+Train Epoch: [5/30] Iters:[400/468] transplant_loss 0.7883, rec_loss 0.0105, p_loss 0.1409, quant_error 0.1327, utilization 0.5999, perplexity 8589.8847,
+Train Epoch: [5/30] Iters:[410/468] transplant_loss 0.7939, rec_loss 0.0106, p_loss 0.1415, quant_error 0.1338, utilization 0.5999, perplexity 8588.1105,
+Train Epoch: [5/30] Iters:[420/468] transplant_loss 0.7917, rec_loss 0.0105, p_loss 0.1409, quant_error 0.1335, utilization 0.5997, perplexity 8589.2069,
+Train Epoch: [5/30] Iters:[430/468] transplant_loss 0.7946, rec_loss 0.0106, p_loss 0.1409, quant_error 0.1341, utilization 0.5994, perplexity 8580.3319,
+Train Epoch: [5/30] Iters:[440/468] transplant_loss 0.7923, rec_loss 0.0106, p_loss 0.1408, quant_error 0.1336, utilization 0.5989, perplexity 8572.5542,
+Train Epoch: [5/30] Iters:[450/468] transplant_loss 0.7911, rec_loss 0.0105, p_loss 0.1406, quant_error 0.1334, utilization 0.5986, perplexity 8569.1474,
+Train Epoch: [5/30] Iters:[460/468] transplant_loss 0.7854, rec_loss 0.0104, p_loss 0.1400, quant_error 0.1323, utilization 0.5988, perplexity 8574.4508,
+Loading pretrained model LPIPS from /home/fangxian/.cache/torch/hub/pyiqa/LPIPS_v0.1_alex-df73285e.pth
