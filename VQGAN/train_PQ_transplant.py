@@ -67,21 +67,15 @@ def main_worker(args):
     pq_model = nn.SyncBatchNorm.convert_sync_batchnorm(pq_model)
 
     if args.VQ == "wasserstein_vq" or args.VQ == "mmd_vq":
-        if args.pq == 2:
-            code_para = list(pq_model.quantizer1.embedding.parameters()) + list(pq_model.quantizer2.embedding.parameters()) 
-        elif args.pq == 4:
-            code_para = list(pq_model.quantizer1.embedding.parameters()) + list(pq_model.quantizer2.embedding.parameters()) + list(pq_model.quantizer3.embedding.parameters()) + list(pq_model.quantizer4.embedding.parameters()) 
-        model_para = list(pq_model.projector_in.parameters()) + list(pq_model.projector_out.parameters()) 
+        code_para = list(pq_model.quantizer1.parameters()) + list(pq_model.quantizer2.parameters()) 
+        model_para = list(pq_model.projector_out.parameters()) + list(pq_model.projector_in.parameters()) 
         all_para = code_para + model_para
         optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
-        if args.pq == 2:
-            model_para = list(pq_model.quantizer1.embedding.parameters()) + list(pq_model.quantizer2.embedding.parameters()) + list(pq_model.projector_in.parameters()) + list(pq_model.projector_out.parameters()) 
-        elif args.pq == 4:
-            model_para = list(pq_model.quantizer1.embedding.parameters()) + list(pq_model.quantizer2.embedding.parameters()) + list(pq_model.quantizer3.embedding.parameters()) + list(pq_model.quantizer4.embedding.parameters()) + list(pq_model.projector_in.parameters()) + list(pq_model.projector_out.parameters()) 
+        model_para = list(pq_model.quantizer1.parameters()) + list(pq_model.quantizer2.parameters()) + list(pq_model.projector_out.parameters()) + list(pq_model.projector_in.parameters()) 
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "ema_vq":
-        model_para = list(pq_model.projector_in.parameters()) + list(pq_model.projector_out.parameters()) 
+        model_para = list(pq_model.projector_out.parameters()) + list(pq_model.projector_in.parameters()) 
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
 
     train_dataloader, val_dataloader, train_sampler, len_train_set, len_val_set = build_dataloader(args)
@@ -91,6 +85,7 @@ def main_worker(args):
     pq_model.module.decoder.eval()
     pq_model.module.quant_conv.eval()
     pq_model.module.post_quant_conv.eval()
+    pq_model.module.perceptual_loss.eval()
 
     results_eval = {'epoch':[], 'psnr':[], 'ssim':[], 'lpips':[], 'rec_loss': [], 'quant_error': [], 'utilization': [], 'perplexity': []}
     train_loss = LossManager()
@@ -108,8 +103,8 @@ def main_worker(args):
                 x = x.to(device, non_blocking=True)
                 optimizer.zero_grad()
 
-                transplant_loss, rec_loss, quant_error, utilization, perplexity = pq_model.module.transplant(x)
-                info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, quant_error=quant_error, utilization=utilization, perplexity=perplexity)
+                transplant_loss, rec_loss, p_loss, quant_error, utilization, perplexity = pq_model.module.transplant(x)
+                info_pack = Pack(transplant_loss=transplant_loss, rec_loss=rec_loss, p_loss=p_loss, quant_error=quant_error, utilization=utilization, perplexity=perplexity)
                 transplant_loss.backward()
                 if args.VQ == "wasserstein_vq":
                     has_nan = False            
