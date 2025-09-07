@@ -70,7 +70,7 @@ def main_worker(args):
         code_para = list(pq_model.quantizer1.parameters()) + list(pq_model.quantizer2.parameters()) 
         model_para = list(pq_model.projector_out.parameters()) + list(pq_model.projector_in.parameters()) 
         all_para = code_para + model_para
-        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.01}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
+        optimizer = torch.optim.AdamW([{'params': model_para}, {'params': code_para, 'lr': 0.002}], lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)
     elif args.VQ == "vanilla_vq" or args.VQ == "online_vq":
         model_para = list(pq_model.quantizer1.parameters()) + list(pq_model.quantizer2.parameters()) + list(pq_model.projector_out.parameters()) + list(pq_model.projector_in.parameters()) 
         optimizer = torch.optim.AdamW(model_para, lr=args.lr_transplant, betas=(0.9, 0.95), weight_decay=0.00001)

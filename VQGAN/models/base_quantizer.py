@@ -121,12 +121,12 @@ class ProductQuantizer(nn.Module):
             self.embedding_1 = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding_1.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding_1.weight.requires_grad = True
-            self.register_buffer("embed_prob1", torch.zeros(self.codebook_size))
+            self.register_buffer("embed_prob_1", torch.zeros(self.codebook_size))
 
             self.embedding_2 = nn.Embedding(self.codebook_size, self.codebook_dim)
             self.embedding_2.weight.data.uniform_(-1.0 /self.codebook_size, 1.0/self.codebook_size)
             self.embedding_2.weight.requires_grad = True
-            self.register_buffer("embed_prob2", torch.zeros(self.codebook_size))
+            self.register_buffer("embed_prob_2", torch.zeros(self.codebook_size))
         elif args.VQ == "ema_vq":
             self.embedding_1 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
             self.embedding_2 = EmbeddingEMA(self.codebook_size, self.codebook_dim, self.decay, eps=1e-5)
