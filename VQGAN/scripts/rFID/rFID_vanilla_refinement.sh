@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --mem=100gb
 #SBATCH --cpus-per-task 12
-#SBATCH --nodelist=g[010-019]
+#SBATCH --nodelist=g013
 #SBATCH --gpus-per-node=1
 #SBATCH --time=2-00:00:00
 #SBATCH --output /projects/yuanai/projects/VQ-Transplant3/metrics/Refinement/ImageNet/rFID_vanilla_refinement.out
@@ -12,8 +12,18 @@
 
 source ~/.bashrc
 conda activate /home/fangxian/packages/anaconda/envs/FID
-CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name wasserstein_vq_refinement_65536_False_1.npz
-CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name wasserstein_vq_refinement_65536_False_2.npz
-CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name wasserstein_vq_refinement_65536_False_3.npz
-CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name wasserstein_vq_refinement_65536_False_4.npz
-CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name wasserstein_vq_refinement_65536_False_5.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_65536_False_1.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_65536_False_2.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_65536_False_3.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_65536_False_4.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_65536_False_5.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_32768_False_1.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_32768_False_2.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_32768_False_3.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_32768_False_4.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_32768_False_5.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_16384_False_1.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_16384_False_2.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_16384_False_3.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_16384_False_4.npz
+CUDA_VISIBLE_DEVICES="0" python /projects/yuanai/projects/VQ-Transplant3/code/evaluator.py --sample_path /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/ImageNet --sample_name vanilla_vq_refinement_16384_False_5.npz

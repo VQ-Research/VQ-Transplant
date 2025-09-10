@@ -126,6 +126,7 @@ def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
     psnr_metric = PSNR()
     ssim_metric = SSIM()
     lpips_metric = LPIPS()
+    total_codebook_size = args.codebook_size * args.codebook_size
 
     if args.stage == "transplant":
         ssim, psnr, lpips, rec_loss, quant_error, utilization, perplexity, total_num =  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
@@ -176,12 +177,12 @@ def eval_one_epoch_pq(args, model, epoch, val_dataloader, len_val_set):
     if args.stage == "transplant":
         eval_quant_error = quant_error/total_num
         codebook_usage_counts_1 = (histogram_all_1 > 0).float().sum()
-        eval_utilization_1  = codebook_usage_counts_1.item() / args.codebook_size
+        eval_utilization_1  = codebook_usage_counts_1.item() / total_codebook_size
         avg_probs_1 = histogram_all_1/histogram_all_1.sum(0)
         eval_perplexity_1 = torch.exp(-torch.sum(avg_probs_1 * torch.log(avg_probs_1 + 1e-10))).item()
 
         codebook_usage_counts_2 = (histogram_all_2 > 0).float().sum()
-        eval_utilization_2  = codebook_usage_counts_2.item() / args.codebook_size
+        eval_utilization_2  = codebook_usage_counts_2.item() / total_codebook_size
         avg_probs_2 = histogram_all_2/histogram_all_2.sum(0)
         eval_perplexity_2 = torch.exp(-torch.sum(avg_probs_2 * torch.log(avg_probs_2 + 1e-10))).item()
 
