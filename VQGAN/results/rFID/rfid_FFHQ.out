@@ -1,0 +1,35 @@
+#################transplant-stage###########################
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/mmd_vq_transplant_16384_False
+compute FID of a folder with ffhq statistics
+downloading statistics to /projects/yuanai/fangxian/packages/anaconda/envs/VQ-Tokenizer/lib/python3.10/site-packages/cleanfid/stats/ffhq_clean_trainval70k_256.npz
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/mmd_vq_transplant_16384_False
+FID: 2.2101728722782354
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/mmd_vq_transplant_32768_False
+compute FID of a folder with ffhq statistics
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/mmd_vq_transplant_32768_False
+FID: 2.0930452068477052
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/wasserstein_vq_transplant_16384_False
+compute FID of a folder with ffhq statistics
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/wasserstein_vq_transplant_16384_False
+FID: 2.634520286586337
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/wasserstein_vq_transplant_32768_False
+compute FID of a folder with ffhq statistics
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/FFHQ/wasserstein_vq_transplant_32768_False
+FID: 2.270309204827072
+#################Refinement-stage###########################
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/mmd_vq_refinement_16384_False
+compute FID of a folder with ffhq statistics
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/mmd_vq_refinement_16384_False
+FID: 1.988409228871717
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/mmd_vq_refinement_32768_False
+compute FID of a folder with ffhq statistics
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/mmd_vq_refinement_32768_False
+FID: 1.369115532260139
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/wasserstein_vq_refinement_16384_False
+compute FID of a folder with ffhq statistics
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/wasserstein_vq_refinement_16384_False
+FID: 1.807079232020385
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/wasserstein_vq_refinement_32768_False
+compute FID of a folder with ffhq statistics
+Found 70000 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/FFHQ/wasserstein_vq_refinement_32768_False
+FID: 1.2091018623463015

@@ -186,12 +186,13 @@ def eval_reconstruction_epoch(args, model, epoch):
         create_npz_from_sample_folder(reconstruction_path)
 
 
-def input_files(args, model):
+def generate_input_images(args):
     val_dataloader, len_val_set = load_dataset(args, batch_size=16)
-    input_name = '{}'.format(args.dataset)
+    input_name = '{}'.format(args.dataset_name)
     input_path = os.path.join("/projects/yuanai/projects/VQ-Transplant3/reconstruction", input_name)
     os.makedirs(input_path, exist_ok=True)
-
+    
+    total = 0
     for idx, (x, _) in enumerate(val_dataloader):
         x = x.cuda()
         with torch.no_grad():
@@ -201,3 +202,4 @@ def input_files(args, model):
             for i, sample in enumerate(input_samples):
                 index = i + total
                 Image.fromarray(sample).save(f"{input_path}/{index:06d}.png")
+            total += 16

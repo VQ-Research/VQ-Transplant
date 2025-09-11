@@ -1,0 +1,22 @@
+#################transplant-stage###########################
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/Churches/mmd_vq_transplant_16384_False
+compute FID between two folders
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/Churches/mmd_vq_transplant_16384_False
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Churches
+FID: 2.725111637776564
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/Churches/wasserstein_vq_transplant_16384_False
+compute FID between two folders
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Transplant/Churches/wasserstein_vq_transplant_16384_False
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Churches
+FID: 2.760271624332944
+#################Refinement-stage###########################
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/Churches/mmd_vq_refinement_16384_False
+compute FID between two folders
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/Churches/mmd_vq_refinement_16384_False
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Churches
+FID: 1.8744929112209832
+/projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/Churches/wasserstein_vq_refinement_16384_False
+compute FID between two folders
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Refinement/Churches/wasserstein_vq_refinement_16384_False
+Found 126227 images in the folder /projects/yuanai/projects/VQ-Transplant3/reconstruction/Churches
+FID: 1.7912522634301808
