@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 1600 720">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#eff6ff"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5f3ff"/>
+    </linearGradient>
+    <linearGradient id="vq" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="720" rx="36" fill="url(#bg)"/>
+
+  <text x="800" y="62" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="38" font-weight="900" fill="#0f172a">
+    VQ-Transplant: Plug-and-play VQ replacement for pretrained tokenizers
+  </text>
+  <text x="800" y="102" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="20" fill="#475569">
+    Instead of retraining the full tokenizer, preserve the pretrained encoder-decoder and transplant a new VQ module.
+  </text>
+
+  <!-- Stage Cards -->
+  <g filter="url(#shadow)">
+    <rect x="72" y="164" width="450" height="390" rx="28" fill="#ffffff" stroke="#dbeafe" stroke-width="2"/>
+    <rect x="575" y="164" width="450" height="390" rx="28" fill="#ffffff" stroke="#dbeafe" stroke-width="2"/>
+    <rect x="1078" y="164" width="450" height="390" rx="28" fill="#ffffff" stroke="#dbeafe" stroke-width="2"/>
+  </g>
+
+  <circle cx="118" cy="204" r="18" fill="#1d4ed8"/>
+  <text x="118" y="211" text-anchor="middle" font-family="Inter,Arial" font-size="18" font-weight="900" fill="#fff">1</text>
+  <text x="148" y="212" font-family="Inter,Arial" font-size="25" font-weight="900" fill="#0f172a">Pretrained Tokenizer</text>
+  <text x="148" y="240" font-family="Inter,Arial" font-size="16" fill="#64748b">strong but expensive to retrain</text>
+
+  <circle cx="621" cy="204" r="18" fill="#16a34a"/>
+  <text x="621" y="211" text-anchor="middle" font-family="Inter,Arial" font-size="18" font-weight="900" fill="#fff">2</text>
+  <text x="651" y="212" font-family="Inter,Arial" font-size="25" font-weight="900" fill="#0f172a">VQ Module Substitution</text>
+  <text x="651" y="240" font-family="Inter,Arial" font-size="16" fill="#64748b">train the new VQ module only</text>
+
+  <circle cx="1124" cy="204" r="18" fill="#ea580c"/>
+  <text x="1124" y="211" text-anchor="middle" font-family="Inter,Arial" font-size="18" font-weight="900" fill="#fff">3</text>
+  <text x="1154" y="212" font-family="Inter,Arial" font-size="25" font-weight="900" fill="#0f172a">Decoder Adaptation</text>
+  <text x="1154" y="240" font-family="Inter,Arial" font-size="16" fill="#64748b">lightweight alignment to new VQ space</text>
+
+  <!-- Components -->
+  <g font-family="Inter,Arial" font-size="17" font-weight="800" text-anchor="middle">
+    <rect x="112" y="320" width="108" height="74" rx="18" fill="#dbeafe" stroke="#93c5fd"/>
+    <text x="166" y="363" fill="#1e3a8a">Encoder</text>
+    <rect x="248" y="320" width="108" height="74" rx="18" fill="#fee2e2" stroke="#fca5a5"/>
+    <text x="302" y="352" fill="#991b1b">Native</text><text x="302" y="374" fill="#991b1b">VQ</text>
+    <rect x="384" y="320" width="108" height="74" rx="18" fill="#dcfce7" stroke="#86efac"/>
+    <text x="438" y="363" fill="#166534">Decoder</text>
+
+    <rect x="615" y="320" width="108" height="74" rx="18" fill="#dbeafe" stroke="#93c5fd"/>
+    <text x="669" y="352" fill="#1e3a8a">Frozen</text><text x="669" y="374" fill="#1e3a8a">Encoder</text>
+    <rect x="751" y="320" width="108" height="74" rx="18" fill="#dcfce7" stroke="#86efac"/>
+    <text x="805" y="352" fill="#166534">New</text><text x="805" y="374" fill="#166534">VQ</text>
+    <rect x="887" y="320" width="108" height="74" rx="18" fill="#dbeafe" stroke="#93c5fd"/>
+    <text x="941" y="352" fill="#1e3a8a">Frozen</text><text x="941" y="374" fill="#1e3a8a">Decoder</text>
+
+    <rect x="1118" y="320" width="108" height="74" rx="18" fill="#dbeafe" stroke="#93c5fd"/>
+    <text x="1172" y="352" fill="#1e3a8a">Frozen</text><text x="1172" y="374" fill="#1e3a8a">Encoder</text>
+    <rect x="1254" y="320" width="108" height="74" rx="18" fill="#dcfce7" stroke="#86efac"/>
+    <text x="1308" y="352" fill="#166534">New</text><text x="1308" y="374" fill="#166534">VQ</text>
+    <rect x="1390" y="320" width="108" height="74" rx="18" fill="#ffedd5" stroke="#fdba74"/>
+    <text x="1444" y="352" fill="#9a3412">Adapted</text><text x="1444" y="374" fill="#9a3412">Decoder</text>
+  </g>
+
+  <g stroke="#334155" stroke-width="3" marker-end="url(#arrow)">
+    <line x1="220" y1="357" x2="246" y2="357"/>
+    <line x1="356" y1="357" x2="382" y2="357"/>
+    <line x1="723" y1="357" x2="749" y2="357"/>
+    <line x1="859" y1="357" x2="885" y2="357"/>
+    <line x1="1226" y1="357" x2="1252" y2="357"/>
+    <line x1="1362" y1="357" x2="1388" y2="357"/>
+    <line x1="535" y1="357" x2="565" y2="357"/>
+    <line x1="1038" y1="357" x2="1068" y2="357"/>
+  </g>
+
+  <text x="550" y="334" text-anchor="middle" font-family="Inter,Arial" font-size="15" font-weight="800" fill="#16a34a">replace only VQ</text>
+  <text x="1053" y="334" text-anchor="middle" font-family="Inter,Arial" font-size="15" font-weight="800" fill="#ea580c">adapt decoder</text>
+
+  <g>
+    <rect x="132" y="460" width="330" height="54" rx="27" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="297" y="493" text-anchor="middle" font-family="Inter,Arial" font-size="17" font-weight="800" fill="#475569">Full retraining is costly</text>
+    <rect x="635" y="460" width="330" height="54" rx="27" fill="#ecfdf5" stroke="#bbf7d0"/>
+    <text x="800" y="493" text-anchor="middle" font-family="Inter,Arial" font-size="17" font-weight="800" fill="#166534">Cheap VQ exploration</text>
+    <rect x="1138" y="460" width="330" height="54" rx="27" fill="#fff7ed" stroke="#fed7aa"/>
+    <text x="1303" y="493" text-anchor="middle" font-family="Inter,Arial" font-size="17" font-weight="800" fill="#9a3412">Aligned reconstruction</text>
+  </g>
+
+  <g>
+    <rect x="150" y="600" width="1300" height="66" rx="26" fill="#0f172a"/>
+    <text x="330" y="641" text-anchor="middle" font-family="Inter,Arial" font-size="23" font-weight="900" fill="#ffffff">21.8× faster</text>
+    <text x="620" y="641" text-anchor="middle" font-family="Inter,Arial" font-size="23" font-weight="900" fill="#ffffff">0.81 rFID</text>
+    <text x="910" y="641" text-anchor="middle" font-family="Inter,Arial" font-size="23" font-weight="900" fill="#ffffff">0.74 rFID extended</text>
+    <text x="1230" y="641" text-anchor="middle" font-family="Inter,Arial" font-size="23" font-weight="900" fill="#ffffff">100% utilization</text>
+  </g>
+</svg>
