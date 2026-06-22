@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="VQ-Transplant: Efficient VQ-Module Integration for Pre-trained Visual Tokenizers." />
+  <title>VQ-Transplant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="nav">
+    <a class="nav-title" href="#">VQ-Transplant</a>
+    <nav>
+      <a href="#abstract">Abstract</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#bibtex">BibTeX</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero section">
+      <div class="badge">ICLR 2026</div>
+      <h1>VQ-Transplant</h1>
+      <h2>Efficient VQ-Module Integration for Pre-trained Visual Tokenizers</h2>
+
+      <p class="subtitle">
+        Plug-and-play replacement of vector quantization modules in pretrained visual tokenizers
+        <strong>without costly end-to-end retraining.</strong>
+      </p>
+
+      <p class="authors">
+        <span>Xianghong Fang</span>
+        <span>Yuan Yuan</span>
+        <span>Dehan Kong</span>
+        <span>Tim G. J. Rudner</span>
+      </p>
+
+      <p class="affiliations">
+        University of Toronto · Boston College · Vijil
+      </p>
+
+      <div class="buttons">
+        <a href="assets/VQ_Transplant.pdf">Paper</a>
+        <a href="#" aria-label="arXiv link placeholder">arXiv</a>
+        <a href="#" aria-label="Code link placeholder">Code</a>
+        <a href="#" aria-label="Model link placeholder">Models</a>
+        <a href="#bibtex">BibTeX</a>
+      </div>
+    </section>
+
+    <section class="section">
+      <img class="teaser" src="assets/teaser.svg" alt="VQ-Transplant framework teaser" />
+    </section>
+
+    <section class="stats section">
+      <article>
+        <h3>21.8×</h3>
+        <p>faster training than standard VAR</p>
+      </article>
+      <article>
+        <h3>0.81</h3>
+        <p>rFID with MMD-VAR on ImageNet-1K</p>
+      </article>
+      <article>
+        <h3>0.74</h3>
+        <p>rFID with extended decoder adaptation</p>
+      </article>
+      <article>
+        <h3>100%</h3>
+        <p>codebook utilization for MMD-VAR</p>
+      </article>
+    </section>
+
+    <section id="abstract" class="section two-col">
+      <div>
+        <h2>Abstract</h2>
+      </div>
+      <div>
+        <p>
+          Vector Quantization underpins modern discrete visual tokenization. However, training new
+          quantization modules for state-of-the-art VQ-based tokenizers often requires substantial
+          computational resources. VQ-Transplant addresses this limitation by enabling plug-and-play
+          integration of new VQ modules into frozen, pretrained visual tokenizers.
+        </p>
+        <p>
+          The framework preserves pretrained encoder-decoder parameters, replaces the native VQ
+          module, and applies lightweight decoder adaptation to resolve decoder-quantization mismatch.
+          This makes it possible to explore new VQ methods efficiently while retaining strong
+          reconstruction fidelity.
+        </p>
+      </div>
+    </section>
+
+    <section id="method" class="section">
+      <div class="section-heading">
+        <h2>Method Overview</h2>
+        <p>VQ-Transplant decouples quantization research from full tokenizer retraining.</p>
+      </div>
+      <img class="panel-img" src="assets/method.svg" alt="Two-stage VQ-Transplant method" />
+
+      <div class="cards">
+        <article>
+          <h3>Stage I: VQ Module Substitution</h3>
+          <p>
+            Freeze the pretrained encoder and decoder. Replace the native VQ module with a new
+            quantizer and train it on pretrained encoder features.
+          </p>
+        </article>
+        <article>
+          <h3>Stage II: Decoder Adaptation</h3>
+          <p>
+            Freeze the encoder and transplanted VQ module. Lightly adapt the decoder so that its
+            learned priors match the new quantized latent space.
+          </p>
+        </article>
+        <article>
+          <h3>MMD-VQ</h3>
+          <p>
+            Use maximum mean discrepancy to align feature and codebook distributions without
+            relying on Gaussian assumptions.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="results" class="section">
+      <div class="section-heading">
+        <h2>Main Results</h2>
+        <p>VQ-Transplant reaches strong reconstruction fidelity with substantially lower training cost.</p>
+      </div>
+
+      <img class="panel-img" src="assets/results.svg" alt="rFID comparison between VAR and MMD-VAR" />
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Tokens</th>
+              <th>Codebook size</th>
+              <th>Adaptation</th>
+              <th>rFID ↓</th>
+              <th>Utilization ↑</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>VAR tokenizer</td>
+              <td>680</td>
+              <td>4096</td>
+              <td>-</td>
+              <td>0.92</td>
+              <td>100%</td>
+            </tr>
+            <tr>
+              <td>MMD-VAR</td>
+              <td>680</td>
+              <td>4096</td>
+              <td>5 epochs</td>
+              <td>0.91</td>
+              <td>100%</td>
+            </tr>
+            <tr class="highlight">
+              <td>MMD-VAR</td>
+              <td>680</td>
+              <td>8192</td>
+              <td>5 epochs</td>
+              <td>0.81</td>
+              <td>100%</td>
+            </tr>
+            <tr class="highlight">
+              <td>MMD-VAR</td>
+              <td>680</td>
+              <td>8192</td>
+              <td>20 epochs</td>
+              <td>0.74</td>
+              <td>100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>Visual Results</h2>
+        <p>
+          Replace this placeholder with reconstruction grids from the paper, such as ImageNet before
+          and after decoder adaptation, plus FFHQ, CelebA-HQ, and LSUN-Churches examples.
+        </p>
+      </div>
+      <img class="panel-img" src="assets/visual_results_placeholder.svg" alt="Visual results placeholder" />
+    </section>
+
+    <section class="section two-col">
+      <div>
+        <h2>Resources</h2>
+      </div>
+      <div class="resource-list">
+        <a href="assets/VQ_Transplant.pdf">Download paper PDF</a>
+        <a href="#">GitHub code release placeholder</a>
+        <a href="#">Hugging Face models placeholder</a>
+        <a href="#">arXiv placeholder</a>
+      </div>
+    </section>
+
+    <section id="bibtex" class="section">
+      <h2>BibTeX</h2>
+      <pre><code>@inproceedings{fang2026vqtransplant,
+          title     = {VQ-Transplant: Efficient VQ-Module Integration for Pre-trained Visual Tokenizers},
+          author    = {Xianghong Fang and Yuan Yuan and Dehan Kong and Tim G. J. Rudner},
+          booktitle = {ICLR},
+          year      = {2026}
+      }</code></pre>
+    </section>
+  </main>
+  
+</body>
+</html>

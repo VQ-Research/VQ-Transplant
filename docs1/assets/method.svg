@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#ede9fe"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="520" rx="24" fill="#ffffff"/>
+  <text x="600" y="60" text-anchor="middle" font-family="Inter,Arial" font-size="32" font-weight="800" fill="#0f172a">Two-stage VQ-Transplant</text>
+
+  <rect x="80" y="125" width="460" height="300" rx="24" fill="#f8fafc" stroke="#dbeafe" stroke-width="2"/>
+  <text x="310" y="170" text-anchor="middle" font-family="Inter,Arial" font-size="26" font-weight="800" fill="#2563eb">Stage I: VQ Module Substitution</text>
+  <text x="310" y="210" text-anchor="middle" font-family="Inter,Arial" font-size="17" fill="#475569">Freeze pretrained encoder and decoder</text>
+  <text x="310" y="240" text-anchor="middle" font-family="Inter,Arial" font-size="17" fill="#475569">Train a new VQ module on encoder features</text>
+  <rect x="140" y="292" width="340" height="70" rx="16" fill="url(#g1)"/>
+  <text x="310" y="335" text-anchor="middle" font-family="Inter,Arial" font-size="19" font-weight="800" fill="#1e293b">Encoder features -> New quantized latents</text>
+
+  <line x1="560" y1="275" x2="640" y2="275" stroke="#475569" stroke-width="5" marker-end="url(#arrow)"/>
+
+  <rect x="660" y="125" width="460" height="300" rx="24" fill="#f8fafc" stroke="#dbeafe" stroke-width="2"/>
+  <text x="890" y="170" text-anchor="middle" font-family="Inter,Arial" font-size="26" font-weight="800" fill="#7c3aed">Stage II: Decoder Adaptation</text>
+  <text x="890" y="210" text-anchor="middle" font-family="Inter,Arial" font-size="17" fill="#475569">Freeze encoder and transplanted VQ</text>
+  <text x="890" y="240" text-anchor="middle" font-family="Inter,Arial" font-size="17" fill="#475569">Lightly adapt decoder to the new VQ space</text>
+  <rect x="720" y="292" width="340" height="70" rx="16" fill="#dcfce7"/>
+  <text x="890" y="335" text-anchor="middle" font-family="Inter,Arial" font-size="19" font-weight="800" fill="#166534">New latents -> High-fidelity reconstructions</text>
+</svg>
